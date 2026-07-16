@@ -14,7 +14,7 @@ const isProd = (process.env.NODE_ENV || '').toLowerCase() === 'production';
 const EMAIL_CONFIG = {
   from: process.env.EMAIL_FROM || process.env.GMAIL_SENDER || 'replybymahirandfriends@gmail.com',
   useGmail: process.env.USE_GMAIL === 'true',
-  useGmailOAuth: process.env.USE_GMAIL_OAUTH === 'true',
+  useGmailOAuth: process.env.USE_GMAIL_OAUTH === 'true' || !!process.env.GMAIL_OAUTH_REFRESH_TOKEN,
   useGmailApi: process.env.USE_GMAIL_API === 'true' || (process.env.EMAIL_PROVIDER || '').toLowerCase() === 'gmailapi',
   useSendGrid: process.env.USE_SENDGRID === 'true' || !!process.env.SENDGRID_API_KEY,
   useCustomSMTP: !!process.env.SMTP_HOST && !!process.env.SMTP_PASS,
