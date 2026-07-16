@@ -1,8 +1,13 @@
 import nodemailer from 'nodemailer';
 import { google } from 'googleapis';
+import dns from 'dns';
 import dotenv from 'dotenv';
 
 dotenv.config();
+
+const ipv4Lookup = (hostname, options, callback) => {
+  return dns.lookup(hostname, { family: 4 }, callback);
+};
 
 const isProd = (process.env.NODE_ENV || '').toLowerCase() === 'production';
 
@@ -94,10 +99,11 @@ const createTransporter = () => {
           pass: EMAIL_CONFIG.smtp.password,
         },
         pool: true,
-        connectionTimeout: 10000,
-        greetingTimeout: 5000,
-        socketTimeout: 10000,
+        connectionTimeout: 20000,
+        greetingTimeout: 15000,
+        socketTimeout: 20000,
         family: 4,
+        lookup: ipv4Lookup,
         tls: {
           rejectUnauthorized: false
         }
@@ -107,15 +113,18 @@ const createTransporter = () => {
     if (EMAIL_CONFIG.useGmail && EMAIL_CONFIG.gmail.user && EMAIL_CONFIG.gmail.password) {
       console.log('📧 Using Gmail SMTP configuration');
       return nodemailer.createTransport({
-        service: 'gmail',
+        host: 'smtp.gmail.com',
+        port: 465,
+        secure: true,
         auth: {
           user: EMAIL_CONFIG.gmail.user,
           pass: EMAIL_CONFIG.gmail.password,
         },
         family: 4,
-        connectionTimeout: 15000,
-        greetingTimeout: 10000,
-        socketTimeout: 15000,
+        lookup: ipv4Lookup,
+        connectionTimeout: 20000,
+        greetingTimeout: 15000,
+        socketTimeout: 20000,
         tls: {
           rejectUnauthorized: false
         }
@@ -387,18 +396,21 @@ export const sendEmail = async ({ to, subject, text, html, attachments = [], typ
           if (EMAIL_CONFIG.gmail.user && EMAIL_CONFIG.gmail.password) {
             try {
               const fallbackTransporter = nodemailer.createTransport({
-                service: 'gmail',
+                host: 'smtp.gmail.com',
+                port: 465,
+                secure: true,
                 auth: {
                   user: EMAIL_CONFIG.gmail.user,
                   pass: EMAIL_CONFIG.gmail.password
                 },
                 family: 4,
+                lookup: ipv4Lookup,
                 tls: {
                   rejectUnauthorized: false
                 },
-                connectionTimeout: 15000,
-                greetingTimeout: 10000,
-                socketTimeout: 15000
+                connectionTimeout: 20000,
+                greetingTimeout: 15000,
+                socketTimeout: 20000
               });
 
               const fallbackInfo = await fallbackTransporter.sendMail(mailOptions);
@@ -430,6 +442,7 @@ export const sendEmail = async ({ to, subject, text, html, attachments = [], typ
                   pass: EMAIL_CONFIG.sendgrid.apiKey
                 },
                 family: 4,
+                lookup: ipv4Lookup,
                 tls: {
                   rejectUnauthorized: false
                 }
