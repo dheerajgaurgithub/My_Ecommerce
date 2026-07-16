@@ -1,0 +1,813 @@
+import express from 'express';
+import DeliveryPartner from '../models/DeliveryPartner.js';
+import DeliveryOrder from '../models/DeliveryOrder.js';
+import Payout from '../models/Payout.js';
+import Order from '../models/Order.js';
+import User from '../models/User.js';
+import { body, validationResult } from 'express-validator';
+import { auth } from '../middleware/auth.js';
+import bcrypt from 'bcryptjs';
+import PDFDocument from 'pdfkit';
+
+const router = express.Router();
+
+// Middleware to check if user is a delivery partner
+const isDeliveryPartner = async (req, res, next) => {
+  try {
+    const partner = await DeliveryPartner.findOne({ userId: req.user._id });
+    if (!partner) {
+      return res.status(403).json({ success: false, message: 'Not a delivery partner' });
+    }
+    req.deliveryPartner = partner;
+    next();
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+// Register as delivery partner
+router.post('/register', [
+  body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
+  body('personalDetails.fullName').notEmpty().withMessage('Full name is required'),
+  body('personalDetails.contactNumber').notEmpty().withMessage('Contact number required'),
+  body('personalDetails.email').isEmail().withMessage('Valid email required'),
+  body('vehicleDetails.vehicleType').isIn(['motorcycle', 'car', 'van', 'bicycle']).withMessage('Invalid vehicle type'),
+  body('vehicleDetails.vehicleNumber').notEmpty().withMessage('Vehicle number required'),
+  body('address.pincode').notEmpty().withMessage('Pincode required')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ success: false, errors: errors.array() });
+    }
+
+    const { password, ...partnerData } = req.body;
+
+    // Check if email or contact already exists
+    const existingPartner = await DeliveryPartner.findOne({
+      $or: [
+        { 'personalDetails.contactNumber': partnerData.personalDetails.contactNumber },
+        { 'personalDetails.email': partnerData.personalDetails.email }
+      ]
+    });
+
+    if (existingPartner) {
+      return res.status(400).json({ success: false, message: 'Contact number or email already registered' });
+    }
+
+    // Create user account for delivery partner
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const newUser = new User({
+      email: partnerData.personalDetails.email,
+      password: hashedPassword,
+      name: partnerData.personalDetails.fullName,
+      role: 'delivery_partner'
+    });
+
+    await newUser.save();
+
+    // Create delivery partner profile
+    const deliveryPartner = new DeliveryPartner({
+      userId: newUser._id,
+      ...partnerData
+    });
+
+    await deliveryPartner.save();
+
+    res.status(201).json({
+      success: true,
+      message: 'Delivery partner registration submitted successfully. Please wait for admin approval.',
+      data: deliveryPartner
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Complete KYC
+router.put('/kyc', auth, isDeliveryPartner, [
+  body('aadharNumber').isLength({ min: 12, max: 12 }).withMessage('Valid Aadhar number required'),
+  body('aadharFrontImage').notEmpty().withMessage('Aadhar front image required'),
+  body('aadharBackImage').notEmpty().withMessage('Aadhar back image required'),
+  body('selfie').notEmpty().withMessage('Selfie required')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ success: false, errors: errors.array() });
+    }
+
+    const partner = await DeliveryPartner.findByIdAndUpdate(
+      req.deliveryPartner._id,
+      {
+        'kycDetails.aadharNumber': req.body.aadharNumber,
+        'kycDetails.aadharFrontImage': req.body.aadharFrontImage,
+        'kycDetails.aadharBackImage': req.body.aadharBackImage,
+        'kycDetails.panNumber': req.body.panNumber,
+        'kycDetails.panImage': req.body.panImage,
+        'kycDetails.selfie': req.body.selfie,
+        'kycDetails.kycStatus': 'pending'
+      },
+      { new: true }
+    );
+
+    res.json({ success: true, message: 'KYC submitted for verification', data: partner });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Update vehicle details
+router.put('/vehicle', auth, isDeliveryPartner, async (req, res) => {
+  try {
+    const partner = await DeliveryPartner.findByIdAndUpdate(
+      req.deliveryPartner._id,
+      { vehicleDetails: req.body },
+      { new: true }
+    );
+
+    res.json({ success: true, message: 'Vehicle details updated', data: partner });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Update bank details
+router.put('/bank', auth, isDeliveryPartner, async (req, res) => {
+  try {
+    const partner = await DeliveryPartner.findByIdAndUpdate(
+      req.deliveryPartner._id,
+      { bankDetails: req.body },
+      { new: true }
+    );
+
+    res.json({ success: true, message: 'Bank details updated', data: partner });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Update payout settings
+router.put('/payout-settings', auth, isDeliveryPartner, async (req, res) => {
+  try {
+    const partner = await DeliveryPartner.findByIdAndUpdate(
+      req.deliveryPartner._id,
+      { payoutSettings: req.body },
+      { new: true }
+    );
+
+    res.json({ success: true, message: 'Payout settings updated', data: partner });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Get delivery partner profile
+router.get('/profile', auth, isDeliveryPartner, async (req, res) => {
+  try {
+    res.json({ success: true, data: req.deliveryPartner });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Update online status
+router.put('/online-status', auth, isDeliveryPartner, async (req, res) => {
+  try {
+    const { isOnline, latitude, longitude } = req.body;
+
+    const partner = await DeliveryPartner.findByIdAndUpdate(
+      req.deliveryPartner._id,
+      {
+        'workDetails.isOnline': isOnline,
+        'workDetails.currentLocation': {
+          latitude,
+          longitude,
+          lastUpdated: new Date()
+        }
+      },
+      { new: true }
+    );
+
+    res.json({ success: true, message: 'Online status updated', data: partner });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Update current location
+router.put('/location', auth, isDeliveryPartner, async (req, res) => {
+  try {
+    const { latitude, longitude } = req.body;
+
+    const partner = await DeliveryPartner.findByIdAndUpdate(
+      req.deliveryPartner._id,
+      {
+        'workDetails.currentLocation': {
+          latitude,
+          longitude,
+          lastUpdated: new Date()
+        }
+      },
+      { new: true }
+    );
+
+    res.json({ success: true, message: 'Location updated', data: partner });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Get available orders (nearby stores)
+router.get('/available-orders', auth, isDeliveryPartner, async (req, res) => {
+  try {
+    const { latitude, longitude, radius = 10 } = req.query;
+
+    if (!latitude || !longitude) {
+      return res.status(400).json({ success: false, message: 'Location coordinates required' });
+    }
+
+    // Find orders that need delivery partners
+    const orders = await Order.find({
+      status: 'confirmed',
+      'delivery.assigned': false
+    }).populate('items.product');
+
+    // Filter orders based on distance (simplified logic)
+    const nearbyOrders = orders.filter(order => {
+      // Add distance calculation logic here
+      return true; // For now, return all
+    });
+
+    res.json({ success: true, data: nearbyOrders });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Accept an order
+router.post('/accept-order/:orderId', auth, isDeliveryPartner, async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.orderId);
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+
+    if (order.delivery.assigned) {
+      return res.status(400).json({ success: false, message: 'Order already assigned' });
+    }
+
+    // Create delivery order
+    const deliveryOrder = new DeliveryOrder({
+      orderId: order._id,
+      deliveryPartnerId: req.deliveryPartner._id,
+      storeId: order.storeId,
+      customerDetails: {
+        name: order.customerName,
+        contactNumber: order.contactNumber,
+        address: order.shippingAddress.address,
+        coordinates: order.shippingAddress.coordinates
+      },
+      pickupDetails: {
+        address: order.storeAddress,
+        coordinates: order.storeCoordinates,
+        contactNumber: order.storeContact,
+        pickupOTP: Math.random().toString(36).substring(2, 8).toUpperCase()
+      },
+      deliveryDetails: {
+        deliveryOTP: Math.random().toString(36).substring(2, 8).toUpperCase(),
+        estimatedDistance: order.delivery.distance,
+        estimatedDuration: order.delivery.estimatedTime
+      },
+      payment: {
+        deliveryFee: order.delivery.fee,
+        distanceFee: order.delivery.distanceFee,
+        totalEarning: order.delivery.fee + order.delivery.distanceFee
+      },
+      timeline: [{
+        status: 'assigned',
+        timestamp: new Date(),
+        notes: 'Order assigned to delivery partner'
+      }]
+    });
+
+    await deliveryOrder.save();
+
+    // Update order
+    order.delivery.assigned = true;
+    order.delivery.partnerId = req.deliveryPartner._id;
+    order.status = 'processing';
+    await order.save();
+
+    res.json({ success: true, message: 'Order accepted', data: deliveryOrder });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Get delivery partner's active orders
+router.get('/active-orders', auth, isDeliveryPartner, async (req, res) => {
+  try {
+    const activeOrders = await DeliveryOrder.find({
+      deliveryPartnerId: req.deliveryPartner._id,
+      status: { $in: ['assigned', 'accepted', 'reached_store', 'picked_up', 'in_transit'] }
+    }).populate('orderId');
+
+    res.json({ success: true, data: activeOrders });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Update delivery order status
+router.put('/order-status/:orderId', auth, isDeliveryPartner, async (req, res) => {
+  try {
+    const { status, latitude, longitude, notes, otp, otpType } = req.body;
+
+    const order = await Order.findOne({
+      _id: req.params.orderId,
+      'delivery.partnerId': req.deliveryPartner._id
+    });
+
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found or not assigned to you' });
+    }
+
+    // OTP verification for pickup and delivery
+    if (otpType === 'pickup' && status === 'reached_store') {
+      if (otp !== order.delivery.pickupOTP) {
+        return res.status(400).json({ success: false, message: 'Invalid pickup OTP' });
+      }
+    }
+
+    if (otpType === 'delivery' && status === 'delivered') {
+      if (otp !== order.delivery.deliveryOTP) {
+        return res.status(400).json({ success: false, message: 'Invalid delivery OTP' });
+      }
+    }
+
+    order.status = status;
+    order.timeline.push({
+      status: status.charAt(0).toUpperCase() + status.slice(1),
+      timestamp: new Date()
+    });
+
+    await order.save();
+
+    res.json({ success: true, message: 'Order status updated', data: order });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Get order history
+router.get('/order-history', auth, isDeliveryPartner, async (req, res) => {
+  try {
+    const { page = 1, limit = 20 } = req.query;
+
+    const orders = await DeliveryOrder.find({
+      deliveryPartnerId: req.deliveryPartner._id,
+      status: { $in: ['delivered', 'cancelled', 'failed'] }
+    })
+      .populate('orderId')
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(parseInt(limit));
+
+    const total = await DeliveryOrder.countDocuments({
+      deliveryPartnerId: req.deliveryPartner._id,
+      status: { $in: ['delivered', 'cancelled', 'failed'] }
+    });
+
+    res.json({
+      success: true,
+      data: orders,
+      pagination: { page, limit, total }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Get payouts
+router.get('/payouts', auth, isDeliveryPartner, async (req, res) => {
+  try {
+    const payouts = await Payout.find({
+      deliveryPartnerId: req.deliveryPartner._id
+    }).sort({ createdAt: -1 });
+
+    res.json({ success: true, data: payouts });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Get earnings summary
+router.get('/earnings', auth, isDeliveryPartner, async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+
+    const matchQuery = {
+      deliveryPartnerId: req.deliveryPartner._id,
+      status: 'delivered'
+    };
+
+    if (startDate && endDate) {
+      matchQuery.updatedAt = {
+        $gte: new Date(startDate),
+        $lte: new Date(endDate)
+      };
+    }
+
+    const orders = await DeliveryOrder.find(matchQuery);
+
+    const totalEarnings = orders.reduce((sum, order) => sum + order.payment.totalEarning, 0);
+    const totalOrders = orders.length;
+    const totalDistance = orders.reduce((sum, order) => sum + order.deliveryDetails.estimatedDistance, 0);
+
+    res.json({
+      success: true,
+      data: {
+        totalEarnings,
+        totalOrders,
+        totalDistance,
+        averagePerOrder: totalOrders > 0 ? totalEarnings / totalOrders : 0
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Report issue with delivery
+router.post('/report-issue/:deliveryOrderId', auth, isDeliveryPartner, async (req, res) => {
+  try {
+    const { type, description } = req.body;
+
+    const deliveryOrder = await DeliveryOrder.findOne({
+      _id: req.params.deliveryOrderId,
+      deliveryPartnerId: req.deliveryPartner._id
+    });
+
+    if (!deliveryOrder) {
+      return res.status(404).json({ success: false, message: 'Delivery order not found' });
+    }
+
+    deliveryOrder.issues.push({
+      type,
+      description,
+      reportedAt: new Date()
+    });
+
+    await deliveryOrder.save();
+
+    res.json({ success: true, message: 'Issue reported', data: deliveryOrder });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Admin routes for managing delivery partners
+router.get('/admin/all', async (req, res) => {
+  try {
+    const partners = await DeliveryPartner.find()
+      .sort({ createdAt: -1 });
+
+    res.json({ success: true, data: partners });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+router.put('/admin/:id/status', async (req, res) => {
+  try {
+    const { status, reason } = req.body;
+
+    const partner = await DeliveryPartner.findByIdAndUpdate(
+      req.params.id,
+      {
+        status,
+        rejectionReason: reason
+      },
+      { new: true }
+    );
+
+    if (!partner) {
+      return res.status(404).json({ success: false, message: 'Partner not found' });
+    }
+
+    res.json({ success: true, message: 'Partner status updated', data: partner });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+router.put('/admin/:id/approve', async (req, res) => {
+  try {
+    const partner = await DeliveryPartner.findByIdAndUpdate(
+      req.params.id,
+      {
+        status: 'approved',
+        'kycDetails.kycStatus': 'approved',
+        'kycDetails.verifiedAt': new Date()
+      },
+      { new: true }
+    );
+
+    if (!partner) {
+      return res.status(404).json({ success: false, message: 'Partner not found' });
+    }
+
+    res.json({ success: true, message: 'Partner approved successfully. They can now pay the joining fee.', data: partner });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Pay joining fee
+router.post('/pay-joining-fee', auth, isDeliveryPartner, async (req, res) => {
+  try {
+    const partner = req.deliveryPartner;
+
+    if (partner.status !== 'approved') {
+      return res.status(400).json({ success: false, message: 'You must be approved before paying the joining fee' });
+    }
+
+    if (partner.joiningFee?.paid) {
+      return res.status(400).json({ success: false, message: 'Joining fee already paid' });
+    }
+
+    // Simulate payment (in production, integrate with payment gateway)
+    const { paymentId } = req.body;
+
+    partner.joiningFee = {
+      amount: partner.joiningFee?.amount || 500,
+      paid: true,
+      paidAt: new Date(),
+      paymentId: paymentId || 'simulated_payment_' + Date.now()
+    };
+
+    partner.status = 'active';
+
+    // Set renewal fee due date (30 days from now)
+    partner.renewalFee = {
+      amount: partner.renewalFee?.amount || 200,
+      lastPaidAt: new Date(),
+      nextDueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      isPaid: true
+    };
+
+    await partner.save();
+
+    res.json({ success: true, message: 'Joining fee paid successfully. You can now start working!', data: partner });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Pay renewal fee
+router.post('/pay-renewal-fee', auth, isDeliveryPartner, async (req, res) => {
+  try {
+    const partner = req.deliveryPartner;
+
+    if (partner.status !== 'active') {
+      return res.status(400).json({ success: false, message: 'Your account must be active to pay renewal fee' });
+    }
+
+    // Simulate payment (in production, integrate with payment gateway)
+    const { paymentId } = req.body;
+
+    partner.renewalFee = {
+      amount: partner.renewalFee?.amount || 200,
+      lastPaidAt: new Date(),
+      nextDueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      isPaid: true
+    };
+
+    await partner.save();
+
+    res.json({ success: true, message: 'Renewal fee paid successfully. Your account is active for another 30 days!', data: partner });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+router.put('/admin/:id/kyc', async (req, res) => {
+  try {
+    const { kycStatus, rejectionReason } = req.body;
+
+    const partner = await DeliveryPartner.findByIdAndUpdate(
+      req.params.id,
+      {
+        'kycDetails.kycStatus': kycStatus,
+        'kycDetails.kycRejectedReason': rejectionReason,
+        'kycDetails.verifiedAt': kycStatus === 'approved' ? new Date() : null
+      },
+      { new: true }
+    );
+
+    if (!partner) {
+      return res.status(404).json({ success: false, message: 'Partner not found' });
+    }
+
+    res.json({ success: true, message: 'KYC status updated', data: partner });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Generate PDF for delivery partner
+router.get('/admin/:id/pdf', async (req, res) => {
+  try {
+    const partner = await DeliveryPartner.findById(req.params.id);
+    if (!partner) {
+      return res.status(404).json({ success: false, message: 'Partner not found' });
+    }
+
+    const doc = new PDFDocument({ margin: 50 });
+    const filename = `delivery-partner-${partner._id}.pdf`;
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+
+    doc.pipe(res);
+
+    // Header
+    doc.fontSize(20).font('Helvetica-Bold').text('Delivery Partner Registration Details', { align: 'center' });
+    doc.moveDown();
+    doc.fontSize(12).font('Helvetica').text(`Generated on: ${new Date().toLocaleString()}`, { align: 'center' });
+    doc.moveDown(2);
+
+    // Personal Details Section
+    doc.fontSize(16).font('Helvetica-Bold').text('Personal Details', { underline: true });
+    doc.moveDown();
+    doc.fontSize(12).font('Helvetica');
+    doc.text(`Full Name: ${partner.personalDetails.fullName}`);
+    doc.text(`Email: ${partner.personalDetails.email}`);
+    doc.text(`Contact Number: ${partner.personalDetails.contactNumber}`);
+    doc.text(`Date of Birth: ${partner.personalDetails.dateOfBirth ? new Date(partner.personalDetails.dateOfBirth).toLocaleDateString() : 'N/A'}`);
+    doc.text(`Gender: ${partner.personalDetails.gender || 'N/A'}`);
+    doc.moveDown();
+
+    // Address Section
+    doc.fontSize(16).font('Helvetica-Bold').text('Address Details', { underline: true });
+    doc.moveDown();
+    doc.fontSize(12).font('Helvetica');
+    doc.text(`Street: ${partner.address.street || 'N/A'}`);
+    doc.text(`City: ${partner.address.city || 'N/A'}`);
+    doc.text(`State: ${partner.address.state || 'N/A'}`);
+    doc.text(`Pincode: ${partner.address.pincode || 'N/A'}`);
+    doc.moveDown();
+
+    // Vehicle Details Section
+    doc.fontSize(16).font('Helvetica-Bold').text('Vehicle Details', { underline: true });
+    doc.moveDown();
+    doc.fontSize(12).font('Helvetica');
+    doc.text(`Vehicle Type: ${partner.vehicleDetails.vehicleType || 'N/A'}`);
+    doc.text(`Vehicle Number: ${partner.vehicleDetails.vehicleNumber || 'N/A'}`);
+    doc.text(`Vehicle Name: ${partner.vehicleDetails.vehicleName || 'N/A'}`);
+    doc.text(`Vehicle Color: ${partner.vehicleDetails.vehicleColor || 'N/A'}`);
+    doc.moveDown();
+
+    // Work Details Section
+    doc.fontSize(16).font('Helvetica-Bold').text('Work Details', { underline: true });
+    doc.moveDown();
+    doc.fontSize(12).font('Helvetica');
+    doc.text(`Preferred Areas: ${partner.workDetails?.preferredAreas?.join(', ') || 'N/A'}`);
+    doc.text(`Available Hours: ${partner.workDetails?.availableHours || 'N/A'}`);
+    doc.text(`Total Deliveries: ${partner.workDetails?.totalDeliveries || 0}`);
+    doc.text(`Online Status: ${partner.workDetails?.isOnline ? 'Online' : 'Offline'}`);
+    doc.moveDown();
+
+    // KYC Details Section
+    doc.fontSize(16).font('Helvetica-Bold').text('KYC Details', { underline: true });
+    doc.moveDown();
+    doc.fontSize(12).font('Helvetica');
+    doc.text(`Aadhar Number: ${partner.kycDetails?.aadharNumber || 'N/A'}`);
+    doc.text(`KYC Status: ${partner.kycDetails?.kycStatus || 'Pending'}`);
+    if (partner.kycDetails?.kycStatus === 'approved') {
+      doc.text(`KYC Verified At: ${partner.kycDetails?.verifiedAt ? new Date(partner.kycDetails.verifiedAt).toLocaleString() : 'N/A'}`);
+    }
+    doc.moveDown();
+
+    // Account Status Section
+    doc.fontSize(16).font('Helvetica-Bold').text('Account Status', { underline: true });
+    doc.moveDown();
+    doc.fontSize(12).font('Helvetica');
+    doc.text(`Status: ${partner.status?.toUpperCase() || 'N/A'}`);
+    doc.text(`Registration Date: ${partner.createdAt ? new Date(partner.createdAt).toLocaleString() : 'N/A'}`);
+    doc.moveDown();
+
+    // Fee Details Section
+    doc.fontSize(16).font('Helvetica-Bold').text('Fee Details', { underline: true });
+    doc.moveDown();
+    doc.fontSize(12).font('Helvetica');
+    doc.text(`Joining Fee: ₹${partner.joiningFee?.amount || 500}`);
+    doc.text(`Joining Fee Status: ${partner.joiningFee?.isPaid ? 'Paid' : 'Pending'}`);
+    if (partner.joiningFee?.paidAt) {
+      doc.text(`Joining Fee Paid At: ${new Date(partner.joiningFee.paidAt).toLocaleString()}`);
+    }
+    doc.moveDown();
+    doc.text(`Renewal Fee: ₹${partner.renewalFee?.amount || 200}`);
+    doc.text(`Renewal Fee Status: ${partner.renewalFee?.isPaid ? 'Paid' : 'Pending'}`);
+    if (partner.renewalFee?.lastPaidAt) {
+      doc.text(`Last Renewal Fee Paid At: ${new Date(partner.renewalFee.lastPaidAt).toLocaleString()}`);
+    }
+    if (partner.renewalFee?.nextDueDate) {
+      doc.text(`Next Renewal Due Date: ${new Date(partner.renewalFee.nextDueDate).toLocaleDateString()}`);
+    }
+
+    doc.end();
+  } catch (error) {
+    console.error('Error generating PDF:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Update delivery partner details (Admin only)
+router.put('/admin/:id/update', async (req, res) => {
+  try {
+    const { 
+      personalDetails, 
+      address, 
+      vehicleDetails, 
+      workDetails 
+    } = req.body;
+
+    const partner = await DeliveryPartner.findByIdAndUpdate(
+      req.params.id,
+      {
+        ...(personalDetails && {
+          'personalDetails.fullName': personalDetails.fullName,
+          'personalDetails.email': personalDetails.email,
+          'personalDetails.contactNumber': personalDetails.contactNumber,
+          'personalDetails.dateOfBirth': personalDetails.dateOfBirth,
+          'personalDetails.gender': personalDetails.gender
+        }),
+        ...(address && {
+          'address.street': address.street,
+          'address.city': address.city,
+          'address.state': address.state,
+          'address.pincode': address.pincode
+        }),
+        ...(vehicleDetails && {
+          'vehicleDetails.vehicleType': vehicleDetails.vehicleType,
+          'vehicleDetails.vehicleNumber': vehicleDetails.vehicleNumber,
+          'vehicleDetails.vehicleName': vehicleDetails.vehicleName,
+          'vehicleDetails.vehicleColor': vehicleDetails.vehicleColor
+        }),
+        ...(workDetails && {
+          'workDetails.preferredAreas': workDetails.preferredAreas,
+          'workDetails.availableHours': workDetails.availableHours
+        })
+      },
+      { new: true }
+    );
+
+    if (!partner) {
+      return res.status(404).json({ success: false, message: 'Partner not found' });
+    }
+
+    res.json({ success: true, message: 'Partner details updated successfully', data: partner });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+router.get('/admin/stats', async (req, res) => {
+  try {
+    const total = await DeliveryPartner.countDocuments();
+    const active = await DeliveryPartner.countDocuments({ status: 'active' });
+    const pending = await DeliveryPartner.countDocuments({ status: 'pending' });
+    const kycPending = await DeliveryPartner.countDocuments({ 'kycDetails.kycStatus': 'pending' });
+
+    res.json({
+      success: true,
+      data: { total, active, pending, kycPending }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Get orders assigned to delivery partner
+router.get('/orders', auth, async (req, res) => {
+  try {
+    const partner = await DeliveryPartner.findOne({ userId: req.user._id });
+    if (!partner) {
+      return res.status(403).json({ success: false, message: 'Not a delivery partner' });
+    }
+
+    const orders = await Order.find({ 
+      'delivery.partnerId': partner._id 
+    }).sort({ createdAt: -1 });
+
+    res.json({ success: true, orders });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+export default router;
