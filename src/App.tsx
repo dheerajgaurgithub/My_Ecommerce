@@ -90,7 +90,11 @@ export default function App() {
               <BrowserRouter>
                 <ScrollToTop />
                 <Routes>
-                <Route path="/admin/login" element={<AdminLoginPage />} />
+                <Route path="/admin/login" element={
+                  <Suspense fallback={<div className="p-8 text-center">Loading...</div>}>
+                    <AdminLoginPage />
+                  </Suspense>
+                } />
                 <Route path="/admin/*" element={
                   <AdminLayout>
                     <Suspense fallback={<div className="p-8 text-center">Loading...</div>}>
