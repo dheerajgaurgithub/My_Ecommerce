@@ -97,6 +97,7 @@ const createTransporter = () => {
         connectionTimeout: 10000,
         greetingTimeout: 5000,
         socketTimeout: 10000,
+        family: 4,
         tls: {
           rejectUnauthorized: false
         }
@@ -111,19 +112,12 @@ const createTransporter = () => {
           user: EMAIL_CONFIG.gmail.user,
           pass: EMAIL_CONFIG.gmail.password,
         },
+        family: 4,
         tls: {
           rejectUnauthorized: false
         }
       });
     }
-    
-    console.warn('⚠️ No SMTP configuration found');
-    return null;
-  } catch (error) {
-    console.error('❌ Failed to create email transporter:', error.message);
-    return null;
-  }
-};
 
 const transporter = createTransporter();
 
@@ -346,18 +340,18 @@ export const sendEmail = async ({ to, subject, text, html, attachments = [], typ
       }
     }
     
+    let mailOptions = {
+      from: `"${EMAIL_CONFIG.sendgrid.fromName}" <${EMAIL_CONFIG.from}>`,
+      to,
+      subject,
+      text,
+      html,
+      attachments
+    };
+
     if (transporter) {
       try {
         console.log('📧 Attempting to send via SMTP to:', to);
-        
-        const mailOptions = {
-          from: `"${EMAIL_CONFIG.sendgrid.fromName}" <${EMAIL_CONFIG.from}>`,
-          to,
-          subject,
-          text,
-          html,
-          attachments
-        };
         
         const info = await transporter.sendMail(mailOptions);
         result = {
@@ -375,32 +369,37 @@ export const sendEmail = async ({ to, subject, text, html, attachments = [], typ
         
         if (error.code === 'ETIMEDOUT' || error.code === 'ESOCKET' || error.code === 'ENETUNREACH') {
           console.log('Connection failed, trying fallback configuration...');
-          try {
-            const fallbackTransporter = nodemailer.createTransport({
-              host: 'smtp.gmail.com',
-              port: 465,
-              secure: true,
-              auth: {
-                user: EMAIL_CONFIG.gmail.user,
-                pass: EMAIL_CONFIG.gmail.password
-              },
-              tls: {
-                rejectUnauthorized: false
-              }
-            });
+          if (EMAIL_CONFIG.gmail.user && EMAIL_CONFIG.gmail.password) {
+            try {
+              const fallbackTransporter = nodemailer.createTransport({
+                host: 'smtp.gmail.com',
+                port: 465,
+                secure: true,
+                auth: {
+                  user: EMAIL_CONFIG.gmail.user,
+                  pass: EMAIL_CONFIG.gmail.password
+                },
+                family: 4,
+                tls: {
+                  rejectUnauthorized: false
+                }
+              });
 
-            const info = await fallbackTransporter.sendMail(mailOptions);
-            result = {
-              success: true,
-              provider: 'gmail-fallback',
-              messageId: info.messageId,
-              deliveryTime: Date.now() - startTime
-            };
-            
-            console.log('✅ Email sent via fallback');
-            return result;
-          } catch (fallbackError) {
-            console.error('Fallback also failed:', fallbackError.message);
+              const info = await fallbackTransporter.sendMail(mailOptions);
+              result = {
+                success: true,
+                provider: 'gmail-fallback',
+                messageId: info.messageId,
+                deliveryTime: Date.now() - startTime
+              };
+              
+              console.log('✅ Email sent via fallback');
+              return result;
+            } catch (fallbackError) {
+              console.error('Fallback also failed:', fallbackError.message);
+            }
+          } else {
+            console.warn('Fallback skipped: Gmail credentials are not configured.');
           }
         }
         
