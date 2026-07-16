@@ -31,6 +31,10 @@ const DeliveryPartnerRegisterPage = lazy(() => import('./pages/DeliveryPartnerRe
 const DeliveryPartnerLoginPage = lazy(() => import('./pages/DeliveryPartnerLoginPage').then(m => ({ default: m.DeliveryPartnerLoginPage })));
 const GoogleCallbackPage = lazy(() => import('./pages/GoogleCallbackPage').then(m => ({ default: m.GoogleCallbackPage })));
 const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage').then(m => ({ default: m.ForgotPasswordPage })));
+const MegaDealAdminPage = lazy(() => import('./pages/MegaDealAdminPage').then(m => ({ default: m.MegaDealAdminPage })));
+const MegaDealPage = lazy(() => import('./pages/MegaDealPage').then(m => ({ default: m.MegaDealPage })));
+const MyRewardsPage = lazy(() => import('./pages/MyRewardsPage').then(m => ({ default: m.MyRewardsPage })));
+const LuckyWheelPage = lazy(() => import('./pages/LuckyWheelPage').then(m => ({ default: m.LuckyWheelPage })));
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -89,7 +93,12 @@ export default function App() {
                 <Route path="/admin/login" element={<AdminLoginPage />} />
                 <Route path="/admin/*" element={
                   <AdminLayout>
-                    <AdminPage />
+                    <Suspense fallback={<div className="p-8 text-center">Loading...</div>}>
+                      <Routes>
+                        <Route path="/" element={<AdminPage />} />
+                        <Route path="/mega-deal" element={<MegaDealAdminPage />} />
+                      </Routes>
+                    </Suspense>
                   </AdminLayout>
                 } />
                 <Route path="/delivery-partner/login" element={<DeliveryPartnerLoginPage />} />
@@ -126,6 +135,9 @@ export default function App() {
                           <Route path="/size-guide" element={<SizeGuidePage />} />
                           <Route path="/faq" element={<FAQPage />} />
                           <Route path="/founder" element={<FounderPage />} />
+                          <Route path="/mega-deal" element={<MegaDealPage />} />
+                          <Route path="/rewards" element={<MyRewardsPage />} />
+                          <Route path="/lucky-wheel" element={<LuckyWheelPage />} />
                         </Routes>
                       </Suspense>
                     </StoreLayout>
