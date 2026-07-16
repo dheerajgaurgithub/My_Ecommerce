@@ -1,7 +1,7 @@
 import express from 'express';
 import crypto from 'crypto';
 import User from '../models/User.js';
-import emailService from '../services/emailService.js';
+import emailService, { sendOTPEmail } from '../services/emailService.js';
 import { authLimiter } from '../middleware/rateLimit.js';
 
 const router = express.Router();
@@ -31,16 +31,10 @@ router.post('/send', authLimiter, async (req, res) => {
     // Store OTP
     otpStore.set(email, { otp, expiresAt });
 
-    // Check if email service is initialized
-    if (!emailService.transporter) {
-      console.error('Email service not initialized - cannot send OTP');
-      return res.status(500).json({ success: false, message: 'Email service not configured. Please contact support.' });
-    }
-
     // Send OTP email
-    const emailSent = await emailService.sendOTPEmail(email, otp, 'User');
+    const emailResult = await sendOTPEmail(email, otp, 'email-verification');
 
-    if (emailSent) {
+    if (emailResult.success) {
       res.json({
         success: true,
         message: 'OTP sent successfully',
