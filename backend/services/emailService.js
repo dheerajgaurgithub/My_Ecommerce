@@ -34,6 +34,11 @@ class EmailService {
       refresh_token: process.env.GMAIL_OAUTH_REFRESH_TOKEN
     });
 
+    async function getAccessToken() {
+      const { token } = await this.oauth2Client.getAccessToken();
+      return token;
+    }
+
     this.transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
@@ -42,8 +47,9 @@ class EmailService {
         clientId: process.env.GMAIL_CLIENT_ID,
         clientSecret: process.env.GMAIL_CLIENT_SECRET,
         refreshToken: process.env.GMAIL_OAUTH_REFRESH_TOKEN,
-        accessToken: this.oauth2Client.getAccessToken()
-      }
+        accessToken: getAccessToken.bind(this)
+      },
+      pool: true
     });
 
     console.log('Email service initialized with OAuth2');
@@ -65,17 +71,6 @@ class EmailService {
     if (!this.transporter) {
       console.error('Email service not initialized');
       return false;
-    }
-
-    // Refresh OAuth2 token if needed
-    if (this.oauth2Client) {
-      try {
-        const { token } = await this.oauth2Client.getAccessToken();
-        this.transporter.auth.accessToken = token;
-      } catch (error) {
-        console.error('Failed to refresh OAuth2 token:', error);
-        return false;
-      }
     }
 
     try {
