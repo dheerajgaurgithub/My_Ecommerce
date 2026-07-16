@@ -4,10 +4,18 @@ import { useAuth } from '../lib/auth';
 import { useToast } from '../lib/toast';
 import { api } from '../lib/api';
 
-export default function GoogleCallbackPage() {
+interface GoogleCallbackResponse {
+  success: boolean;
+  token?: string;
+  user?: any;
+  isNewUser?: boolean;
+  message?: string;
+}
+
+export function GoogleCallbackPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { setToken, setUser } = useAuth();
+  const { setUser } = useAuth();
   const { showToast } = useToast();
 
   useEffect(() => {
@@ -22,10 +30,12 @@ export default function GoogleCallbackPage() {
       }
 
       try {
-        const response = await api.post('/google/callback', { code });
-        
+        const response: GoogleCallbackResponse = await api.post<GoogleCallbackResponse>('/google/callback', { code });
+
         if (response.success) {
-          setToken(response.token);
+          if (response.token) {
+            api.setToken(response.token);
+          }
           setUser(response.user);
           showToast(response.isNewUser ? 'Account created successfully!' : 'Welcome back!', 'success');
           navigate(redirect);
@@ -42,7 +52,7 @@ export default function GoogleCallbackPage() {
     };
 
     handleGoogleCallback();
-  }, [searchParams, navigate, setToken, setUser, showToast]);
+  }, [searchParams, navigate, setUser, showToast]);
 
   return (
     <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 bg-neutral-50 dark:bg-neutral-900">
