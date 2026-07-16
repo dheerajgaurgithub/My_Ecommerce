@@ -18,7 +18,7 @@ interface AuthContextType {
   isAdmin: boolean;
   setUser: (user: User | null) => void;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
-  signUp: (email: string, password: string, name: string) => Promise<{ error: string | null }>;
+  signUp: (email: string, password: string, name: string, otp?: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
   adminSignIn: (email: string, password: string) => Promise<{ error: string | null }>;
   adminSignOut: () => void;
@@ -76,9 +76,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const signUp = async (email: string, password: string, name: string) => {
+  const signUp = async (email: string, password: string, name: string, otp?: string) => {
     try {
-      const response = await api.post<{ success: boolean; token: string; user: User }>('/auth/register', { email, password, name });
+      const response = await api.post<{ success: boolean; token: string; user: User }>('/auth/register', { email, password, name, otp });
       if (response.success) {
         api.setToken(response.token);
         setUser(response.user);

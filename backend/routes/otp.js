@@ -121,4 +121,97 @@ router.post('/resend', authLimiter, async (req, res) => {
   }
 });
 
+// Send OTP for password reset (only for existing users)
+router.post('/forgot-password/send', authLimiter, async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'Email is required' });
+    }
+
+    // Check if user exists
+    const existingUser = await User.findOne({ email });
+    if (!existingUser) {
+      return res.status(400).json({ success: false, message: 'No account found with this email' });
+    }
+
+    // Generate 6-digit OTP
+    const otp = crypto.randomInt(100000, 999999).toString();
+    const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
+
+    // Store OTP with prefix for password reset
+    otpStore.set(`reset_${email}`, { otp, expiresAt });
+
+    // Send OTP email
+    const emailSent = await emailService.sendOTPEmail(email, otp, existingUser.name || 'User');
+
+    if (emailSent) {
+      res.json({ 
+        success: true, 
+        message: 'Password reset OTP sent successfully',
+        expiresAt 
+      });
+    } else {
+      res.status(500).json({ success: false, message: 'Failed to send OTP' });
+    }
+  } catch (error) {
+    console.error('Password reset OTP send error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Verify OTP for password reset
+router.post('/forgot-password/verify', authLimiter, async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+
+    if (!email || !otp) {
+      return res.status(400).json({ success: false, message: 'Email and OTP are required' });
+    }
+
+    const storedData = otpStore.get(`reset_${email}`);
+
+    if (!storedData) {
+      return res.status(400).json({ success: false, message: 'OTP not found or expired' });
+    }
+
+    if (Date.now() > storedData.expiresAt) {
+      otpStore.delete(`reset_${email}`);
+      return res.status(400).json({ success: false, message: 'OTP has expired' });
+    }
+
+    if (storedData.otp !== otp) {
+      return res.status(400).json({ success: false, message: 'Invalid OTP' });
+    }
+
+    // OTP is valid, keep it for password update
+    res.json({ 
+      success: true, 
+      message: 'OTP verified successfully',
+      verified: true 
+    });
+  } catch (error) {
+    console.error('Password reset OTP verify error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Clear OTP after successful password reset
+router.post('/forgot-password/clear', authLimiter, async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'Email is required' });
+    }
+
+    otpStore.delete(`reset_${email}`);
+    res.json({ success: true, message: 'OTP cleared successfully' });
+  } catch (error) {
+    console.error('OTP clear error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 export default router;

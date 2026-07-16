@@ -30,6 +30,7 @@ const DeliveryPartnerPage = lazy(() => import('./pages/DeliveryPartnerPage').the
 const DeliveryPartnerRegisterPage = lazy(() => import('./pages/DeliveryPartnerRegisterPage').then(m => ({ default: m.DeliveryPartnerRegisterPage })));
 const DeliveryPartnerLoginPage = lazy(() => import('./pages/DeliveryPartnerLoginPage').then(m => ({ default: m.DeliveryPartnerLoginPage })));
 const GoogleCallbackPage = lazy(() => import('./pages/GoogleCallbackPage').then(m => ({ default: m.GoogleCallbackPage })));
+const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage').then(m => ({ default: m.ForgotPasswordPage })));
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -112,6 +113,7 @@ export default function App() {
                           <Route path="/checkout" element={<CheckoutPage />} />
                           <Route path="/login" element={<AuthPage mode="login" />} />
                           <Route path="/signup" element={<AuthPage mode="signup" />} />
+                          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                           <Route path="/auth/google/callback" element={<GoogleCallbackPage />} />
                           <Route path="/account" element={<AccountPage />} />
                           <Route path="/account/orders" element={<AccountPage />} />

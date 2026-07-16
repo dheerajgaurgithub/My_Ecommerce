@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Mail, Lock, User, Eye, EyeOff, ArrowRight } from 'lucide-react';
+import { Mail, Lock, User, Eye, EyeOff, ArrowRight, RefreshCw } from 'lucide-react';
 import { useAuth } from '../lib/auth';
 import { useToast } from '../lib/toast';
 import { api } from '../lib/api';
@@ -21,8 +21,71 @@ export function AuthPage({ mode }: { mode: 'login' | 'signup' }) {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [otp, setOtp] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpVerified, setOtpVerified] = useState(false);
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
 
   const redirect = searchParams.get('redirect') ?? '/';
+
+  const handleSendOtp = async () => {
+    if (!email) {
+      showToast('Please enter your email address', 'error');
+      return;
+    }
+    try {
+      setOtpLoading(true);
+      const response = await api.post<{ success: boolean; message?: string }>('/otp/send', { email });
+      if (response.success) {
+        setOtpSent(true);
+        showToast('OTP sent to your email', 'success');
+      } else {
+        showToast(response.message || 'Failed to send OTP', 'error');
+      }
+    } catch (error: any) {
+      showToast(error.message || 'Failed to send OTP', 'error');
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    if (!otp || otp.length !== 6) {
+      showToast('Please enter a valid 6-digit OTP', 'error');
+      return;
+    }
+    try {
+      setOtpLoading(true);
+      const response = await api.post<{ success: boolean; message?: string }>('/otp/verify', { email, otp });
+      if (response.success) {
+        setOtpVerified(true);
+        showToast('OTP verified successfully', 'success');
+      } else {
+        showToast(response.message || 'Invalid OTP', 'error');
+      }
+    } catch (error: any) {
+      showToast(error.message || 'Failed to verify OTP', 'error');
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    try {
+      setResendLoading(true);
+      const response = await api.post<{ success: boolean; message?: string }>('/otp/resend', { email });
+      if (response.success) {
+        showToast('OTP resent to your email', 'success');
+      } else {
+        showToast(response.message || 'Failed to resend OTP', 'error');
+      }
+    } catch (error: any) {
+      showToast(error.message || 'Failed to resend OTP', 'error');
+    } finally {
+      setResendLoading(false);
+    }
+  };
 
   const handleGoogleLogin = async () => {
     try {
@@ -57,7 +120,12 @@ export function AuthPage({ mode }: { mode: 'login' | 'signup' }) {
         setLoading(false);
         return;
       }
-      const { error } = await signUp(email, password, name);
+      if (!otpVerified) {
+        showToast('Please verify your email with OTP first', 'error');
+        setLoading(false);
+        return;
+      }
+      const { error } = await signUp(email, password, name, otp);
       if (error) {
         showToast(error, 'error');
       } else {
@@ -116,7 +184,57 @@ export function AuthPage({ mode }: { mode: 'login' | 'signup' }) {
                   placeholder="you@example.com"
                 />
               </div>
+              {mode === 'signup' && (
+                <button
+                  type="button"
+                  onClick={handleSendOtp}
+                  disabled={otpLoading || otpSent}
+                  className="mt-2 text-sm text-brand-600 hover:text-brand-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {otpLoading ? 'Sending...' : otpSent ? 'OTP Sent' : 'Send Verification Code'}
+                </button>
+              )}
             </div>
+            {mode === 'signup' && (
+              <div>
+                <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5 block">Verification Code</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    required
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value)}
+                    className="input flex-1"
+                    placeholder="Enter 6-digit code"
+                    maxLength={6}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleVerifyOtp}
+                    disabled={otpLoading || otpVerified || !otpSent}
+                    className="btn-primary px-4 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {otpLoading ? 'Verifying...' : otpVerified ? 'Verified' : 'Verify'}
+                  </button>
+                </div>
+                <div className="flex items-center justify-between mt-2">
+                  {!otpVerified && (
+                    <button
+                      type="button"
+                      onClick={handleResendOtp}
+                      disabled={resendLoading || !otpSent}
+                      className="text-sm text-neutral-600 hover:text-neutral-700 flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <RefreshCw size={14} className={resendLoading ? 'animate-spin' : ''} />
+                      {resendLoading ? 'Resending...' : 'Resend Code'}
+                    </button>
+                  )}
+                  {otpVerified && (
+                    <span className="text-sm text-green-600 font-medium">✓ Email Verified</span>
+                  )}
+                </div>
+              </div>
+            )}
             <div>
               <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5 block">Password</label>
               <div className="relative">
@@ -133,6 +251,17 @@ export function AuthPage({ mode }: { mode: 'login' | 'signup' }) {
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
+              {mode === 'login' && (
+                <div className="mt-2 text-right">
+                  <button
+                    type="button"
+                    onClick={() => navigate('/forgot-password')}
+                    className="text-sm text-brand-600 hover:text-brand-700 font-medium"
+                  >
+                    Forgot Password?
+                  </button>
+                </div>
+              )}
             </div>
 
             <button type="submit" disabled={loading} className="w-full btn-primary flex items-center justify-center gap-2 disabled:opacity-50">
