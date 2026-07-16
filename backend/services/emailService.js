@@ -13,7 +13,7 @@ const EMAIL_CONFIG = {
   useGmailApi: process.env.USE_GMAIL_API === 'true' || (process.env.EMAIL_PROVIDER || '').toLowerCase() === 'gmailapi',
   useSendGrid: process.env.USE_SENDGRID === 'true' || !!process.env.SENDGRID_API_KEY,
   useCustomSMTP: !!process.env.SMTP_HOST && !!process.env.SMTP_PASS,
-  enableEmailSending: process.env.ENABLE_EMAIL_SENDING === 'true' || isProd || process.env.NODE_ENV === 'production',
+  enableEmailSending: process.env.ENABLE_EMAIL_SENDING === 'true' || isProd || process.env.NODE_ENV === 'production' || EMAIL_CONFIG.useCustomSMTP,
   
   gmail: {
     user: process.env.GMAIL_USER,
