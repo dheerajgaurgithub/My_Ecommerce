@@ -23,12 +23,11 @@ export function HomePage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [heroSlide, setHeroSlide] = useState(0);
-  const [recentWinners, setRecentWinners] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchAll = async () => {
       try {
-        const [t, n, b, f, p, cp, gc, c, w] = await Promise.all([
+        const [t, n, b, f, p, cp, gc, c] = await Promise.all([
           api.get<{ success: boolean; products: Product[] }>('/products?filter=trending&limit=8'),
           api.get<{ success: boolean; products: Product[] }>('/products?filter=new&limit=8'),
           api.get<{ success: boolean; products: Product[] }>('/products?filter=bestseller&limit=8'),
@@ -37,7 +36,6 @@ export function HomePage() {
           api.get<{ success: boolean; combos: ComboPack[] }>('/combos'),
           api.get<{ success: boolean; giftCards: GiftCard[] }>('/gift-cards'),
           api.get<{ success: boolean; categories: Category[] }>('/categories'),
-          fetch('https://mahirandfriends.onrender.com/api/mega-deal/winners/recent?limit=5').then(r => r.json()),
         ]);
         setTrending(t.products ?? []);
         setNewArrivals(n.products ?? []);
@@ -47,9 +45,6 @@ export function HomePage() {
         setComboPacks(cp.combos ?? []);
         setGiftCards(gc.giftCards ?? []);
         setCategories(c.categories ?? []);
-        if (w.success) {
-          setRecentWinners(w.winners ?? []);
-        }
       } catch (error) {
         console.error('Failed to fetch data:', error);
       } finally {
@@ -224,44 +219,6 @@ export function HomePage() {
               {loading
                 ? Array.from({ length: 4 }).map((_, i) => <ProductCardSkeleton key={i} />)
                 : flashSale.map((p) => <ProductCard key={p.id} product={p} />)}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* Live Winners */}
-      {recentWinners.length > 0 && (
-        <section className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-neutral-800 dark:to-neutral-800 py-12">
-          <div className="max-w-7xl mx-auto px-6">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <Award className="text-purple-600" size={24} />
-                <div>
-                  <h2 className="font-serif text-2xl sm:text-3xl font-bold text-neutral-900 dark:text-white">Recent Winners</h2>
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">Congratulations to our lucky winners!</p>
-                </div>
-              </div>
-              <Link to="/mega-deal" className="text-sm text-purple-600 hover:text-purple-700 flex items-center gap-1">
-                View All <ArrowRight size={14} />
-              </Link>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-              {recentWinners.map((winner, idx) => (
-                <div key={idx} className="bg-white dark:bg-neutral-700 rounded-lg p-4 shadow-sm hover:shadow-md transition">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900 rounded-full flex items-center justify-center">
-                      <span className="text-lg">🎉</span>
-                    </div>
-                    <div>
-                      <p className="font-semibold text-neutral-900 dark:text-white">{winner.name}</p>
-                      <p className="text-xs text-neutral-500 dark:text-neutral-400">{winner.location}</p>
-                    </div>
-                  </div>
-                  <div className="bg-purple-50 dark:bg-purple-900/30 rounded-lg p-3">
-                    <p className="text-sm font-medium text-purple-700 dark:text-purple-300">{winner.prize}</p>
-                  </div>
-                </div>
-              ))}
             </div>
           </div>
         </section>
