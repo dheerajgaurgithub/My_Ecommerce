@@ -358,15 +358,6 @@ export const sendEmail = async ({ to, subject, text, html, attachments = [], typ
         console.log('🔄 Falling back to other email providers...');
       }
     }
-    
-    let mailOptions = {
-      from: `"${EMAIL_CONFIG.sendgrid.fromName}" <${EMAIL_CONFIG.from}>`,
-      to,
-      subject,
-      text,
-      html,
-      attachments
-    };
 
     if (transporter) {
       try {
