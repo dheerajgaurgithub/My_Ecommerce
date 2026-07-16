@@ -31,8 +31,6 @@ const DeliveryPartnerRegisterPage = lazy(() => import('./pages/DeliveryPartnerRe
 const DeliveryPartnerLoginPage = lazy(() => import('./pages/DeliveryPartnerLoginPage').then(m => ({ default: m.DeliveryPartnerLoginPage })));
 const GoogleCallbackPage = lazy(() => import('./pages/GoogleCallbackPage').then(m => ({ default: m.GoogleCallbackPage })));
 const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage').then(m => ({ default: m.ForgotPasswordPage })));
-const MegaDealAdminPage = lazy(() => import('./pages/MegaDealAdminPage').then(m => ({ default: m.MegaDealAdminPage })));
-const MegaDealPage = lazy(() => import('./pages/MegaDealPage').then(m => ({ default: m.MegaDealPage })));
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -94,7 +92,6 @@ export default function App() {
                     <Suspense fallback={<div className="p-8 text-center">Loading...</div>}>
                       <Routes>
                         <Route path="/" element={<AdminPage />} />
-                        <Route path="/mega-deal" element={<MegaDealAdminPage />} />
                       </Routes>
                     </Suspense>
                   </AdminLayout>
@@ -133,7 +130,6 @@ export default function App() {
                           <Route path="/size-guide" element={<SizeGuidePage />} />
                           <Route path="/faq" element={<FAQPage />} />
                           <Route path="/founder" element={<FounderPage />} />
-                          <Route path="/mega-deal" element={<MegaDealPage />} />
                         </Routes>
                       </Suspense>
                     </StoreLayout>
