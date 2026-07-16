@@ -113,11 +113,22 @@ const createTransporter = () => {
           pass: EMAIL_CONFIG.gmail.password,
         },
         family: 4,
+        connectionTimeout: 15000,
+        greetingTimeout: 10000,
+        socketTimeout: 15000,
         tls: {
           rejectUnauthorized: false
         }
       });
     }
+
+    console.warn('⚠️ No SMTP configuration found');
+    return null;
+  } catch (error) {
+    console.error('❌ Failed to create email transporter:', error.message);
+    return null;
+  }
+};
 
 const transporter = createTransporter();
 
@@ -292,6 +303,14 @@ export const sendEmail = async ({ to, subject, text, html, attachments = [], typ
     }
     
     const emailData = { to, subject, text, html, attachments };
+    const mailOptions = {
+      from: `"${EMAIL_CONFIG.sendgrid.fromName}" <${EMAIL_CONFIG.from}>`,
+      to,
+      subject,
+      text,
+      html,
+      attachments
+    };
     
     if (!EMAIL_CONFIG.enableEmailSending) {
       console.log('📪 Email sending disabled. Logging email:', { to, subject, hasOtp: !!otp });
@@ -367,14 +386,17 @@ export const sendEmail = async ({ to, subject, text, html, attachments = [], typ
       } catch (error) {
         console.error('❌ SMTP send failed:', error.message);
         
-        if (error.code === 'ETIMEDOUT' || error.code === 'ESOCKET' || error.code === 'ENETUNREACH') {
+        if (error.code === 'ETIMEDOUT' || error.code === 'ESOCKET' || error.code === 'ENETUNREACH' || error.code === 'ECONNECTION') {
           console.log('Connection failed, trying fallback configuration...');
+
+          if (!mailOptions) {
+            console.error('Fallback failed: mailOptions is not defined');
+          }
+
           if (EMAIL_CONFIG.gmail.user && EMAIL_CONFIG.gmail.password) {
             try {
               const fallbackTransporter = nodemailer.createTransport({
-                host: 'smtp.gmail.com',
-                port: 465,
-                secure: true,
+                service: 'gmail',
                 auth: {
                   user: EMAIL_CONFIG.gmail.user,
                   pass: EMAIL_CONFIG.gmail.password
@@ -382,14 +404,17 @@ export const sendEmail = async ({ to, subject, text, html, attachments = [], typ
                 family: 4,
                 tls: {
                   rejectUnauthorized: false
-                }
+                },
+                connectionTimeout: 15000,
+                greetingTimeout: 10000,
+                socketTimeout: 15000
               });
 
-              const info = await fallbackTransporter.sendMail(mailOptions);
+              const fallbackInfo = await fallbackTransporter.sendMail(mailOptions);
               result = {
                 success: true,
                 provider: 'gmail-fallback',
-                messageId: info.messageId,
+                messageId: fallbackInfo.messageId,
                 deliveryTime: Date.now() - startTime
               };
               
@@ -400,6 +425,36 @@ export const sendEmail = async ({ to, subject, text, html, attachments = [], typ
             }
           } else {
             console.warn('Fallback skipped: Gmail credentials are not configured.');
+          }
+
+          if (EMAIL_CONFIG.useSendGrid && EMAIL_CONFIG.sendgrid.apiKey) {
+            try {
+              console.log('📧 Trying SendGrid fallback...');
+              const sgTransport = nodemailer.createTransport({
+                host: 'smtp.sendgrid.net',
+                port: 587,
+                secure: false,
+                auth: {
+                  user: 'apikey',
+                  pass: EMAIL_CONFIG.sendgrid.apiKey
+                },
+                family: 4,
+                tls: {
+                  rejectUnauthorized: false
+                }
+              });
+              const sgInfo = await sgTransport.sendMail(mailOptions);
+              result = {
+                success: true,
+                provider: 'sendgrid-fallback',
+                messageId: sgInfo.messageId,
+                deliveryTime: Date.now() - startTime
+              };
+              console.log('✅ Email sent via SendGrid fallback');
+              return result;
+            } catch (sendGridError) {
+              console.error('SendGrid fallback also failed:', sendGridError.message);
+            }
           }
         }
         
