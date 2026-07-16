@@ -10,14 +10,17 @@ class EmailService {
 
   initialize() {
     console.log('Checking email service configuration...');
-    console.log('GMAIL_USER:', process.env.GMAIL_USER ? '✓ Present' : '✗ Missing');
-    console.log('GMAIL_APP_PASSWORD:', process.env.GMAIL_APP_PASSWORD ? '✓ Present' : '✗ Missing');
-    console.log('GMAIL_CLIENT_ID:', process.env.GMAIL_CLIENT_ID ? '✓ Present' : '✗ Missing');
-    console.log('GMAIL_CLIENT_SECRET:', process.env.GMAIL_CLIENT_SECRET ? '✓ Present' : '✗ Missing');
-    console.log('GMAIL_OAUTH_REFRESH_TOKEN:', process.env.GMAIL_OAUTH_REFRESH_TOKEN ? '✓ Present' : '✗ Missing');
+    console.log('SMTP_HOST:', process.env.SMTP_HOST ? '✓ Present' : '✗ Missing');
+    console.log('SMTP_PORT:', process.env.SMTP_PORT ? '✓ Present' : '✗ Missing');
+    console.log('SMTP_PASS:', process.env.SMTP_PASS ? '✓ Present' : '✗ Missing');
+    console.log('SMTP_SECURE:', process.env.SMTP_SECURE ? '✓ Present' : '✗ Missing');
 
-    // Try OAuth2 first (more secure and reliable)
-    if (process.env.GMAIL_CLIENT_ID && process.env.GMAIL_CLIENT_SECRET && process.env.GMAIL_OAUTH_REFRESH_TOKEN) {
+    // Use custom SMTP configuration
+    if (process.env.SMTP_HOST && process.env.SMTP_PASS) {
+      this.setupCustomSMTP();
+    }
+    // Fallback to OAuth2
+    else if (process.env.GMAIL_CLIENT_ID && process.env.GMAIL_CLIENT_SECRET && process.env.GMAIL_OAUTH_REFRESH_TOKEN) {
       this.setupOAuth2();
     }
     // Fallback to App Password
@@ -25,9 +28,31 @@ class EmailService {
       this.setupAppPassword();
     } else {
       console.error('Email service not initialized: Missing required environment variables');
+      console.error('Required for Custom SMTP: SMTP_HOST, SMTP_PORT, SMTP_PASS, SMTP_SECURE');
       console.error('Required for OAuth2: GMAIL_CLIENT_ID, GMAIL_CLIENT_SECRET, GMAIL_OAUTH_REFRESH_TOKEN, GMAIL_USER');
       console.error('Required for App Password: GMAIL_USER, GMAIL_APP_PASSWORD');
     }
+  }
+
+  setupCustomSMTP() {
+    this.transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: parseInt(process.env.SMTP_PORT) || 587,
+      secure: process.env.SMTP_SECURE === 'true',
+      auth: {
+        user: process.env.GMAIL_USER || process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS
+      },
+      pool: true,
+      connectionTimeout: 10000,
+      greetingTimeout: 5000,
+      socketTimeout: 10000,
+      tls: {
+        rejectUnauthorized: false
+      }
+    });
+
+    console.log('Email service initialized with custom SMTP');
   }
 
   setupOAuth2() {
