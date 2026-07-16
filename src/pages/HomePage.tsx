@@ -5,7 +5,6 @@ import { api } from '../lib/api';
 import type { Product, Category, ComboPack, GiftCard } from '../lib/types';
 import { ProductCard, ProductCardSkeleton } from '../components/ProductCard';
 import { StarRating } from '../components/StarRating';
-import { CampaignBanner } from '../components/CampaignBanner';
 import { formatPrice } from '../lib/utils';
 import { useAuth } from '../lib/auth';
 import { useToast } from '../lib/toast';
@@ -38,7 +37,7 @@ export function HomePage() {
           api.get<{ success: boolean; combos: ComboPack[] }>('/combos'),
           api.get<{ success: boolean; giftCards: GiftCard[] }>('/gift-cards'),
           api.get<{ success: boolean; categories: Category[] }>('/categories'),
-          fetch('http://localhost:5000/api/mega-deal/winners/recent?limit=5').then(r => r.json()),
+          fetch('https://mahirandfriends.onrender.com/api/mega-deal/winners/recent?limit=5').then(r => r.json()),
         ]);
         setTrending(t.products ?? []);
         setNewArrivals(n.products ?? []);
@@ -158,11 +157,6 @@ export function HomePage() {
             />
           ))}
         </div>
-      </section>
-
-      {/* Campaign Banner */}
-      <section className="max-w-7xl mx-auto px-6 py-6">
-        <CampaignBanner />
       </section>
 
       {/* Trust badges */}

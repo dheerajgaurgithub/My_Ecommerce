@@ -659,75 +659,6 @@ export const sendDeliveryUpdateEmail = async (email, name, order, status) => {
   return await sendEmail({ to: email, subject, html });
 };
 
-export const sendScratchCardWinEmail = async (email, prizeName, uniqueToken) => {
-  const subject = '🎉 Congratulations! You Won a Prize!';
-  const html = `
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Congratulations - You Won!</title>
-      <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-        .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
-        .prize-box { background: white; padding: 20px; border-radius: 10px; margin: 20px 0; border-left: 4px solid #764ba2; }
-        .token-box { background: #e8f5e9; padding: 15px; border-radius: 5px; margin: 20px 0; text-align: center; }
-        .token { font-size: 24px; font-weight: bold; color: #2e7d32; letter-spacing: 2px; }
-        .button { display: inline-block; background: #764ba2; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; }
-        .footer { text-align: center; margin-top: 30px; font-size: 12px; color: #666; }
-      </style>
-    </head>
-    <body>
-      <div class="container">
-        <div class="header">
-          <h1>🎉 Congratulations!</h1>
-          <p>You're a Winner!</p>
-        </div>
-        <div class="content">
-          <p>Dear Customer,</p>
-          <p>We're thrilled to inform you that you've won a prize in our Mega Deal Festival!</p>
-          
-          <div class="prize-box">
-            <h3>Your Prize:</h3>
-            <p style="font-size: 18px; font-weight: bold; color: #764ba2;">${prizeName}</p>
-          </div>
-          
-          <div class="token-box">
-            <p>Your Scratch Card Token:</p>
-            <div class="token">${uniqueToken}</div>
-            <p style="font-size: 12px; margin-top: 10px;">Please keep this token safe. You'll need it to claim your prize.</p>
-          </div>
-          
-          <p><strong>How to Claim Your Prize:</strong></p>
-          <ol style="margin-left: 20px;">
-            <li>Visit your My Rewards page</li>
-            <li>Scratch your card to reveal the prize</li>
-            <li>Follow the instructions to claim</li>
-            <li>For physical prizes, select your nearest store for pickup</li>
-          </ol>
-          
-          <div style="text-align: center;">
-            <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/rewards" class="button">View My Rewards</a>
-          </div>
-          
-          <p style="font-size: 12px; color: #666; margin-top: 20px;">
-            If you have any questions, please contact our customer support.
-          </p>
-        </div>
-        <div class="footer">
-          <p>&copy; ${new Date().getFullYear()} Mahir & Friends. All rights reserved.</p>
-        </div>
-      </div>
-    </body>
-    </html>
-  `;
-
-  return await sendEmail({ to: email, subject, html });
-};
-
 if (EMAIL_CONFIG.enableEmailSending) {
   console.log(`📧 Email system initialized:`);
   console.log(`   • Environment: ${isProd ? 'production' : 'development'}`);
@@ -752,8 +683,7 @@ const emailService = {
   sendOTPEmail,
   sendWelcomeEmail,
   sendOrderConfirmationEmail,
-  sendDeliveryUpdateEmail,
-  sendScratchCardWinEmail
+  sendDeliveryUpdateEmail
 };
 
 export default emailService;

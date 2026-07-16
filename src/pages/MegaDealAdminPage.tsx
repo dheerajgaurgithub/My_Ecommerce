@@ -53,17 +53,6 @@ export function MegaDealAdminPage() {
   const [editingCampaign, setEditingCampaign] = useState<Campaign | null>(null);
   const [editingPrize, setEditingPrize] = useState<Prize | null>(null);
   const [loading, setLoading] = useState(false);
-  const [showBulkGenerateModal, setShowBulkGenerateModal] = useState(false);
-  const [bulkCardQuantities, setBulkCardQuantities] = useState<Record<string, number>>({});
-  const [winningCards, setWinningCards] = useState<any[]>([]);
-  const [statistics, setStatistics] = useState({
-    totalCards: 0,
-    assignedCards: 0,
-    unassignedCards: 0,
-    scratchedCards: 0,
-    claimedCards: 0,
-    prizeBreakdown: []
-  });
 
   const [campaignForm, setCampaignForm] = useState({
     name: '',
@@ -108,8 +97,6 @@ export function MegaDealAdminPage() {
   useEffect(() => {
     if (selectedCampaign) {
       fetchPrizes(selectedCampaign._id);
-      fetchStatistics(selectedCampaign._id);
-      fetchWinningCards(selectedCampaign._id);
     }
   }, [selectedCampaign]);
 
@@ -144,79 +131,6 @@ export function MegaDealAdminPage() {
       }
     } catch (error) {
       console.error('Error fetching prizes:', error);
-    }
-  };
-
-  const fetchStatistics = async (campaignId: string) => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/mega-deal/admin/campaign/${campaignId}/statistics`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      const data = await response.json();
-      if (data.success) {
-        setStatistics(data.statistics);
-      }
-    } catch (error) {
-      console.error('Error fetching statistics:', error);
-    }
-  };
-
-  const fetchWinningCards = async (campaignId: string) => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/mega-deal/admin/campaign/${campaignId}/winning-cards`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      const data = await response.json();
-      if (data.success) {
-        setWinningCards(data.winningCards);
-      }
-    } catch (error) {
-      console.error('Error fetching winning cards:', error);
-    }
-  };
-
-  const handleBulkGenerate = async () => {
-    setLoading(true);
-    try {
-      const token = localStorage.getItem('token');
-      const scratchCards = Object.entries(bulkCardQuantities)
-        .filter(([_, qty]) => qty > 0)
-        .map(([prizeId, quantity]) => ({ prizeId, quantity }));
-
-      if (scratchCards.length === 0 || !selectedCampaign) {
-        return;
-      }
-
-      const response = await fetch('http://localhost:5000/api/mega-deal/admin/generate-scratch-cards', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          campaignId: selectedCampaign._id,
-          scratchCards
-        })
-      });
-
-      const data = await response.json();
-      if (data.success) {
-        setShowBulkGenerateModal(false);
-        setBulkCardQuantities({});
-        fetchStatistics(selectedCampaign._id);
-        alert(`Successfully generated ${data.count} scratch cards`);
-      }
-    } catch (error) {
-      console.error('Error generating scratch cards:', error);
-      alert('Failed to generate scratch cards');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -581,57 +495,33 @@ export function MegaDealAdminPage() {
             ) : (
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {prizes.map((prize) => (
-                  <div key={prize._id} className="border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition">
-                    <div className="relative h-40 bg-gray-100">
-                      {prize.image ? (
-                        <img
-                          src={prize.image}
-                          alt={prize.name}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <Gift className="w-12 h-12 text-gray-300" />
-                        </div>
-                      )}
-                      <div className="absolute top-2 right-2">
-                        <span
-                          className={`px-2 py-1 text-xs rounded-full ${
-                            prize.isGrandPrize
-                              ? 'bg-yellow-100 text-yellow-700'
-                              : prize.isDailyFlash
-                              ? 'bg-red-100 text-red-700'
-                              : 'bg-gray-100 text-gray-700'
-                          }`}
-                        >
-                          {prize.isGrandPrize ? '🏆 Grand Prize' : prize.isDailyFlash ? '⚡ Flash' : prize.type}
-                        </span>
-                      </div>
+                  <div key={prize._id} className="border border-gray-200 rounded-lg p-4">
+                    <div className="flex items-start justify-between mb-3">
+                      <span
+                        className={`px-2 py-1 text-xs rounded-full ${
+                          prize.isGrandPrize
+                            ? 'bg-yellow-100 text-yellow-700'
+                            : 'bg-gray-100 text-gray-700'
+                        }`}
+                      >
+                        {prize.isGrandPrize ? 'Grand Prize' : prize.type}
+                      </span>
+                      <button
+                        onClick={() => openPrizeModal(prize)}
+                        className="p-1 text-gray-600 hover:text-purple-600 transition"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
                     </div>
-                    <div className="p-4">
-                      <div className="flex items-start justify-between mb-2">
-                        <h3 className="font-semibold">{prize.name}</h3>
-                        <button
-                          onClick={() => openPrizeModal(prize)}
-                          className="p-1 text-gray-600 hover:text-purple-600 transition"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
-                      </div>
-                      <p className="text-gray-600 text-sm mb-3 line-clamp-2">{prize.description}</p>
-                      {prize.type === 'coupon' && prize.couponValue > 0 && (
-                        <div className="bg-green-50 text-green-700 px-2 py-1 rounded text-sm font-medium mb-3">
-                          ₹{prize.couponValue} OFF
-                        </div>
-                      )}
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-500">
-                          {prize.used}/{prize.inventory} used
-                        </span>
-                        <span className="text-purple-600 font-medium">
-                          {prize.probability}%
-                        </span>
-                      </div>
+                    <h3 className="font-semibold">{prize.name}</h3>
+                    <p className="text-gray-600 text-sm mt-1">{prize.description}</p>
+                    <div className="flex items-center justify-between mt-3 text-sm">
+                      <span className="text-gray-500">
+                        {prize.used}/{prize.inventory} used
+                      </span>
+                      <span className="text-purple-600 font-medium">
+                        {prize.probability}%
+                      </span>
                     </div>
                   </div>
                 ))}
@@ -643,102 +533,11 @@ export function MegaDealAdminPage() {
         {/* Scratch Cards Tab */}
         {activeTab === 'scratch-cards' && (
           <div className="bg-white rounded-xl shadow-sm p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold">Scratch Card Management</h2>
-              <button
-                onClick={() => setShowBulkGenerateModal(true)}
-                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition flex items-center gap-2"
-              >
-                <Plus className="w-4 h-4" />
-                Generate Scratch Cards
-              </button>
+            <h2 className="text-xl font-semibold mb-6">All Scratch Cards</h2>
+            <div className="text-center py-12 text-gray-500">
+              <Users className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+              <p>Scratch card management coming soon</p>
             </div>
-
-            {/* Statistics */}
-            {selectedCampaign && (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                <div className="bg-purple-50 rounded-lg p-4">
-                  <p className="text-sm text-purple-600">Total Cards</p>
-                  <p className="text-2xl font-bold text-purple-900">{statistics.totalCards}</p>
-                </div>
-                <div className="bg-green-50 rounded-lg p-4">
-                  <p className="text-sm text-green-600">Assigned</p>
-                  <p className="text-2xl font-bold text-green-900">{statistics.assignedCards}</p>
-                </div>
-                <div className="bg-yellow-50 rounded-lg p-4">
-                  <p className="text-sm text-yellow-600">Available</p>
-                  <p className="text-2xl font-bold text-yellow-900">{statistics.unassignedCards}</p>
-                </div>
-                <div className="bg-blue-50 rounded-lg p-4">
-                  <p className="text-sm text-blue-600">Claimed</p>
-                  <p className="text-2xl font-bold text-blue-900">{statistics.claimedCards}</p>
-                </div>
-              </div>
-            )}
-
-            {/* Winning Cards Section */}
-            {selectedCampaign && winningCards.length > 0 && (
-              <div className="mb-6">
-                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                  <Gift className="w-5 h-5 text-yellow-600" />
-                  Verified Winners ({winningCards.length})
-                </h3>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="bg-gray-50">
-                        <th className="px-4 py-3 text-left font-medium text-gray-700">User</th>
-                        <th className="px-4 py-3 text-left font-medium text-gray-700">Email</th>
-                        <th className="px-4 py-3 text-left font-medium text-gray-700">Prize</th>
-                        <th className="px-4 py-3 text-left font-medium text-gray-700">Order</th>
-                        <th className="px-4 py-3 text-left font-medium text-gray-700">Token</th>
-                        <th className="px-4 py-3 text-left font-medium text-gray-700">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {winningCards.map((card) => (
-                        <tr key={card._id} className="border-b border-gray-100 hover:bg-gray-50">
-                          <td className="px-4 py-3 font-medium">{card.userId?.name || 'N/A'}</td>
-                          <td className="px-4 py-3">
-                            <a href={`mailto:${card.userId?.email}`} className="text-purple-600 hover:underline">
-                              {card.userId?.email || 'N/A'}
-                            </a>
-                          </td>
-                          <td className="px-4 py-3">
-                            <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs">
-                              {card.prizeId?.name || 'N/A'}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3">{card.orderId?.order_number || 'N/A'}</td>
-                          <td className="px-4 py-3 font-mono text-xs">{card.uniqueToken}</td>
-                          <td className="px-4 py-3">
-                            {card.isClaimed ? (
-                              <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs">Claimed</span>
-                            ) : (
-                              <span className="bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full text-xs">Pending</span>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-
-            {!selectedCampaign ? (
-              <div className="text-center py-12 text-gray-500">
-                <Users className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-                <p>Select a campaign to manage scratch cards</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="text-sm text-gray-600">
-                  <p>Select a campaign to generate and manage scratch cards.</p>
-                  <p className="mt-2">Users who order ₹{selectedCampaign.minimumPurchaseAmount}+ will receive a scratch card after payment.</p>
-                </div>
-              </div>
-            )}
           </div>
         )}
 
@@ -799,52 +598,14 @@ export function MegaDealAdminPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Banner Image</label>
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            const reader = new FileReader();
-                            reader.onloadend = () => {
-                              setCampaignForm({ ...campaignForm, bannerImage: reader.result as string });
-                            };
-                            reader.readAsDataURL(file);
-                          }
-                        }}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                      />
-                    </div>
-                    {campaignForm.bannerImage && (
-                      <div className="relative w-full h-32 rounded-lg overflow-hidden border border-gray-200">
-                        <img
-                          src={campaignForm.bannerImage}
-                          alt="Banner preview"
-                          className="w-full h-full object-cover"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setCampaignForm({ ...campaignForm, bannerImage: '' })}
-                          className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600 transition"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                    )}
-                    <div className="text-xs text-gray-500">
-                      Or enter image URL:
-                    </div>
-                    <input
-                      type="text"
-                      value={campaignForm.bannerImage}
-                      onChange={(e) => setCampaignForm({ ...campaignForm, bannerImage: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                      placeholder="https://example.com/banner.jpg"
-                    />
-                  </div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Banner Image URL</label>
+                  <input
+                    type="text"
+                    value={campaignForm.bannerImage}
+                    onChange={(e) => setCampaignForm({ ...campaignForm, bannerImage: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    placeholder="https://example.com/banner.jpg"
+                  />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -1036,50 +797,14 @@ export function MegaDealAdminPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Prize Image</label>
-                  <div className="space-y-3">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          const reader = new FileReader();
-                          reader.onloadend = () => {
-                            setPrizeForm({ ...prizeForm, image: reader.result as string });
-                          };
-                          reader.readAsDataURL(file);
-                        }
-                      }}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    />
-                    {prizeForm.image && (
-                      <div className="relative w-full h-32 rounded-lg overflow-hidden border border-gray-200">
-                        <img
-                          src={prizeForm.image}
-                          alt="Prize preview"
-                          className="w-full h-full object-cover"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setPrizeForm({ ...prizeForm, image: '' })}
-                          className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600 transition"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                    )}
-                    <div className="text-xs text-gray-500">
-                      Or enter image URL:
-                    </div>
-                    <input
-                      type="text"
-                      value={prizeForm.image}
-                      onChange={(e) => setPrizeForm({ ...prizeForm, image: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                      placeholder="https://example.com/prize.jpg"
-                    />
-                  </div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Image URL</label>
+                  <input
+                    type="text"
+                    value={prizeForm.image}
+                    onChange={(e) => setPrizeForm({ ...prizeForm, image: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    placeholder="https://example.com/prize.jpg"
+                  />
                 </div>
 
                 <div>
@@ -1215,97 +940,6 @@ export function MegaDealAdminPage() {
                 >
                   <Save className="w-4 h-4" />
                   {loading ? 'Saving...' : editingPrize ? 'Update' : 'Add'}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Bulk Generate Modal */}
-        {showBulkGenerateModal && selectedCampaign && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="p-6 border-b border-gray-200">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-xl font-semibold">Generate Scratch Cards</h3>
-                  <button
-                    onClick={() => setShowBulkGenerateModal(false)}
-                    className="p-2 text-gray-600 hover:text-gray-900 transition"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-              </div>
-
-              <div className="p-6 space-y-4">
-                <p className="text-sm text-gray-600">
-                  Generate scratch cards for <strong>{selectedCampaign.name}</strong>. 
-                  These cards will be assigned to users who order ₹{selectedCampaign.minimumPurchaseAmount}+.
-                </p>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Add Scratch Cards</label>
-                  <div className="space-y-2">
-                    {prizes.map((prize) => (
-                      <div key={prize._id} className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg">
-                        <div className="flex-1">
-                          <p className="font-medium">{prize.name}</p>
-                          <p className="text-sm text-gray-500">{prize.type}</p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => {
-                              const currentQty = bulkCardQuantities[prize._id] || 0;
-                              if (currentQty > 0) {
-                                setBulkCardQuantities({ ...bulkCardQuantities, [prize._id]: currentQty - 1 });
-                              }
-                            }}
-                            className="w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 transition flex items-center justify-center"
-                          >
-                            -
-                          </button>
-                          <input
-                            type="number"
-                            value={bulkCardQuantities[prize._id] || 0}
-                            onChange={(e) => setBulkCardQuantities({ ...bulkCardQuantities, [prize._id]: parseInt(e.target.value) || 0 })}
-                            className="w-16 text-center border border-gray-300 rounded-lg"
-                            min="0"
-                          />
-                          <button
-                            onClick={() => {
-                              const currentQty = bulkCardQuantities[prize._id] || 0;
-                              setBulkCardQuantities({ ...bulkCardQuantities, [prize._id]: currentQty + 1 });
-                            }}
-                            className="w-8 h-8 rounded-full bg-purple-600 text-white hover:bg-purple-700 transition flex items-center justify-center"
-                          >
-                            +
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="bg-purple-50 p-4 rounded-lg">
-                  <p className="text-sm text-purple-900">
-                    <strong>Total cards to generate:</strong> {Object.values(bulkCardQuantities).reduce((a, b) => a + b, 0)}
-                  </p>
-                </div>
-              </div>
-
-              <div className="p-6 border-t border-gray-200 flex justify-end gap-3">
-                <button
-                  onClick={() => setShowBulkGenerateModal(false)}
-                  className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleBulkGenerate}
-                  disabled={loading || Object.values(bulkCardQuantities).reduce((a, b) => a + b, 0) === 0}
-                  className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition disabled:opacity-50"
-                >
-                  {loading ? 'Generating...' : 'Generate Cards'}
                 </button>
               </div>
             </div>

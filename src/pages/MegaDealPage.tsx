@@ -87,7 +87,7 @@ export function MegaDealPage() {
 
   const fetchCampaign = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/mega-deal/campaign/active');
+      const response = await fetch('https://mahirandfriends.onrender.com/api/mega-deal/campaign/active');
       const data = await response.json();
       if (data.success) {
         setCampaign(data.campaign);
@@ -104,7 +104,7 @@ export function MegaDealPage() {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const response = await fetch('http://localhost:5000/api/mega-deal/scratch-cards', {
+      const response = await fetch('https://mahirandfriends.onrender.com/api/mega-deal/scratch-cards', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -122,7 +122,7 @@ export function MegaDealPage() {
     setScratching(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/mega-deal/scratch-card/scratch', {
+      const response = await fetch('https://mahirandfriends.onrender.com/api/mega-deal/scratch-card/scratch', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -145,7 +145,7 @@ export function MegaDealPage() {
     setClaiming(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/mega-deal/scratch-card/claim', {
+      const response = await fetch('https://mahirandfriends.onrender.com/api/mega-deal/scratch-card/claim', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -173,7 +173,7 @@ export function MegaDealPage() {
   const handleGenerateOTP = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/mega-deal/scratch-card/generate-otp', {
+      const response = await fetch('https://mahirandfriends.onrender.com/api/mega-deal/scratch-card/generate-otp', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -482,5 +482,3 @@ export function MegaDealPage() {
     </div>
   );
 }
-
-export default MegaDealPage;

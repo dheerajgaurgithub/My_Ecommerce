@@ -9,12 +9,12 @@ const scratchCardSchema = new mongoose.Schema({
   orderId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Order',
-    default: null
+    required: true
   },
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    default: null
+    required: true
   },
   prizeId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -25,18 +25,6 @@ const scratchCardSchema = new mongoose.Schema({
     type: String,
     required: true,
     unique: true
-  },
-  isPreGenerated: {
-    type: Boolean,
-    default: false
-  },
-  isAssigned: {
-    type: Boolean,
-    default: false
-  },
-  assignedAt: {
-    type: Date,
-    default: null
   },
   isScratched: {
     type: Boolean,

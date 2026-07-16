@@ -33,8 +33,6 @@ const GoogleCallbackPage = lazy(() => import('./pages/GoogleCallbackPage').then(
 const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage').then(m => ({ default: m.ForgotPasswordPage })));
 const MegaDealAdminPage = lazy(() => import('./pages/MegaDealAdminPage').then(m => ({ default: m.MegaDealAdminPage })));
 const MegaDealPage = lazy(() => import('./pages/MegaDealPage').then(m => ({ default: m.MegaDealPage })));
-const MyRewardsPage = lazy(() => import('./pages/MyRewardsPage').then(m => ({ default: m.MyRewardsPage })));
-const LuckyWheelPage = lazy(() => import('./pages/LuckyWheelPage').then(m => ({ default: m.LuckyWheelPage })));
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -90,11 +88,7 @@ export default function App() {
               <BrowserRouter>
                 <ScrollToTop />
                 <Routes>
-                <Route path="/admin/login" element={
-                  <Suspense fallback={<div className="p-8 text-center">Loading...</div>}>
-                    <AdminLoginPage />
-                  </Suspense>
-                } />
+                <Route path="/admin/login" element={<AdminLoginPage />} />
                 <Route path="/admin/*" element={
                   <AdminLayout>
                     <Suspense fallback={<div className="p-8 text-center">Loading...</div>}>
@@ -140,8 +134,6 @@ export default function App() {
                           <Route path="/faq" element={<FAQPage />} />
                           <Route path="/founder" element={<FounderPage />} />
                           <Route path="/mega-deal" element={<MegaDealPage />} />
-                          <Route path="/rewards" element={<MyRewardsPage />} />
-                          <Route path="/lucky-wheel" element={<LuckyWheelPage />} />
                         </Routes>
                       </Suspense>
                     </StoreLayout>
