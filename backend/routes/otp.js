@@ -31,21 +31,27 @@ router.post('/send', authLimiter, async (req, res) => {
     // Store OTP
     otpStore.set(email, { otp, expiresAt });
 
+    // Check if email service is initialized
+    if (!emailService.transporter) {
+      console.error('Email service not initialized - cannot send OTP');
+      return res.status(500).json({ success: false, message: 'Email service not configured. Please contact support.' });
+    }
+
     // Send OTP email
     const emailSent = await emailService.sendOTPEmail(email, otp, 'User');
 
     if (emailSent) {
-      res.json({ 
-        success: true, 
+      res.json({
+        success: true,
         message: 'OTP sent successfully',
-        expiresAt 
+        expiresAt
       });
     } else {
-      res.status(500).json({ success: false, message: 'Failed to send OTP' });
+      res.status(500).json({ success: false, message: 'Failed to send OTP email' });
     }
   } catch (error) {
     console.error('OTP send error:', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: error.message || 'Failed to send OTP' });
   }
 });
 

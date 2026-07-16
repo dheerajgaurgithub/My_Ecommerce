@@ -12,10 +12,14 @@ class EmailService {
     // Try OAuth2 first (more secure and reliable)
     if (process.env.GMAIL_CLIENT_ID && process.env.GMAIL_CLIENT_SECRET && process.env.GMAIL_OAUTH_REFRESH_TOKEN) {
       this.setupOAuth2();
-    } 
+    }
     // Fallback to App Password
     else if (process.env.GMAIL_APP_PASSWORD && process.env.GMAIL_USER) {
       this.setupAppPassword();
+    } else {
+      console.error('Email service not initialized: Missing required environment variables');
+      console.error('Required for OAuth2: GMAIL_CLIENT_ID, GMAIL_CLIENT_SECRET, GMAIL_OAUTH_REFRESH_TOKEN, GMAIL_USER');
+      console.error('Required for App Password: GMAIL_USER, GMAIL_APP_PASSWORD');
     }
   }
 
