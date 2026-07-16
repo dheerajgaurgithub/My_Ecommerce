@@ -9,6 +9,13 @@ class EmailService {
   }
 
   initialize() {
+    console.log('Checking email service configuration...');
+    console.log('GMAIL_USER:', process.env.GMAIL_USER ? '✓ Present' : '✗ Missing');
+    console.log('GMAIL_APP_PASSWORD:', process.env.GMAIL_APP_PASSWORD ? '✓ Present' : '✗ Missing');
+    console.log('GMAIL_CLIENT_ID:', process.env.GMAIL_CLIENT_ID ? '✓ Present' : '✗ Missing');
+    console.log('GMAIL_CLIENT_SECRET:', process.env.GMAIL_CLIENT_SECRET ? '✓ Present' : '✗ Missing');
+    console.log('GMAIL_OAUTH_REFRESH_TOKEN:', process.env.GMAIL_OAUTH_REFRESH_TOKEN ? '✓ Present' : '✗ Missing');
+
     // Try OAuth2 first (more secure and reliable)
     if (process.env.GMAIL_CLIENT_ID && process.env.GMAIL_CLIENT_SECRET && process.env.GMAIL_OAUTH_REFRESH_TOKEN) {
       this.setupOAuth2();
@@ -57,10 +64,19 @@ class EmailService {
 
   setupAppPassword() {
     this.transporter = nodemailer.createTransport({
-      service: 'gmail',
+      host: 'smtp.gmail.com',
+      port: 587,
+      secure: false,
       auth: {
         user: process.env.GMAIL_USER,
         pass: process.env.GMAIL_APP_PASSWORD
+      },
+      pool: true,
+      connectionTimeout: 10000,
+      greetingTimeout: 5000,
+      socketTimeout: 10000,
+      tls: {
+        rejectUnauthorized: false
       }
     });
 
@@ -86,6 +102,41 @@ class EmailService {
       return true;
     } catch (error) {
       console.error('Failed to send email:', error);
+      console.error('Error code:', error.code);
+      console.error('Error message:', error.message);
+
+      // Try fallback with different configuration if connection fails
+      if (error.code === 'ETIMEDOUT' || error.code === 'ESOCKET' || error.code === 'ENETUNREACH') {
+        console.log('Connection failed, trying fallback configuration...');
+        try {
+          const fallbackTransporter = nodemailer.createTransport({
+            host: 'smtp.gmail.com',
+            port: 465,
+            secure: true,
+            auth: {
+              user: process.env.GMAIL_USER,
+              pass: process.env.GMAIL_APP_PASSWORD
+            },
+            tls: {
+              rejectUnauthorized: false
+            }
+          });
+
+          const info = await fallbackTransporter.sendMail({
+            from: process.env.GMAIL_SENDER || process.env.GMAIL_USER,
+            to,
+            subject,
+            html,
+            text
+          });
+
+          console.log('Email sent via fallback:', info.messageId);
+          return true;
+        } catch (fallbackError) {
+          console.error('Fallback also failed:', fallbackError);
+        }
+      }
+
       return false;
     }
   }
