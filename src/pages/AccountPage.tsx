@@ -15,7 +15,7 @@ type Tab = 'overview' | 'orders' | 'wishlist' | 'addresses' | 'profile';
 
 export function AccountPage() {
   const navigate = useNavigate();
-  const { user, signOut, isAdmin, refreshUser } = useAuth();
+  const { user, signOut, isAdmin, refreshUser, setUser } = useAuth();
   const { showToast } = useToast();
   const [tab, setTab] = useState<Tab>('overview');
   const [orders, setOrders] = useState<Order[]>([]);
@@ -398,14 +398,22 @@ export function AccountPage() {
                         onChange={async (e) => {
                           const file = e.target.files?.[0];
                           if (file) {
+                            // Limit file size to 2MB
+                            if (file.size > 2 * 1024 * 1024) {
+                              showToast('Image must be less than 2MB', 'error');
+                              return;
+                            }
                             const reader = new FileReader();
                             reader.onloadend = async () => {
                               const base64 = reader.result as string;
                               try {
-                                await api.put('/users/me', { profilePicture: base64 });
-                                showToast('Profile picture updated', 'success');
-                                await refreshUser();
+                                const response = await api.put<{ success: boolean; user: any }>('/users/me', { profilePicture: base64 });
+                                if (response.success && response.user) {
+                                  showToast('Profile picture updated', 'success');
+                                  setUser(response.user);
+                                }
                               } catch (error) {
+                                console.error('Profile update error:', error);
                                 showToast('Failed to update profile picture', 'error');
                               }
                             };
@@ -481,10 +489,13 @@ export function AccountPage() {
                     <button
                       onClick={async () => {
                         try {
-                          await api.put('/users/me', profileForm);
-                          showToast('Profile updated successfully', 'success');
-                          await refreshUser();
+                          const response = await api.put<{ success: boolean; user: any }>('/users/me', profileForm);
+                          if (response.success && response.user) {
+                            showToast('Profile updated successfully', 'success');
+                            setUser(response.user);
+                          }
                         } catch (error) {
+                          console.error('Profile update error:', error);
                           showToast('Failed to update profile', 'error');
                         }
                       }}
