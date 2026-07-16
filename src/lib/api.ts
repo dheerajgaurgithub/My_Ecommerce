@@ -22,7 +22,8 @@ class ApiClient {
 
   private async request<T>(
     endpoint: string,
-    options: RequestInit = {}
+    options: RequestInit = {},
+    retries = 3
   ): Promise<T> {
     const url = `${API_BASE_URL}${endpoint}`;
     const token = this.getToken();
@@ -44,6 +45,12 @@ class ApiClient {
     const data = await response.json();
 
     if (!response.ok) {
+      // Handle 429 (Too Many Requests) with automatic retry
+      if (response.status === 429 && retries > 0) {
+        const retryAfter = data.retryAfter || 1000; // Default 1 second
+        await new Promise(resolve => setTimeout(resolve, retryAfter));
+        return this.request<T>(endpoint, options, retries - 1);
+      }
       throw new Error(data.message || 'Request failed');
     }
 

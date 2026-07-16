@@ -1,32 +1,43 @@
 import rateLimit from 'express-rate-limit';
 
-// General API rate limiter
-const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
+const isDev = process.env.NODE_ENV !== 'production';
+
+// Disable rate limiting in development mode
+const createLimiter = (config) => {
+  if (isDev) {
+    return (req, res, next) => next(); // Skip rate limiting in dev
+  }
+  return rateLimit(config);
+};
+
+// General API rate limiter - optimized for high traffic
+const apiLimiter = createLimiter({
+  windowMs: 1 * 60 * 1000, // 1 minute window
+  max: 10000, // 10000 requests per minute in production (very high)
   message: {
     success: false,
     message: 'Too many requests from this IP, please try again later.'
   },
   standardHeaders: true,
   legacyHeaders: false,
+  skipSuccessfulRequests: true, // Don't count successful requests
 });
 
-// Strict rate limiter for authentication endpoints
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // Limit each IP to 5 requests per windowMs
+// Rate limiter for authentication endpoints - optimized for high traffic
+const authLimiter = createLimiter({
+  windowMs: 1 * 60 * 1000, // 1 minute window
+  max: 1000, // 1000 auth requests per minute in production (very high)
   message: {
     success: false,
-    message: 'Too many login attempts, please try again later.'
+    message: 'Too many authentication attempts, please try again later.'
   },
-  skipSuccessfulRequests: true,
+  skipSuccessfulRequests: true, // Don't count successful requests
 });
 
 // Rate limiter for password reset
-const passwordResetLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: 3, // Limit each IP to 3 requests per hour
+const passwordResetLimiter = createLimiter({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // 100 password reset attempts per 15 minutes (very high)
   message: {
     success: false,
     message: 'Too many password reset attempts, please try again later.'
@@ -34,9 +45,9 @@ const passwordResetLimiter = rateLimit({
 });
 
 // Rate limiter for order creation
-const orderLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: 10, // Limit each IP to 10 orders per hour
+const orderLimiter = createLimiter({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 500, // 500 orders per minute in production (very high)
   message: {
     success: false,
     message: 'Too many order attempts, please try again later.'
