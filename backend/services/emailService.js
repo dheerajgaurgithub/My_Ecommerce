@@ -196,7 +196,7 @@ const buildGmailMime = ({ from, to, subject, text, html }) => {
 const createOTPEmailTemplate = (otp, type = 'password-reset', name = '') => {
   const templates = {
     'password-reset': {
-      subject: '🔐 Password Reset Code - Mahir & Friends',
+      subject: 'Password Reset Code - Mahir & Friends',
       text: `Your password reset code is: ${otp}\n\nThis code expires in 15 minutes.\n\nIf you didn't request this, please ignore this email.\n\nBest regards,\nMahir & Friends Team`,
       html: `
         <!DOCTYPE html>
@@ -269,7 +269,7 @@ const createOTPEmailTemplate = (otp, type = 'password-reset', name = '') => {
         <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
           <div style="max-width: 600px; margin: 40px auto; background-color: white; padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
             <div style="text-align: center; margin-bottom: 30px;">
-              <img src="https://mahirandfriends.onrender.com/logo.png" alt="Mahir & Friends Logo" style="width: 80px; height: 80px; margin-bottom: 15px;">
+              <img src="https://drive.google.com/uc?export=view&id=1XGs1RdNl-HJ4trhcv_YSh_T36sTLuZwk" alt="Mahir & Friends Logo" style="width: 80px; height: 80px; margin-bottom: 15px;">
               <h1 style="color: #11998e; margin: 0; font-size: 32px; font-weight: bold;">Welcome to Mahir & Friends!</h1>
               <p style="color: #38ef7d; margin-top: 5px; font-size: 16px;">Premium Fashion Store</p>
             </div>
@@ -533,7 +533,7 @@ export const sendWelcomeEmail = async (email, name) => {
     <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
       <div style="max-width: 600px; margin: 40px auto; background-color: white; padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
         <div style="text-align: center; margin-bottom: 30px;">
-          <img src="https://mahirandfriends.onrender.com/logo.png" alt="Mahir & Friends Logo" style="width: 80px; height: 80px; margin-bottom: 15px;">
+          <img src="https://drive.google.com/uc?export=view&id=1XGs1RdNl-HJ4trhcv_YSh_T36sTLuZwk" alt="Mahir & Friends Logo" style="width: 80px; height: 80px; margin-bottom: 15px;">
           <h1 style="color: #f5576c; margin: 0; font-size: 32px; font-weight: bold;">Welcome to Mahir & Friends!</h1>
           <p style="color: #f093fb; margin-top: 5px; font-size: 16px;">Premium Fashion Store</p>
         </div>
@@ -603,7 +603,7 @@ export const sendOrderConfirmationEmail = async (email, name, order) => {
     <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
       <div style="max-width: 600px; margin: 40px auto; background-color: white; padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
         <div style="text-align: center; margin-bottom: 30px;">
-          <img src="https://mahirandfriends.onrender.com/logo.png" alt="Mahir & Friends Logo" style="width: 80px; height: 80px; margin-bottom: 15px;">
+          <img src="https://drive.google.com/uc?export=view&id=1XGs1RdNl-HJ4trhcv_YSh_T36sTLuZwk" alt="Mahir & Friends Logo" style="width: 80px; height: 80px; margin-bottom: 15px;">
           <h1 style="color: #11998e; margin: 0; font-size: 32px; font-weight: bold;">Order Confirmed!</h1>
           <p style="color: #38ef7d; margin-top: 5px; font-size: 16px;">Mahir & Friends</p>
         </div>
@@ -706,7 +706,7 @@ export const sendDeliveryUpdateEmail = async (email, name, order, status) => {
     <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, ${color} 0%, ${color}dd 100%);">
       <div style="max-width: 600px; margin: 40px auto; background-color: white; padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
         <div style="text-align: center; margin-bottom: 30px;">
-          <img src="https://mahirandfriends.onrender.com/logo.png" alt="Mahir & Friends Logo" style="width: 80px; height: 80px; margin-bottom: 15px;">
+          <img src="https://drive.google.com/uc?export=view&id=1XGs1RdNl-HJ4trhcv_YSh_T36sTLuZwk" alt="Mahir & Friends Logo" style="width: 80px; height: 80px; margin-bottom: 15px;">
           <h1 style="color: ${color}; margin: 0; font-size: 32px; font-weight: bold;">Order Update</h1>
           <p style="color: ${color}dd; margin-top: 5px; font-size: 16px;">Mahir & Friends</p>
         </div>
@@ -768,7 +768,7 @@ export const sendFeedbackRequestEmail = async (email, name, orderId, orderNumber
     <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
       <div style="max-width: 600px; margin: 40px auto; background-color: white; padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
         <div style="text-align: center; margin-bottom: 30px;">
-          <img src="https://mahirandfriends.onrender.com/logo.png" alt="Mahir & Friends Logo" style="width: 80px; height: 80px; margin-bottom: 15px;">
+          <img src="https://drive.google.com/uc?export=view&id=1XGs1RdNl-HJ4trhcv_YSh_T36sTLuZwk" alt="Mahir & Friends Logo" style="width: 80px; height: 80px; margin-bottom: 15px;">
           <h1 style="color: #667eea; margin: 0; font-size: 32px; font-weight: bold;">Your Order Has Been Delivered!</h1>
           <p style="color: #764ba2; margin-top: 5px; font-size: 16px;">Order #${orderNumber}</p>
         </div>
