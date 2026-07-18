@@ -813,10 +813,14 @@ if (EMAIL_CONFIG.enableEmailSending) {
   console.log(`   • SMTP: ${!!transporter ? '✅' : '❌'}`);
   console.log(`   • From: ${EMAIL_CONFIG.from}`);
 
-  if (transporter) {
+  // Skip email verification in production to prevent deployment failures
+  // Render free tier blocks SMTP connections
+  if (transporter && process.env.NODE_ENV !== 'production') {
     verifyTransporter().catch(error => {
       console.warn('⚠️ SMTP verification failed on startup:', error.message);
     });
+  } else if (transporter && process.env.NODE_ENV === 'production') {
+    console.log('⚠️ Email verification skipped in production (SMTP may be blocked)');
   }
 } else {
   console.log('📪 Email sending is disabled');

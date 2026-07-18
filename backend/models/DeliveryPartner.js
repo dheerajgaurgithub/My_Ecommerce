@@ -258,11 +258,7 @@ const deliveryPartnerSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Indexes for efficient queries
-deliveryPartnerSchema.index({ 'personalDetails.contactNumber': 1 });
-deliveryPartnerSchema.index({ 'personalDetails.email': 1 });
-deliveryPartnerSchema.index({ 'kycDetails.aadharNumber': 1 });
-deliveryPartnerSchema.index({ 'vehicleDetails.vehicleNumber': 1 });
+// Indexes for efficient queries (unique fields already have indexes from unique: true)
 deliveryPartnerSchema.index({ status: 1 });
 deliveryPartnerSchema.index({ 'workDetails.isOnline': 1 });
 deliveryPartnerSchema.index({ 'workDetails.currentLocation.coordinates': '2dsphere' });
