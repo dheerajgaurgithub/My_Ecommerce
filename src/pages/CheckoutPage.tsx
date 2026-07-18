@@ -6,6 +6,7 @@ import { useAuth } from '../lib/auth';
 import { useToast } from '../lib/toast';
 import { api } from '../lib/api';
 import { formatPrice, getDeliveryDate } from '../lib/utils';
+import { RazorpayPayment } from '../components/RazorpayPayment';
 import type { Address } from '../lib/types';
 
 export function CheckoutPage() {
@@ -25,7 +26,7 @@ export function CheckoutPage() {
   const [hasFirstOrderDiscount, setHasFirstOrderDiscount] = useState(false);
   const [deliveryAvailable, setDeliveryAvailable] = useState(false);
   const [deliveryCharge, setDeliveryCharge] = useState(0);
-  const [deliveryDays, setDeliveryDays] = useState(2);
+  const [showRazorpay, setShowRazorpay] = useState(false);
 
   const checkoutData = JSON.parse(sessionStorage.getItem('checkout_data') ?? '{}');
   const baseSubtotal = checkoutData.subtotal ?? cartSubtotal;
@@ -53,12 +54,10 @@ export function CheckoutPage() {
         const response = await api.get<{ success: boolean; available: boolean; charge?: number; days?: number }>(`/delivery/check/${address.pincode}`);
         setDeliveryAvailable(response.available);
         setDeliveryCharge(response.charge ?? 49);
-        setDeliveryDays(response.days ?? 2);
       } catch (error) {
         console.error('Failed to check delivery availability:', error);
         setDeliveryAvailable(false);
         setDeliveryCharge(49);
-        setDeliveryDays(2);
       }
     }
   };
@@ -142,14 +141,21 @@ export function CheckoutPage() {
       showToast('A valid mobile number (at least 10 digits) is required to place the order', 'error');
       return;
     }
-    setPlacing(true);
 
-    // For online payments, show processing animation before creating the order
+    // For Razorpay payment, initiate Razorpay checkout
+    if (paymentMethod === 'razorpay') {
+      setShowRazorpay(true);
+      return;
+    }
+
+    // For other online payments, show processing animation before creating the order
     if (paymentMethod !== 'cod') {
       setProcessingPayment(true);
       await new Promise((r) => setTimeout(r, 2500));
       setProcessingPayment(false);
     }
+
+    setPlacing(true);
 
     try {
       const response = await api.post<{ success: boolean; order: any; firstOrderDiscount?: number }>('/orders', {
@@ -180,6 +186,55 @@ export function CheckoutPage() {
       showToast('Failed to place order', 'error');
       setPlacing(false);
     }
+  };
+
+  const handleRazorpaySuccess = async (paymentId: string, razorpayOrderId: string, signature: string) => {
+    setPlacing(true);
+    setShowRazorpay(false);
+
+    try {
+      const response = await api.post<{ success: boolean; order: any; firstOrderDiscount?: number }>('/orders', {
+        address_id: selectedAddressId,
+        payment_method: 'razorpay',
+        delivery_type: deliveryAvailable ? 'express' : 'standard',
+        coupon_code: checkoutData.couponCode ?? null,
+        payment_details: {
+          payment_id: paymentId,
+          razorpay_order_id: razorpayOrderId,
+          signature,
+        },
+      });
+
+      if (!response.success) {
+        showToast('Failed to place order after payment', 'error');
+        setPlacing(false);
+        return;
+      }
+
+      const order = response.order;
+      await clearCart();
+      sessionStorage.removeItem('checkout_data');
+      setPlacing(false);
+      setOrderPlaced({ 
+        orderNumber: order.order_number, 
+        total: order.total, 
+        paymentMethod: 'razorpay', 
+        paymentStatus: order.payment_status,
+        firstOrderDiscount: response.firstOrderDiscount
+      });
+    } catch (error) {
+      showToast('Failed to place order after payment', 'error');
+      setPlacing(false);
+    }
+  };
+
+  const handleRazorpayFailure = (error: string) => {
+    showToast(error, 'error');
+    setShowRazorpay(false);
+  };
+
+  const handleRazorpayClose = () => {
+    setShowRazorpay(false);
   };
 
   if (orderPlaced) {
@@ -385,6 +440,42 @@ export function CheckoutPage() {
             <div className="flex items-center justify-center gap-2 text-xs text-neutral-400">
               <Lock size={12} /> Secured with 256-bit encryption
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Razorpay Payment Modal */}
+      {showRazorpay && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-neutral-800 rounded-2xl p-8 max-w-md w-full">
+            <h2 className="font-serif text-xl font-bold text-neutral-900 dark:text-white mb-4">Complete Payment</h2>
+            <div className="bg-neutral-50 dark:bg-neutral-700 rounded-xl p-4 mb-6">
+              <div className="flex justify-between mb-2">
+                <span className="text-sm text-neutral-600 dark:text-neutral-400">Amount to Pay</span>
+                <span className="font-bold text-lg text-neutral-900 dark:text-white">{formatPrice(total)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm text-neutral-600 dark:text-neutral-400">Payment Method</span>
+                <span className="text-sm font-medium text-neutral-900 dark:text-white">Razorpay</span>
+              </div>
+            </div>
+            <RazorpayPayment
+              amount={total}
+              onSuccess={handleRazorpaySuccess}
+              onFailure={handleRazorpayFailure}
+              onClose={handleRazorpayClose}
+              userInfo={{
+                name: user?.name || '',
+                email: user?.email || '',
+                contact: addresses.find(a => a._id === selectedAddressId)?.phone || '',
+              }}
+            />
+            <button
+              onClick={handleRazorpayClose}
+              className="w-full mt-4 text-sm text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200"
+            >
+              Cancel Payment
+            </button>
           </div>
         </div>
       )}

@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, startTransition } from 'react';
 import {
   Search, ShoppingBag, Heart, User, Menu, X, Sun, Moon,
   ChevronDown, Package, LogOut, LayoutDashboard, MapPin, Bell
@@ -52,41 +52,43 @@ export function Header() {
   useEffect(() => {
     // Get user's location using Geolocation API
     if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          const { latitude, longitude } = position.coords;
-          try {
-            // Use OpenStreetMap's Nominatim API for reverse geocoding
-            const response = await fetch(
-              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
-            );
-            const data = await response.json();
-            const city = data.address.city || data.address.town || data.address.village || data.address.county || 'Your Location';
-            const postcode = data.address.postcode || '';
-            setUserLocation(city);
-            
-            // Check delivery availability for this location (use postcode if available, otherwise use city)
+      startTransition(() => {
+        navigator.geolocation.getCurrentPosition(
+          async (position) => {
+            const { latitude, longitude } = position.coords;
             try {
-              const checkParam = postcode || city;
-              const deliveryResponse = await api.get<{ success: boolean; available: boolean; free: boolean }>(`/delivery/check/${encodeURIComponent(checkParam)}`);
-              if (deliveryResponse.success) {
-                setDeliveryAvailable(deliveryResponse.available);
-                setFreeDelivery(deliveryResponse.free);
+              // Use OpenStreetMap's Nominatim API for reverse geocoding
+              const response = await fetch(
+                `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
+              );
+              const data = await response.json();
+              const city = data.address.city || data.address.town || data.address.village || data.address.county || 'Your Location';
+              const postcode = data.address.postcode || '';
+              setUserLocation(city);
+              
+              // Check delivery availability for this location (use postcode if available, otherwise use city)
+              try {
+                const checkParam = postcode || city;
+                const deliveryResponse = await api.get<{ success: boolean; available: boolean; free: boolean }>(`/delivery/check/${encodeURIComponent(checkParam)}`);
+                if (deliveryResponse.success) {
+                  setDeliveryAvailable(deliveryResponse.available);
+                  setFreeDelivery(deliveryResponse.free);
+                }
+              } catch (error) {
+                console.error('Failed to check delivery availability:', error);
+                setDeliveryAvailable(null);
               }
             } catch (error) {
-              console.error('Failed to check delivery availability:', error);
-              setDeliveryAvailable(null);
+              console.error('Failed to get location name:', error);
+              setUserLocation('Your Location');
             }
-          } catch (error) {
-            console.error('Failed to get location name:', error);
+          },
+          (error) => {
+            console.error('Geolocation error:', error);
             setUserLocation('Your Location');
           }
-        },
-        (error) => {
-          console.error('Geolocation error:', error);
-          setUserLocation('Your Location');
-        }
-      );
+        );
+      });
     }
   }, []);
 
@@ -174,11 +176,11 @@ export function Header() {
               >
                 Categories <ChevronDown size={14} />
               </button>
-              <Link to="/shop" className="px-3 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-200 hover:text-brand-600">Shop All</Link>
-              <Link to="/shop?filter=trending" className="px-3 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-200 hover:text-brand-600">Trending</Link>
-              <Link to="/shop?filter=new" className="px-3 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-200 hover:text-brand-600">New Arrivals</Link>
-              <Link to="/shop?filter=bestseller" className="px-3 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-200 hover:text-brand-600">Best Sellers</Link>
-              <Link to="/shop?filter=flash-sale" className="px-3 py-2 text-sm font-medium text-accent-600 dark:text-accent-400 hover:text-accent-700">Flash Sale</Link>
+              <Link key="shop-all" to="/shop" className="px-3 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-200 hover:text-brand-600">Shop All</Link>
+              <Link key="trending" to="/shop?filter=trending" className="px-3 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-200 hover:text-brand-600">Trending</Link>
+              <Link key="new-arrivals" to="/shop?filter=new" className="px-3 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-200 hover:text-brand-600">New Arrivals</Link>
+              <Link key="best-sellers" to="/shop?filter=bestseller" className="px-3 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-200 hover:text-brand-600">Best Sellers</Link>
+              <Link key="flash-sale" to="/shop?filter=flash-sale" className="px-3 py-2 text-sm font-medium text-accent-600 dark:text-accent-400 hover:text-accent-700">Flash Sale</Link>
             </nav>
 
             {/* Right actions */}
@@ -398,7 +400,7 @@ export function Header() {
               <button onClick={() => setShowMobileMenu(false)}><X size={24} /></button>
             </div>
             <nav className="p-4 space-y-1">
-              <Link to="/shop" onClick={() => setShowMobileMenu(false)} className="block py-2.5 px-3 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 font-medium">Shop All</Link>
+              <Link key="mobile-shop-all" to="/shop" onClick={() => setShowMobileMenu(false)} className="block py-2.5 px-3 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 font-medium">Shop All</Link>
               {categories.map((cat) => (
                 <Link
                   key={cat.id}
@@ -410,25 +412,25 @@ export function Header() {
                 </Link>
               ))}
               <div className="border-t border-neutral-100 dark:border-neutral-700 pt-2 mt-2">
-                <Link to="/wishlist" onClick={() => setShowMobileMenu(false)} className="flex items-center gap-2 py-2.5 px-3 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800">
+                <Link key="mobile-wishlist" to="/wishlist" onClick={() => setShowMobileMenu(false)} className="flex items-center gap-2 py-2.5 px-3 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800">
                   <Heart size={18} /> Wishlist
                 </Link>
                 {user ? (
                   <>
-                    <Link to="/account" onClick={() => setShowMobileMenu(false)} className="flex items-center gap-2 py-2.5 px-3 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800">
+                    <Link key="mobile-account" to="/account" onClick={() => setShowMobileMenu(false)} className="flex items-center gap-2 py-2.5 px-3 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800">
                       <User size={18} /> My Account
                     </Link>
                     {isAdmin && (
-                      <Link to="/admin" onClick={() => setShowMobileMenu(false)} className="flex items-center gap-2 py-2.5 px-3 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 text-brand-600 font-medium">
+                      <Link key="mobile-admin" to="/admin" onClick={() => setShowMobileMenu(false)} className="flex items-center gap-2 py-2.5 px-3 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 text-brand-600 font-medium">
                         <LayoutDashboard size={18} /> Admin Panel
                       </Link>
                     )}
-                    <button onClick={() => { signOut(); setShowMobileMenu(false); }} className="flex items-center gap-2 py-2.5 px-3 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 text-red-500 w-full">
+                    <button key="mobile-signout" onClick={() => { signOut(); setShowMobileMenu(false); }} className="flex items-center gap-2 py-2.5 px-3 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 text-red-500 w-full">
                       <LogOut size={18} /> Sign Out
                     </button>
                   </>
                 ) : (
-                  <Link to="/login" onClick={() => setShowMobileMenu(false)} className="flex items-center gap-2 py-2.5 px-3 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800">
+                  <Link key="mobile-login" to="/login" onClick={() => setShowMobileMenu(false)} className="flex items-center gap-2 py-2.5 px-3 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800">
                     <User size={18} /> Login / Sign Up
                   </Link>
                 )}
