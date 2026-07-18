@@ -25,12 +25,13 @@ const ReturnsPage = lazy(() => import('./pages/ReturnsPage').then(m => ({ defaul
 const ShippingPage = lazy(() => import('./pages/ShippingPage').then(m => ({ default: m.ShippingPage })));
 const SizeGuidePage = lazy(() => import('./pages/SizeGuidePage').then(m => ({ default: m.SizeGuidePage })));
 const FAQPage = lazy(() => import('./pages/FAQPage').then(m => ({ default: m.FAQPage })));
-const FounderPage = lazy(() => import('./pages/FounderPage').then(m => ({ default: m.FounderPage })));
+const FounderPage = lazy(() => import('./pages/FounderPage'));
 const DeliveryPartnerPage = lazy(() => import('./pages/DeliveryPartnerPage').then(m => ({ default: m.DeliveryPartnerPage })));
 const DeliveryPartnerRegisterPage = lazy(() => import('./pages/DeliveryPartnerRegisterPage').then(m => ({ default: m.DeliveryPartnerRegisterPage })));
 const DeliveryPartnerLoginPage = lazy(() => import('./pages/DeliveryPartnerLoginPage').then(m => ({ default: m.DeliveryPartnerLoginPage })));
 const GoogleCallbackPage = lazy(() => import('./pages/GoogleCallbackPage').then(m => ({ default: m.GoogleCallbackPage })));
 const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage').then(m => ({ default: m.ForgotPasswordPage })));
+const FeedbackPage = lazy(() => import('./pages/FeedbackPage').then(m => ({ default: m.FeedbackPage })));
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -99,10 +100,12 @@ export default function App() {
                 <Route path="/delivery-partner/login" element={<DeliveryPartnerLoginPage />} />
                 <Route path="/delivery-partner/*" element={
                   <DeliveryPartnerLayout>
-                    <Routes>
-                      <Route path="/" element={<DeliveryPartnerPage />} />
-                      <Route path="/register" element={<DeliveryPartnerRegisterPage />} />
-                    </Routes>
+                    <Suspense fallback={<div className="p-8 text-center">Loading...</div>}>
+                      <Routes>
+                        <Route path="/" element={<DeliveryPartnerPage />} />
+                        <Route path="/register" element={<DeliveryPartnerRegisterPage />} />
+                      </Routes>
+                    </Suspense>
                   </DeliveryPartnerLayout>
                 } />
                 <Route path="/*" element={
@@ -130,6 +133,7 @@ export default function App() {
                           <Route path="/size-guide" element={<SizeGuidePage />} />
                           <Route path="/faq" element={<FAQPage />} />
                           <Route path="/founder" element={<FounderPage />} />
+                          <Route path="/feedback" element={<FeedbackPage />} />
                         </Routes>
                       </Suspense>
                     </StoreLayout>

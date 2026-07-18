@@ -190,7 +190,7 @@ const buildGmailMime = ({ from, to, subject, text, html }) => {
 const createOTPEmailTemplate = (otp, type = 'password-reset', name = '') => {
   const templates = {
     'password-reset': {
-      subject: 'Your Mahir & Friends Password Reset Code',
+      subject: '🔐 Password Reset Code - Mahir & Friends',
       text: `Your password reset code is: ${otp}\n\nThis code expires in 15 minutes.\n\nIf you didn't request this, please ignore this email.\n\nBest regards,\nMahir & Friends Team`,
       html: `
         <!DOCTYPE html>
@@ -200,28 +200,37 @@ const createOTPEmailTemplate = (otp, type = 'password-reset', name = '') => {
           <meta name="viewport" content="width=device-width, initial-scale=1">
           <title>Password Reset - Mahir & Friends</title>
         </head>
-        <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f5f5f5;">
-          <div style="max-width: 600px; margin: 0 auto; background-color: white; padding: 20px; border-radius: 8px; margin-top: 20px;">
+        <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+          <div style="max-width: 600px; margin: 40px auto; background-color: white; padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
             <div style="text-align: center; margin-bottom: 30px;">
-              <h1 style="color: #667eea; margin: 0; font-size: 28px;">Mahir & Friends</h1>
-              <p style="color: #6b7280; margin-top: 5px;">Premium Fashion Store</p>
+              <div style="font-size: 50px; margin-bottom: 10px;">🔐</div>
+              <h1 style="color: #667eea; margin: 0; font-size: 32px; font-weight: bold;">Mahir & Friends</h1>
+              <p style="color: #764ba2; margin-top: 5px; font-size: 16px;">Premium Fashion Store</p>
             </div>
             
-            <h2 style="color: #1f2937; margin-bottom: 20px;">Password Reset Code</h2>
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 25px; border-radius: 15px; margin-bottom: 30px; text-align: center;">
+              <p style="color: white; margin: 0; font-size: 18px; font-weight: bold;">Your Password Reset Code</p>
+            </div>
             
-            <p style="color: #374151; line-height: 1.6; margin-bottom: 25px;">
+            <p style="color: #374151; line-height: 1.6; margin-bottom: 25px; font-size: 15px;">
               You requested a password reset for your Mahir & Friends account. Use the following code to reset your password:
             </p>
             
             <div style="text-align: center; margin: 30px 0;">
-              <div style="display: inline-block; background-color: #f3f4f6; padding: 20px 30px; border-radius: 8px; border: 2px dashed #d1d5db;">
-                <span style="font-family: 'Courier New', monospace; font-size: 32px; font-weight: bold; color: #667eea; letter-spacing: 5px;">${otp}</span>
+              <div style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 25px 40px; border-radius: 15px; box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);">
+                <span style="font-family: 'Courier New', monospace; font-size: 42px; font-weight: bold; color: white; letter-spacing: 8px;">${otp}</span>
               </div>
             </div>
             
-            <div style="background-color: #fef3c7; padding: 15px; border-radius: 6px; border-left: 4px solid #f59e0b; margin: 20px 0;">
-              <p style="margin: 0; color: #92400e; font-weight: 500;">
-                ⚠️ This code expires in 15 minutes
+            <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); padding: 20px; border-radius: 10px; border-left: 5px solid #f59e0b; margin: 25px 0;">
+              <p style="margin: 0; color: #92400e; font-weight: bold; font-size: 15px;">
+                ⏰ This code expires in 15 minutes
+              </p>
+            </div>
+            
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-top: 25px; border-left: 4px solid #667eea;">
+              <p style="margin: 0; color: #333; font-size: 14px;">
+                <strong style="color: #667eea;">🔒 Security Tip:</strong> Never share your OTP with anyone, even if they claim to represent Mahir & Friends.
               </p>
             </div>
             
@@ -229,11 +238,11 @@ const createOTPEmailTemplate = (otp, type = 'password-reset', name = '') => {
               If you didn't request this password reset, please ignore this email. Your password will remain unchanged.
             </p>
             
-            <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
+            <hr style="border: none; border-top: 2px solid #eee; margin: 30px 0;">
             
             <div style="text-align: center; color: #9ca3af; font-size: 12px;">
               <p>© ${new Date().getFullYear()} Mahir & Friends. All rights reserved.</p>
-              <p>This is an automated message, please do not reply.</p>
+              <p style="margin-top: 5px;">🌟 Delivering Excellence, Together 🌟</p>
             </div>
           </div>
         </body>
@@ -241,7 +250,7 @@ const createOTPEmailTemplate = (otp, type = 'password-reset', name = '') => {
       `
     },
     'email-verification': {
-      subject: 'Verify Your Mahir & Friends Email Address',
+      subject: '✉️ Verify Your Email - Mahir & Friends',
       text: `Welcome to Mahir & Friends!\n\nYour verification code is: ${otp}\n\nThis code expires in 15 minutes.\n\nBest regards,\nMahir & Friends Team`,
       html: `
         <!DOCTYPE html>
@@ -251,36 +260,45 @@ const createOTPEmailTemplate = (otp, type = 'password-reset', name = '') => {
           <meta name="viewport" content="width=device-width, initial-scale=1">
           <title>Email Verification - Mahir & Friends</title>
         </head>
-        <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f5f5f5;">
-          <div style="max-width: 600px; margin: 0 auto; background-color: white; padding: 20px; border-radius: 8px; margin-top: 20px;">
+        <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
+          <div style="max-width: 600px; margin: 40px auto; background-color: white; padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
             <div style="text-align: center; margin-bottom: 30px;">
-              <h1 style="color: #667eea; margin: 0; font-size: 28px;">Welcome to Mahir & Friends!</h1>
-              <p style="color: #6b7280; margin-top: 5px;">Premium Fashion Store</p>
+              <div style="font-size: 50px; margin-bottom: 10px;">✉️</div>
+              <h1 style="color: #11998e; margin: 0; font-size: 32px; font-weight: bold;">Welcome to Mahir & Friends!</h1>
+              <p style="color: #38ef7d; margin-top: 5px; font-size: 16px;">Premium Fashion Store</p>
             </div>
             
-            <h2 style="color: #1f2937; margin-bottom: 20px;">Verify Your Email Address</h2>
+            <div style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); padding: 25px; border-radius: 15px; margin-bottom: 30px; text-align: center;">
+              <p style="color: white; margin: 0; font-size: 18px; font-weight: bold;">Verify Your Email Address</p>
+            </div>
             
-            <p style="color: #374151; line-height: 1.6; margin-bottom: 25px;">
+            <p style="color: #374151; line-height: 1.6; margin-bottom: 25px; font-size: 15px;">
               Thanks for joining Mahir & Friends! Please verify your email address using the code below:
             </p>
             
             <div style="text-align: center; margin: 30px 0;">
-              <div style="display: inline-block; background-color: #f3f4f6; padding: 20px 30px; border-radius: 8px; border: 2px dashed #d1d5db;">
-                <span style="font-family: 'Courier New', monospace; font-size: 32px; font-weight: bold; color: #667eea; letter-spacing: 5px;">${otp}</span>
+              <div style="display: inline-block; background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); padding: 25px 40px; border-radius: 15px; box-shadow: 0 5px 15px rgba(17, 153, 142, 0.3);">
+                <span style="font-family: 'Courier New', monospace; font-size: 42px; font-weight: bold; color: white; letter-spacing: 8px;">${otp}</span>
               </div>
             </div>
             
-            <div style="background-color: #fef3c7; padding: 15px; border-radius: 6px; border-left: 4px solid #f59e0b; margin: 20px 0;">
-              <p style="margin: 0; color: #92400e; font-weight: 500;">
-                ⚠️ This code expires in 15 minutes
+            <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); padding: 20px; border-radius: 10px; border-left: 5px solid #f59e0b; margin: 25px 0;">
+              <p style="margin: 0; color: #92400e; font-weight: bold; font-size: 15px;">
+                ⏰ This code expires in 15 minutes
               </p>
             </div>
             
-            <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-top: 25px; border-left: 4px solid #11998e;">
+              <p style="margin: 0; color: #333; font-size: 14px;">
+                <strong style="color: #11998e;">🎉 What's next?</strong> After verification, you'll have access to exclusive deals, personalized recommendations, and much more!
+              </p>
+            </div>
+            
+            <hr style="border: none; border-top: 2px solid #eee; margin: 30px 0;">
             
             <div style="text-align: center; color: #9ca3af; font-size: 12px;">
               <p>© ${new Date().getFullYear()} Mahir & Friends. All rights reserved.</p>
-              <p>This is an automated message, please do not reply.</p>
+              <p style="margin-top: 5px;">🌟 Delivering Excellence, Together 🌟</p>
             </div>
           </div>
         </body>
@@ -491,7 +509,7 @@ export const sendOTPEmail = async (to, otp, type = 'password-reset', name = '') 
 };
 
 export const sendWelcomeEmail = async (email, name) => {
-  const subject = 'Welcome to Mahir & Friends!';
+  const subject = '🎉 Welcome to Mahir & Friends!';
   const html = `
     <!DOCTYPE html>
     <html>
@@ -499,35 +517,58 @@ export const sendWelcomeEmail = async (email, name) => {
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>Welcome</title>
-      <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-        .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
-        .button { display: inline-block; background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; }
-        .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
-      </style>
     </head>
-    <body>
-      <div class="container">
-        <div class="header">
-          <h1>Welcome to Mahir & Friends!</h1>
+    <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+      <div style="max-width: 600px; margin: 40px auto; background-color: white; padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
+        <div style="text-align: center; margin-bottom: 30px;">
+          <div style="font-size: 60px; margin-bottom: 10px;">🎉</div>
+          <h1 style="color: #f5576c; margin: 0; font-size: 32px; font-weight: bold;">Welcome to Mahir & Friends!</h1>
+          <p style="color: #f093fb; margin-top: 5px; font-size: 16px;">Premium Fashion Store</p>
         </div>
-        <div class="content">
-          <h2>Hello ${name || 'there'},</h2>
-          <p>We're thrilled to have you join our community! Your account has been successfully created.</p>
-          <h3>What's next?</h3>
-          <ul>
-            <li>Explore our latest collection of premium fashion</li>
-            <li>Create your wishlist and save favorites</li>
-            <li>Enjoy exclusive member-only deals</li>
-            <li>Track your orders in real-time</li>
+        
+        <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 25px; border-radius: 15px; margin-bottom: 30px; text-align: center;">
+          <p style="color: white; margin: 0; font-size: 18px; font-weight: bold;">Hello ${name || 'there'},</p>
+          <p style="color: white; margin: 10px 0 0; font-size: 14px;">We're thrilled to have you join our community!</p>
+        </div>
+        
+        <div style="margin-bottom: 30px;">
+          <h3 style="color: #f5576c; font-size: 20px; margin-bottom: 20px; border-bottom: 2px solid #f093fb; padding-bottom: 10px;">
+            🚀 What's next?
+          </h3>
+          <ul style="color: #333; padding-left: 20px; margin: 0; font-size: 15px;">
+            <li style="margin-bottom: 15px; padding-left: 10px;">
+              <span style="color: #f093fb; font-weight: bold;">Explore our latest collection</span> of premium fashion
+            </li>
+            <li style="margin-bottom: 15px; padding-left: 10px;">
+              <span style="color: #f093fb; font-weight: bold;">Create your wishlist</span> and save favorites
+            </li>
+            <li style="margin-bottom: 15px; padding-left: 10px;">
+              <span style="color: #f093fb; font-weight: bold;">Enjoy exclusive member-only deals</span>
+            </li>
+            <li style="margin-bottom: 0; padding-left: 10px;">
+              <span style="color: #f093fb; font-weight: bold;">Track your orders</span> in real-time
+            </li>
           </ul>
-          <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/shop" class="button">Start Shopping</a>
-          <p>If you have any questions, feel free to reach out to our support team.</p>
         </div>
-        <div class="footer">
-          <p>&copy; ${new Date().getFullYear()} Mahir & Friends. All rights reserved.</p>
+        
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/shop" style="display: inline-block; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 15px 40px; text-decoration: none; border-radius: 25px; font-weight: bold; font-size: 16px; box-shadow: 0 5px 15px rgba(240, 147, 251, 0.3);">
+            Start Shopping 🛍️
+          </a>
+        </div>
+        
+        <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-top: 25px; border-left: 4px solid #f093fb;">
+          <p style="margin: 0; color: #333; font-size: 14px;">
+            <strong style="color: #f5576c;">💡 Need Help?</strong> Feel free to reach out to our support team anytime.
+          </p>
+        </div>
+        
+        <div style="text-align: center; border-top: 2px solid #eee; margin-top: 30px; padding-top: 20px;">
+          <p style="color: #f093fb; margin: 0; font-size: 16px; font-weight: bold;">Best regards,</p>
+          <p style="color: #f5576c; margin: 5px 0 0; font-size: 14px;">Mahir & Friends Team</p>
+          <div style="margin-top: 15px; color: #999; font-size: 12px;">
+            🌟 Delivering Excellence, Together 🌟
+          </div>
         </div>
       </div>
     </body>
@@ -538,7 +579,7 @@ export const sendWelcomeEmail = async (email, name) => {
 };
 
 export const sendOrderConfirmationEmail = async (email, name, order) => {
-  const subject = `Order Confirmation - ${order.order_number}`;
+  const subject = `🛒 Order Confirmed - ${order.order_number}`;
   const html = `
     <!DOCTYPE html>
     <html>
@@ -546,51 +587,58 @@ export const sendOrderConfirmationEmail = async (email, name, order) => {
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>Order Confirmation</title>
-      <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-        .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
-        .order-details { background: white; padding: 20px; margin: 20px 0; border-radius: 5px; }
-        .item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }
-        .total { font-size: 18px; font-weight: bold; text-align: right; margin-top: 20px; }
-        .button { display: inline-block; background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; }
-        .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
-      </style>
     </head>
-    <body>
-      <div class="container">
-        <div class="header">
-          <h1>Order Confirmed!</h1>
+    <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
+      <div style="max-width: 600px; margin: 40px auto; background-color: white; padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
+        <div style="text-align: center; margin-bottom: 30px;">
+          <div style="font-size: 60px; margin-bottom: 10px;">🛒</div>
+          <h1 style="color: #11998e; margin: 0; font-size: 32px; font-weight: bold;">Order Confirmed!</h1>
+          <p style="color: #38ef7d; margin-top: 5px; font-size: 16px;">Mahir & Friends</p>
         </div>
-        <div class="content">
-          <h2>Hello ${name || 'there'},</h2>
-          <p>Great news! Your order has been successfully placed.</p>
-          
-          <div class="order-details">
-            <h3>Order Details</h3>
-            <p><strong>Order Number:</strong> ${order.order_number}</p>
-            <p><strong>Date:</strong> ${new Date(order.createdAt).toLocaleDateString()}</p>
-            
-            <h3>Items</h3>
-            ${order.items.map(item => `
-              <div class="item">
-                <span>${item.product_id?.name || 'Product'} x ${item.quantity}</span>
-                <span>₹${(item.product_id?.price || item.price) * item.quantity}</span>
-              </div>
-            `).join('')}
-            
-            <div class="total">
-              <p>Total: ₹${order.total}</p>
+        
+        <div style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); padding: 25px; border-radius: 15px; margin-bottom: 30px; text-align: center;">
+          <p style="color: white; margin: 0; font-size: 18px; font-weight: bold;">Hello ${name || 'there'},</p>
+          <p style="color: white; margin: 10px 0 0; font-size: 14px;">Great news! Your order has been successfully placed.</p>
+        </div>
+        
+        <div style="background: #f8f9fa; padding: 25px; border-radius: 15px; margin-bottom: 30px; border-left: 4px solid #11998e;">
+          <h3 style="color: #11998e; font-size: 18px; margin: 0 0 15px;">📋 Order Details</h3>
+          <p style="color: #333; margin: 5px 0; font-size: 14px;"><strong>Order Number:</strong> <span style="color: #38ef7d;">${order.order_number}</span></p>
+          <p style="color: #333; margin: 5px 0; font-size: 14px;"><strong>Date:</strong> ${new Date(order.createdAt).toLocaleDateString()}</p>
+        </div>
+        
+        <div style="background: white; padding: 25px; margin-bottom: 30px; border-radius: 15px; border: 2px solid #e0e0e0;">
+          <h3 style="color: #11998e; font-size: 18px; margin: 0 0 20px;">📦 Items</h3>
+          ${order.items.map(item => `
+            <div style="display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #eee; font-size: 14px;">
+              <span style="color: #333;">${item.product_id?.name || 'Product'} x ${item.quantity}</span>
+              <span style="color: #38ef7d; font-weight: bold;">₹${(item.product_id?.price || item.price) * item.quantity}</span>
             </div>
+          `).join('')}
+          
+          <div style="text-align: right; margin-top: 20px; padding-top: 15px; border-top: 2px solid #11998e;">
+            <p style="color: #11998e; margin: 0; font-size: 22px; font-weight: bold;">Total: ₹${order.total}</p>
           </div>
-          
-          <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/track-order" class="button">Track Your Order</a>
-          
-          <p>Thank you for shopping with Mahir & Friends!</p>
         </div>
-        <div class="footer">
-          <p>&copy; ${new Date().getFullYear()} Mahir & Friends. All rights reserved.</p>
+        
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/track-order" style="display: inline-block; background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white; padding: 15px 40px; text-decoration: none; border-radius: 25px; font-weight: bold; font-size: 16px; box-shadow: 0 5px 15px rgba(17, 153, 142, 0.3);">
+            Track Your Order 🚚
+          </a>
+        </div>
+        
+        <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); padding: 20px; border-radius: 10px; margin-top: 25px; border-left: 4px solid #f59e0b;">
+          <p style="margin: 0; color: #92400e; font-size: 14px;">
+            <strong style="color: #dc3545;">💡 Thank you</strong> for shopping with Mahir & Friends! We appreciate your business.
+          </p>
+        </div>
+        
+        <div style="text-align: center; border-top: 2px solid #eee; margin-top: 30px; padding-top: 20px;">
+          <p style="color: #11998e; margin: 0; font-size: 16px; font-weight: bold;">Best regards,</p>
+          <p style="color: #38ef7d; margin: 5px 0 0; font-size: 14px;">Mahir & Friends Team</p>
+          <div style="margin-top: 15px; color: #999; font-size: 12px;">
+            🌟 Delivering Excellence, Together 🌟
+          </div>
         </div>
       </div>
     </body>
@@ -611,7 +659,30 @@ export const sendDeliveryUpdateEmail = async (email, name, order, status) => {
     'in_transit': 'Your order is in transit to your location.'
   };
 
-  const subject = `Order Update - ${order.order_number} - ${status.replace('_', ' ').toUpperCase()}`;
+  const statusColors = {
+    'confirmed': '#667eea',
+    'processing': '#f59e0b',
+    'shipped': '#11998e',
+    'out_for_delivery': '#38ef7d',
+    'delivered': '#4CAF50',
+    'picked_up': '#667eea',
+    'in_transit': '#f093fb'
+  };
+
+  const statusEmoji = {
+    'confirmed': '✅',
+    'processing': '⏳',
+    'shipped': '📦',
+    'out_for_delivery': '🚚',
+    'delivered': '🎉',
+    'picked_up': '🛵',
+    'in_transit': '📍'
+  };
+
+  const color = statusColors[status] || '#667eea';
+  const emoji = statusEmoji[status] || '📋';
+
+  const subject = `${emoji} Order Update - ${order.order_number} - ${status.replace('_', ' ').toUpperCase()}`;
   const html = `
     <!DOCTYPE html>
     <html>
@@ -619,37 +690,110 @@ export const sendDeliveryUpdateEmail = async (email, name, order, status) => {
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>Order Update</title>
-      <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-        .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
-        .status-box { background: white; padding: 20px; margin: 20px 0; border-radius: 5px; border-left: 4px solid #667eea; }
-        .button { display: inline-block; background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; }
-        .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
-      </style>
     </head>
-    <body>
-      <div class="container">
-        <div class="header">
-          <h1>Order Update</h1>
+    <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, ${color} 0%, ${color}dd 100%);">
+      <div style="max-width: 600px; margin: 40px auto; background-color: white; padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
+        <div style="text-align: center; margin-bottom: 30px;">
+          <div style="font-size: 60px; margin-bottom: 10px;">${emoji}</div>
+          <h1 style="color: ${color}; margin: 0; font-size: 32px; font-weight: bold;">Order Update</h1>
+          <p style="color: ${color}dd; margin-top: 5px; font-size: 16px;">Mahir & Friends</p>
         </div>
-        <div class="content">
-          <h2>Hello ${name || 'there'},</h2>
-          
-          <div class="status-box">
-            <h3>Order: ${order.order_number}</h3>
-            <p><strong>Status:</strong> ${status.replace('_', ' ').toUpperCase()}</p>
-            <p>${statusMessages[status] || 'Your order status has been updated.'}</p>
+        
+        <div style="background: linear-gradient(135deg, ${color} 0%, ${color}dd 100%); padding: 25px; border-radius: 15px; margin-bottom: 30px; text-align: center;">
+          <p style="color: white; margin: 0; font-size: 18px; font-weight: bold;">Hello ${name || 'there'},</p>
+          <p style="color: white; margin: 10px 0 0; font-size: 14px;">Your order status has been updated!</p>
+        </div>
+        
+        <div style="background: #f8f9fa; padding: 25px; border-radius: 15px; margin-bottom: 30px; border-left: 4px solid ${color};">
+          <h3 style="color: ${color}; font-size: 18px; margin: 0 0 15px;">📋 Order: ${order.order_number}</h3>
+          <p style="color: #333; margin: 5px 0; font-size: 14px;"><strong>Status:</strong> <span style="background: ${color}; color: white; padding: 5px 15px; border-radius: 20px; font-weight: bold;">${status.replace('_', ' ').toUpperCase()}</span></p>
+          <p style="color: #666; margin: 10px 0 0; font-size: 14px;">${statusMessages[status] || 'Your order status has been updated.'}</p>
+        </div>
+        
+        ${(order.delivery?.pickupOTP || order.delivery?.deliveryOTP) ? `
+        <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); padding: 20px; border-radius: 10px; margin-bottom: 30px; border-left: 4px solid #f59e0b;">
+          <p style="margin: 0; color: #92400e; font-size: 14px;">
+            <strong style="color: #dc3545;">🔐 OTP Information:</strong>
+          </p>
+          ${order.delivery?.pickupOTP ? `<p style="margin: 5px 0 0; color: #92400e; font-size: 14px;"><strong>Pickup OTP:</strong> <span style="background: #f59e0b; color: white; padding: 3px 10px; border-radius: 15px; font-weight: bold;">${order.delivery.pickupOTP}</span></p>` : ''}
+          ${order.delivery?.deliveryOTP ? `<p style="margin: 5px 0 0; color: #92400e; font-size: 14px;"><strong>Delivery OTP:</strong> <span style="background: #f59e0b; color: white; padding: 3px 10px; border-radius: 15px; font-weight: bold;">${order.delivery.deliveryOTP}</span></p>` : ''}
+        </div>
+        ` : ''}
+        
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/track-order" style="display: inline-block; background: linear-gradient(135deg, ${color} 0%, ${color}dd 100%); color: white; padding: 15px 40px; text-decoration: none; border-radius: 25px; font-weight: bold; font-size: 16px; box-shadow: 0 5px 15px rgba(${parseInt(color.slice(1,3),16)}, ${parseInt(color.slice(3,5),16)}, ${parseInt(color.slice(5,7),16)}, 0.3);">
+            Track Your Order 🚚
+          </a>
+        </div>
+        
+        <div style="text-align: center; border-top: 2px solid #eee; margin-top: 30px; padding-top: 20px;">
+          <p style="color: ${color}; margin: 0; font-size: 16px; font-weight: bold;">Best regards,</p>
+          <p style="color: ${color}dd; margin: 5px 0 0; font-size: 14px;">Mahir & Friends Team</p>
+          <div style="margin-top: 15px; color: #999; font-size: 12px;">
+            🌟 Delivering Excellence, Together 🌟
           </div>
-          
-          ${order.delivery?.pickupOTP ? `<p><strong>Pickup OTP:</strong> ${order.delivery.pickupOTP}</p>` : ''}
-          ${order.delivery?.deliveryOTP ? `<p><strong>Delivery OTP:</strong> ${order.delivery.deliveryOTP}</p>` : ''}
-          
-          <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/track-order" class="button">Track Your Order</a>
         </div>
-        <div class="footer">
-          <p>&copy; ${new Date().getFullYear()} Mahir & Friends. All rights reserved.</p>
+      </div>
+    </body>
+    </html>
+  `;
+
+  return await sendEmail({ to: email, subject, html });
+};
+
+export const sendFeedbackRequestEmail = async (email, name, orderId, orderNumber) => {
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+  const subject = '📝 Share Your Experience - Mahir & Friends';
+  
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <title>Feedback Request - Mahir & Friends</title>
+    </head>
+    <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+      <div style="max-width: 600px; margin: 40px auto; background-color: white; padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
+        <div style="text-align: center; margin-bottom: 30px;">
+          <div style="font-size: 50px; margin-bottom: 10px;">📦</div>
+          <h1 style="color: #667eea; margin: 0; font-size: 32px; font-weight: bold;">Your Order Has Been Delivered!</h1>
+          <p style="color: #764ba2; margin-top: 5px; font-size: 16px;">Order #${orderNumber}</p>
+        </div>
+        
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 25px; border-radius: 15px; margin-bottom: 30px; text-align: center;">
+          <p style="color: white; margin: 0; font-size: 18px; font-weight: bold;">We'd Love to Hear From You!</p>
+        </div>
+        
+        <p style="color: #374151; line-height: 1.6; margin-bottom: 25px; font-size: 15px;">
+          Hi ${name},<br><br>
+          Your order has been successfully delivered! We hope you're happy with your purchase. Please take a moment to share your experience with us. Your feedback helps us improve our products and services.
+        </p>
+        
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${frontendUrl}/feedback?orderId=${orderId}" 
+             style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 15px 40px; border-radius: 15px; text-decoration: none; color: white; font-weight: bold; font-size: 16px; box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);">
+            📝 Share Your Feedback
+          </a>
+        </div>
+        
+        <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-top: 25px; border-left: 4px solid #667eea;">
+          <p style="margin: 0; color: #333; font-size: 14px;">
+            <strong style="color: #667eea;">🎁 Why share feedback?</strong> Your input helps us serve you better and earn exclusive rewards!
+          </p>
+        </div>
+        
+        <div style="background: #fef3c7; padding: 20px; border-radius: 10px; border-left: 5px solid #f59e0b; margin: 25px 0;">
+          <p style="margin: 0; color: #92400e; font-weight: bold; font-size: 15px;">
+            ⏰ This feedback link is valid for 7 days
+          </p>
+        </div>
+        
+        <hr style="border: none; border-top: 2px solid #eee; margin: 30px 0;">
+        
+        <div style="text-align: center; color: #9ca3af; font-size: 12px;">
+          <p>© ${new Date().getFullYear()} Mahir & Friends. All rights reserved.</p>
+          <p style="margin-top: 5px;">🌟 Delivering Excellence, Together 🌟</p>
         </div>
       </div>
     </body>
@@ -683,7 +827,8 @@ const emailService = {
   sendOTPEmail,
   sendWelcomeEmail,
   sendOrderConfirmationEmail,
-  sendDeliveryUpdateEmail
+  sendDeliveryUpdateEmail,
+  sendFeedbackRequestEmail
 };
 
 export default emailService;

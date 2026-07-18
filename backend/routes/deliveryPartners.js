@@ -4,10 +4,13 @@ import DeliveryOrder from '../models/DeliveryOrder.js';
 import Payout from '../models/Payout.js';
 import Order from '../models/Order.js';
 import User from '../models/User.js';
+import Notification from '../models/Notification.js';
 import { body, validationResult } from 'express-validator';
 import { auth } from '../middleware/auth.js';
 import bcrypt from 'bcryptjs';
 import PDFDocument from 'pdfkit';
+import { generateDeliveryPartnerPDF } from '../utils/generatePartnerPDF.js';
+import { sendEmail, sendFeedbackRequestEmail } from '../services/emailService.js';
 
 const router = express.Router();
 
@@ -75,6 +78,18 @@ router.post('/register', [
     });
 
     await deliveryPartner.save();
+
+    // Create notification for all admin users
+    const adminUsers = await User.find({ role: 'admin' });
+    if (adminUsers.length > 0) {
+      const notifications = adminUsers.map(admin => ({
+        user_id: admin._id,
+        title: 'New Delivery Partner Registration',
+        message: `${partnerData.personalDetails.fullName} has registered as a delivery partner and is awaiting approval.`,
+        type: 'delivery_partner'
+      }));
+      await Notification.insertMany(notifications);
+    }
 
     res.status(201).json({
       success: true,
@@ -159,6 +174,29 @@ router.put('/payout-settings', auth, isDeliveryPartner, async (req, res) => {
     );
 
     res.json({ success: true, message: 'Payout settings updated', data: partner });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Update emergency contact
+router.put('/emergency-contact', auth, isDeliveryPartner, async (req, res) => {
+  try {
+    const { name, relationship, contactNumber } = req.body;
+    
+    const partner = await DeliveryPartner.findByIdAndUpdate(
+      req.deliveryPartner._id,
+      { 
+        emergencyContact: {
+          name,
+          relationship,
+          contactNumber
+        }
+      },
+      { new: true }
+    );
+    
+    res.json({ success: true, data: partner, message: 'Emergency contact updated successfully' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -356,6 +394,24 @@ router.put('/order-status/:orderId', auth, isDeliveryPartner, async (req, res) =
 
     await order.save();
 
+    // Send feedback request email when order is delivered
+    if (status === 'delivered') {
+      try {
+        const mainOrder = await Order.findById(order.orderId);
+        if (mainOrder && mainOrder.userEmail) {
+          await sendFeedbackRequestEmail(
+            mainOrder.userEmail,
+            mainOrder.userName || 'Customer',
+            mainOrder._id,
+            mainOrder.orderNumber
+          );
+        }
+      } catch (emailError) {
+        console.error('Error sending feedback request email:', emailError);
+        // Don't fail the order update if email fails
+      }
+    }
+
     res.json({ success: true, message: 'Order status updated', data: order });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -511,7 +567,9 @@ router.put('/admin/:id/approve', async (req, res) => {
       {
         status: 'approved',
         'kycDetails.kycStatus': 'approved',
-        'kycDetails.verifiedAt': new Date()
+        'kycDetails.verifiedAt': new Date(),
+        'adminApproval.approvedAt': new Date(),
+        'adminApproval.rejectedAt': null
       },
       { new: true }
     );
@@ -520,8 +578,176 @@ router.put('/admin/:id/approve', async (req, res) => {
       return res.status(404).json({ success: false, message: 'Partner not found' });
     }
 
-    res.json({ success: true, message: 'Partner approved successfully. They can now pay the joining fee.', data: partner });
+    // Generate PDF
+    const pdfBuffer = await generateDeliveryPartnerPDF(partner);
+
+    // Send approval email with PDF attachment
+    const emailSubject = '🎉 Delivery Partner Registration Approved - Mahir & Friends';
+    const emailBody = `
+      <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 20px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
+        <div style="background: rgba(255,255,255,0.95); padding: 40px; margin: 20px; border-radius: 15px;">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <div style="font-size: 60px; margin-bottom: 10px;">🎉</div>
+            <h1 style="color: #667eea; margin: 0; font-size: 28px; font-weight: bold;">Congratulations!</h1>
+            <p style="color: #764ba2; font-size: 18px; margin: 10px 0;">Your Application Has Been Approved</p>
+          </div>
+          
+          <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 10px; margin-bottom: 25px;">
+            <p style="color: white; margin: 0; font-size: 16px; text-align: center;">
+              <strong style="font-size: 18px;">Dear ${partner.personalDetails.fullName},</strong>
+            </p>
+            <p style="color: white; margin: 10px 0 0; font-size: 14px; text-align: center;">
+              Your delivery partner registration has been <span style="background: #4CAF50; color: white; padding: 5px 15px; border-radius: 20px; font-weight: bold;">APPROVED</span>
+            </p>
+          </div>
+
+          <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-bottom: 25px; border-left: 4px solid #667eea;">
+            <p style="color: #333; margin: 0 0 10px; font-size: 14px;">
+              <strong style="color: #667eea;">📋 Your registration details are attached as a PDF document</strong>
+            </p>
+            <p style="color: #666; margin: 0; font-size: 13px;">
+              Signed by: <strong style="color: #764ba2;">${partner.adminApproval.approvedBy}</strong><br>
+              <span style="color: #666;">${partner.adminApproval.approvedByTitle}</span>
+            </p>
+          </div>
+
+          <div style="margin-bottom: 25px;">
+            <h3 style="color: #667eea; font-size: 18px; margin-bottom: 15px; border-bottom: 2px solid #667eea; padding-bottom: 10px;">
+              🚀 Next Steps
+            </h3>
+            <ol style="color: #333; padding-left: 20px; margin: 0;">
+              <li style="margin-bottom: 12px; padding-left: 10px;">
+                <span style="color: #764ba2; font-weight: bold;">Pay the joining fee</span> of <strong style="color: #4CAF50;">₹${partner.joiningFee?.amount || 500}</strong> to activate your account
+              </li>
+              <li style="margin-bottom: 12px; padding-left: 10px;">
+                <span style="color: #764ba2; font-weight: bold;">Complete your profile setup</span> with all required information
+              </li>
+              <li style="margin-bottom: 12px; padding-left: 10px;">
+                <span style="color: #764ba2; font-weight: bold;">Start accepting delivery orders</span> and earn money
+              </li>
+            </ol>
+          </div>
+
+          <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 10px; text-align: center; margin-bottom: 25px;">
+            <p style="color: white; margin: 0; font-size: 14px;">
+              <strong>Need Help?</strong> Contact our support team anytime
+            </p>
+          </div>
+
+          <div style="text-align: center; border-top: 2px solid #eee; padding-top: 20px;">
+            <p style="color: #667eea; margin: 0; font-size: 16px; font-weight: bold;">Best regards,</p>
+            <p style="color: #764ba2; margin: 5px 0 0; font-size: 14px;">Mahir & Friends Team</p>
+            <div style="margin-top: 15px; color: #999; font-size: 12px;">
+              🌟 Delivering Excellence, Together 🌟
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    await sendEmail({
+      to: partner.personalDetails.email,
+      subject: emailSubject,
+      html: emailBody,
+      attachments: [{
+        filename: `delivery-partner-${partner._id}.pdf`,
+        content: pdfBuffer,
+        contentType: 'application/pdf'
+      }]
+    });
+
+    res.json({ success: true, message: 'Partner approved successfully. Approval email sent with PDF attachment.', data: partner });
   } catch (error) {
+    console.error('Error approving partner:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+router.put('/admin/:id/reject', async (req, res) => {
+  try {
+    const { reason } = req.body;
+
+    const partner = await DeliveryPartner.findByIdAndUpdate(
+      req.params.id,
+      {
+        status: 'rejected',
+        rejectionReason: reason,
+        'adminApproval.rejectedAt': new Date(),
+        'adminApproval.approvedAt': null
+      },
+      { new: true }
+    );
+
+    if (!partner) {
+      return res.status(404).json({ success: false, message: 'Partner not found' });
+    }
+
+    // Send rejection email without PDF
+    const emailSubject = '📋 Delivery Partner Registration Update - Mahir & Friends';
+    const emailBody = `
+      <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); border-radius: 20px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
+        <div style="background: rgba(255,255,255,0.95); padding: 40px; margin: 20px; border-radius: 15px;">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <div style="font-size: 60px; margin-bottom: 10px;">📋</div>
+            <h1 style="color: #f5576c; margin: 0; font-size: 28px; font-weight: bold;">Registration Update</h1>
+            <p style="color: #f093fb; font-size: 18px; margin: 10px 0;">Your Application Status</p>
+          </div>
+          
+          <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 20px; border-radius: 10px; margin-bottom: 25px;">
+            <p style="color: white; margin: 0; font-size: 16px; text-align: center;">
+              <strong style="font-size: 18px;">Dear ${partner.personalDetails.fullName},</strong>
+            </p>
+            <p style="color: white; margin: 10px 0 0; font-size: 14px; text-align: center;">
+              Your delivery partner registration has been <span style="background: #ff6b6b; color: white; padding: 5px 15px; border-radius: 20px; font-weight: bold;">REJECTED</span>
+            </p>
+          </div>
+
+          ${reason ? `
+          <div style="background: #fff3cd; padding: 20px; border-radius: 10px; margin-bottom: 25px; border-left: 4px solid #ffc107;">
+            <p style="color: #856404; margin: 0 0 10px; font-size: 14px;">
+              <strong style="color: #dc3545;">⚠️ Reason for rejection:</strong>
+            </p>
+            <p style="color: #856404; margin: 0; font-size: 13px;">${reason}</p>
+          </div>
+          ` : ''}
+
+          <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-bottom: 25px; border-left: 4px solid #f093fb;">
+            <p style="color: #333; margin: 0; font-size: 14px;">
+              <strong style="color: #f5576c;">💡 What can you do?</strong>
+            </p>
+            <ul style="color: #666; padding-left: 20px; margin: 10px 0 0; font-size: 13px;">
+              <li style="margin-bottom: 8px;">Review the rejection reason above</li>
+              <li style="margin-bottom: 8px;">Contact our support team for clarification</li>
+              <li style="margin-bottom: 0;">Reapply after addressing the issues</li>
+            </ul>
+          </div>
+
+          <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 20px; border-radius: 10px; text-align: center; margin-bottom: 25px;">
+            <p style="color: white; margin: 0; font-size: 14px;">
+              <strong>Need Help?</strong> Contact our support team anytime
+            </p>
+          </div>
+
+          <div style="text-align: center; border-top: 2px solid #eee; padding-top: 20px;">
+            <p style="color: #f093fb; margin: 0; font-size: 16px; font-weight: bold;">Best regards,</p>
+            <p style="color: #f5576c; margin: 5px 0 0; font-size: 14px;">Mahir & Friends Team</p>
+            <div style="margin-top: 15px; color: #999; font-size: 12px;">
+              🌟 Delivering Excellence, Together 🌟
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    await sendEmail({
+      to: partner.personalDetails.email,
+      subject: emailSubject,
+      html: emailBody
+    });
+
+    res.json({ success: true, message: 'Partner rejected successfully. Rejection email sent.', data: partner });
+  } catch (error) {
+    console.error('Error rejecting partner:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 });

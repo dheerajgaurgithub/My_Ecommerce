@@ -42,6 +42,15 @@ class ApiClient {
       headers,
     });
 
+    // Check if response is JSON
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      if (!response.ok) {
+        throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+      }
+      throw new Error('Invalid response format from server');
+    }
+
     const data = await response.json();
 
     if (!response.ok) {

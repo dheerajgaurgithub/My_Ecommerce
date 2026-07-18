@@ -1,11 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, startTransition } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
   LayoutDashboard, Package, ShoppingBag, Tag, MapPin, Users, LogOut,
   TrendingUp, DollarSign, Clock, XCircle, CheckCircle, Plus, Edit, Trash2,
-  Eye, Search, X, Save, Gift, Download, Bell, AlertTriangle
+  Eye, Search, X, Save, Gift, Download, Bell, AlertTriangle, Moon, Sun, User, MessageSquare, Star
 } from 'lucide-react';
 import { useAuth } from '../lib/auth';
+import { useTheme } from '../lib/theme';
 import { useToast } from '../lib/toast';
 import { api } from '../lib/api';
 import { formatPrice, formatDate } from '../lib/utils';
@@ -13,11 +14,12 @@ import type { Product, Category, Order, Coupon, ComboPack, GiftCard } from '../l
 import { StatsCardSkeleton } from '../components/LoadingSkeleton';
 import { AdminAnalytics } from '../components/AdminAnalytics';
 
-type AdminTab = 'dashboard' | 'products' | 'categories' | 'orders' | 'coupons' | 'combos' | 'giftcards' | 'delivery' | 'delivery-partners' | 'users' | 'notifications' | 'analytics';
+type AdminTab = 'dashboard' | 'products' | 'categories' | 'orders' | 'coupons' | 'combos' | 'giftcards' | 'delivery' | 'delivery-partners' | 'users' | 'notifications' | 'analytics' | 'feedback' | 'profile';
 
 export function AdminPage() {
   const navigate = useNavigate();
   const { isAdmin, adminSignOut } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const { showToast } = useToast();
   const [tab, setTab] = useState<AdminTab>('dashboard');
   const [stats, setStats] = useState({ totalSales: 0, todaySales: 0, totalOrders: 0, totalProducts: 0, totalCustomers: 0, pendingOrders: 0, deliveredOrders: 0, cancelledOrders: 0 });
@@ -54,6 +56,37 @@ export function AdminPage() {
 
     return () => clearInterval(interval);
   }, [isAdmin, navigate]);
+
+  const markNotificationAsRead = async (notificationId: string) => {
+    try {
+      await api.patch(`/notifications/${notificationId}/read`);
+      setNotifications(notifications.map(n => n._id === notificationId ? { ...n, is_read: true } : n));
+    } catch (error) {
+      console.error('Failed to mark notification as read:', error);
+    }
+  };
+
+  const deleteNotification = async (notificationId: string) => {
+    try {
+      await api.delete(`/notifications/${notificationId}`);
+      setNotifications(notifications.filter(n => n._id !== notificationId));
+      showToast('Notification deleted', 'success');
+    } catch (error) {
+      console.error('Failed to delete notification:', error);
+      showToast('Failed to delete notification', 'error');
+    }
+  };
+
+  const deleteAllNotifications = async () => {
+    try {
+      await api.delete('/notifications');
+      setNotifications([]);
+      showToast('All notifications deleted', 'success');
+    } catch (error) {
+      console.error('Failed to delete all notifications:', error);
+      showToast('Failed to delete all notifications', 'error');
+    }
+  };
 
   const fetchAll = async () => {
     try {
@@ -227,6 +260,8 @@ export function AdminPage() {
   const filteredOrders = orders.filter((o) => orderFilter === 'all' || o.status === orderFilter);
   const filteredProducts = products.filter((p) => p.name.toLowerCase().includes(search.toLowerCase()) || p.sku?.toLowerCase().includes(search.toLowerCase()));
 
+  const unreadCount = notifications.filter(n => !n.is_read).length;
+
   const navItems = [
     { id: 'dashboard' as AdminTab, label: 'Dashboard', icon: LayoutDashboard },
     { id: 'products' as AdminTab, label: 'Products', icon: Package },
@@ -238,8 +273,10 @@ export function AdminPage() {
     { id: 'delivery' as AdminTab, label: 'Delivery', icon: MapPin },
     { id: 'delivery-partners' as AdminTab, label: 'Delivery Partners', icon: Users },
     { id: 'users' as AdminTab, label: 'Users', icon: Users },
+    { id: 'feedback' as AdminTab, label: 'Feedback', icon: MessageSquare },
     { id: 'analytics' as AdminTab, label: 'Analytics', icon: TrendingUp },
-    { id: 'notifications' as AdminTab, label: 'Notifications', icon: Bell },
+    { id: 'notifications' as AdminTab, label: 'Notifications', icon: Bell, badge: unreadCount },
+    { id: 'profile' as AdminTab, label: 'Profile', icon: User },
   ];
 
   if (!isAdmin) return null;
@@ -253,12 +290,24 @@ export function AdminPage() {
         </div>
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
           {navItems.map((item) => (
-            <button key={item.id} onClick={() => setTab(item.id)} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${tab === item.id ? 'bg-brand-600 text-white' : 'text-neutral-300 hover:bg-neutral-800'}`}>
-              <item.icon size={18} /> {item.label}
+            <button key={item.id} onClick={() => startTransition(() => setTab(item.id))} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${tab === item.id ? 'bg-brand-600 text-white' : 'text-neutral-300 hover:bg-neutral-800'}`}>
+              <div className="relative">
+                <item.icon size={18} />
+                {item.badge !== undefined && (
+                  <span className={`absolute -top-1 -right-1 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center ${item.badge > 0 ? 'bg-red-500' : 'bg-neutral-500'}`}>
+                    {item.badge > 9 ? '9+' : item.badge}
+                  </span>
+                )}
+              </div>
+              {item.label}
             </button>
           ))}
         </nav>
-        <div className="p-4 border-t border-neutral-800">
+        <div className="p-4 border-t border-neutral-800 space-y-2">
+          <button onClick={toggleTheme} className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-neutral-300 hover:bg-neutral-800">
+            {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+            {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+          </button>
           <button onClick={() => { adminSignOut(); navigate('/'); }} className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-red-400 hover:bg-neutral-800">
             <LogOut size={18} /> Sign Out
           </button>
@@ -267,8 +316,13 @@ export function AdminPage() {
 
       <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-neutral-900 z-40 flex justify-around py-2 overflow-x-auto scrollbar-hide">
         {navItems.map((item) => (
-          <button key={item.id} onClick={() => setTab(item.id)} className={`p-2 flex-shrink-0 ${tab === item.id ? 'text-brand-500' : 'text-neutral-400'}`}>
+          <button key={item.id} onClick={() => startTransition(() => setTab(item.id))} className={`p-2 flex-shrink-0 relative ${tab === item.id ? 'text-brand-500' : 'text-neutral-400'}`}>
             <item.icon size={20} />
+            {item.badge !== undefined && (
+              <span className={`absolute -top-1 right-0 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center ${item.badge > 0 ? 'bg-red-500' : 'bg-neutral-500'}`}>
+                {item.badge > 9 ? '9+' : item.badge}
+              </span>
+            )}
           </button>
         ))}
       </div>
@@ -614,26 +668,50 @@ export function AdminPage() {
         {tab === 'delivery' && <DeliveryManagement />}
         {tab === 'delivery-partners' && <DeliveryPartnersManagement />}
         {tab === 'users' && <UsersManagement />}
+        {tab === 'feedback' && <FeedbackManagement />}
         {tab === 'analytics' && <AdminAnalytics />}
+        {tab === 'profile' && <AdminProfile />}
         {tab === 'notifications' && (
           <div className="space-y-4">
-            <h1 className="font-serif text-2xl font-bold text-neutral-900 dark:text-white">Notifications</h1>
+            <div className="flex items-center justify-between">
+              <h1 className="font-serif text-2xl font-bold text-neutral-900 dark:text-white">Notifications</h1>
+              {notifications.length > 0 && (
+                <button onClick={deleteAllNotifications} className="text-sm text-red-600 hover:text-red-700 font-medium">
+                  Clear All
+                </button>
+              )}
+            </div>
             <div className="card p-5">
               {notifications.length === 0 ? (
                 <p className="text-neutral-500 text-sm">No notifications</p>
               ) : (
                 <div className="space-y-3">
                   {notifications.map((notif) => (
-                    <div key={notif._id} className={`p-4 rounded-lg border ${notif.is_read ? 'bg-neutral-50 dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700' : 'bg-brand-50 dark:bg-brand-900/20 border-brand-200 dark:border-brand-800'}`}>
+                    <div
+                      key={notif._id}
+                      className={`p-4 rounded-lg border transition-colors ${notif.is_read ? 'bg-neutral-50 dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700' : 'bg-brand-50 dark:bg-brand-900/20 border-brand-200 dark:border-brand-800'}`}
+                    >
                       <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1">
+                        <div
+                          className="flex-1 cursor-pointer"
+                          onClick={() => !notif.is_read && markNotificationAsRead(notif._id)}
+                        >
                           <h3 className="font-medium text-neutral-900 dark:text-white">{notif.title}</h3>
                           <p className="text-sm text-neutral-600 dark:text-neutral-300 mt-1">{notif.message}</p>
                           <p className="text-xs text-neutral-400 mt-2">{formatDate(notif.createdAt)}</p>
                         </div>
-                        {!notif.is_read && (
-                          <span className="w-2 h-2 bg-brand-500 rounded-full flex-shrink-0 mt-2"></span>
-                        )}
+                        <div className="flex items-center gap-2">
+                          {!notif.is_read && (
+                            <span className="w-2 h-2 bg-brand-500 rounded-full flex-shrink-0"></span>
+                          )}
+                          <button
+                            onClick={() => deleteNotification(notif._id)}
+                            className="p-1 text-neutral-400 hover:text-red-500 transition-colors"
+                            title="Delete notification"
+                          >
+                            <X size={16} />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -653,15 +731,27 @@ function ProductForm({ product, categories, onClose, onSaved }: { product: Produ
   const { showToast } = useToast();
   const [showCategoryForm, setShowCategoryForm] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
+  const [imageUrls, setImageUrls] = useState<string[]>(product?.images ?? ['https://images.pexels.com/photos/996329/pexels-photo-996329.jpeg?auto=compress&cs=tinysrgb&w=600']);
+  const [newImageUrl, setNewImageUrl] = useState('');
   const [form, setForm] = useState({
     name: product?.name ?? '', slug: product?.slug ?? '', description: product?.description ?? '', brand: product?.brand ?? 'MAHIR & FRIENDS',
     category_id: product?.category_id ?? categories[0]?._id ?? '', price: product?.price ?? 0, compare_at_price: product?.compare_at_price ?? 0,
     stock: product?.stock ?? 0, sku: product?.sku ?? '', sizes: product?.sizes?.join(', ') ?? '', colors: product?.colors?.join(', ') ?? '',
     material: product?.material ?? '', gender: product?.gender ?? 'unisex',
-    images: product?.images?.join('\n') ?? 'https://images.pexels.com/photos/996329/pexels-photo-996329.jpeg?auto=compress&cs=tinysrgb&w=600',
     is_published: product?.is_published ?? true, is_featured: product?.is_featured ?? false, is_trending: product?.is_trending ?? false,
     is_bestseller: product?.is_bestseller ?? false, is_new_arrival: product?.is_new_arrival ?? false, is_flash_sale: product?.is_flash_sale ?? false, is_premium: product?.is_premium ?? false,
   });
+
+  const addImage = () => {
+    if (newImageUrl.trim()) {
+      setImageUrls([...imageUrls, newImageUrl.trim()]);
+      setNewImageUrl('');
+    }
+  };
+
+  const removeImage = (index: number) => {
+    setImageUrls(imageUrls.filter((_, i) => i !== index));
+  };
 
   const createCategory = async () => {
     if (!newCategoryName.trim()) {
@@ -693,7 +783,7 @@ function ProductForm({ product, categories, onClose, onSaved }: { product: Produ
       discount_percent: form.compare_at_price ? Math.round(((Number(form.compare_at_price) - Number(form.price)) / Number(form.compare_at_price)) * 100) : 0,
       stock: Number(form.stock), sku: form.sku, sizes: form.sizes.split(',').map((s) => s.trim()).filter(Boolean),
       colors: form.colors.split(',').map((s) => s.trim()).filter(Boolean), material: form.material, gender: form.gender,
-      images: form.images.split('\n').map((s) => s.trim()).filter(Boolean), is_published: form.is_published, is_featured: form.is_featured,
+      images: imageUrls.filter(Boolean), is_published: form.is_published, is_featured: form.is_featured,
       is_trending: form.is_trending, is_bestseller: form.is_bestseller, is_new_arrival: form.is_new_arrival, is_flash_sale: form.is_flash_sale, is_premium: form.is_premium,
     };
     try {
@@ -755,7 +845,37 @@ function ProductForm({ product, categories, onClose, onSaved }: { product: Produ
             <div><label className="text-sm font-medium mb-1 block">Sizes (comma separated)</label><input className="input" value={form.sizes} onChange={(e) => setForm({ ...form, sizes: e.target.value })} placeholder="S, M, L, XL" /></div>
             <div><label className="text-sm font-medium mb-1 block">Colors (comma separated)</label><input className="input" value={form.colors} onChange={(e) => setForm({ ...form, colors: e.target.value })} placeholder="Black, White, Blue" /></div>
           </div>
-          <div><label className="text-sm font-medium mb-1 block">Image URLs (one per line)</label><textarea className="input min-h-[80px]" value={form.images} onChange={(e) => setForm({ ...form, images: e.target.value })} /></div>
+          <div>
+            <label className="text-sm font-medium mb-2 block">Product Images</label>
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mb-3">
+              {imageUrls.map((url, index) => (
+                <div key={index} className="relative group">
+                  <img src={url} alt={`Product image ${index + 1}`} className="w-full h-24 object-cover rounded border border-neutral-200 dark:border-neutral-700" />
+                  <button
+                    onClick={() => removeImage(index)}
+                    className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    title="Remove image"
+                  >
+                    <X size={14} />
+                  </button>
+                  {index === 0 && (
+                    <span className="absolute bottom-1 left-1 bg-brand-500 text-white text-xs px-1.5 py-0.5 rounded">Primary</span>
+                  )}
+                </div>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                className="input flex-1"
+                value={newImageUrl}
+                onChange={(e) => setNewImageUrl(e.target.value)}
+                placeholder="Enter image URL"
+                onKeyPress={(e) => e.key === 'Enter' && addImage()}
+              />
+              <button onClick={addImage} className="btn-primary px-4">Add</button>
+            </div>
+          </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {[{ key: 'is_published', label: 'Published' }, { key: 'is_featured', label: 'Featured' }, { key: 'is_trending', label: 'Trending' }, { key: 'is_bestseller', label: 'Best Seller' }, { key: 'is_new_arrival', label: 'New Arrival' }, { key: 'is_flash_sale', label: 'Flash Sale' }, { key: 'is_premium', label: 'Premium' }].map((f) => (
               <label key={f.key} className="flex items-center gap-2 text-sm"><input type="checkbox" checked={(form as any)[f.key]} onChange={(e) => setForm({ ...form, [f.key]: e.target.checked })} className="accent-brand-600" />{f.label}</label>
@@ -1276,6 +1396,7 @@ function DeliveryPartnersManagement() {
   const [partners, setPartners] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('pending');
+  const [search, setSearch] = useState('');
   const { showToast } = useToast();
 
   useEffect(() => {
@@ -1335,13 +1456,36 @@ function DeliveryPartnersManagement() {
       });
       const data = await response.json();
       if (data.success) {
-        showToast('Partner approved successfully', 'success');
+        showToast('Partner approved successfully. Email sent with PDF.', 'success');
         fetchPartners();
       } else {
         showToast(data.message || 'Failed to approve partner', 'error');
       }
     } catch (error) {
       showToast('Error approving partner', 'error');
+    }
+  };
+
+  const rejectPartner = async (partnerId: string, reason: string) => {
+    try {
+      const token = localStorage.getItem('adminToken');
+      const response = await fetch(`http://localhost:5000/api/delivery-partners/admin/${partnerId}/reject`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ reason })
+      });
+      const data = await response.json();
+      if (data.success) {
+        showToast('Partner rejected successfully. Rejection email sent.', 'success');
+        fetchPartners();
+      } else {
+        showToast(data.message || 'Failed to reject partner', 'error');
+      }
+    } catch (error) {
+      showToast('Error rejecting partner', 'error');
     }
   };
 
@@ -1371,10 +1515,32 @@ function DeliveryPartnersManagement() {
     }
   };
 
+  const previewPartnerPDF = async (partnerId: string) => {
+    try {
+      const token = localStorage.getItem('adminToken');
+      const response = await fetch(`http://localhost:5000/api/delivery-partners/admin/${partnerId}/pdf`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        setPreviewPDF(url);
+        setShowPDFPreview(true);
+      } else {
+        showToast('Failed to generate PDF preview', 'error');
+      }
+    } catch (error) {
+      showToast('Error generating PDF preview', 'error');
+    }
+  };
+
   const [selectedPartner, setSelectedPartner] = useState<any>(null);
   const [showPartnerDetails, setShowPartnerDetails] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
   const [editFormData, setEditFormData] = useState<any>(null);
+  const [previewPDF, setPreviewPDF] = useState<string | null>(null);
+  const [showPDFPreview, setShowPDFPreview] = useState(false);
 
   const viewPartnerDetails = (partner: any) => {
     setSelectedPartner(partner);
@@ -1416,12 +1582,28 @@ function DeliveryPartnersManagement() {
     }
   };
 
-  const filteredPartners = filter === 'all' ? partners : partners.filter(p => p.status === filter);
+  const filteredPartners = partners.filter(p => {
+    const matchesFilter = filter === 'all' || p.status === filter;
+    const searchLower = search.toLowerCase();
+    const matchesSearch = !search || 
+      p.personalDetails?.fullName?.toLowerCase().includes(searchLower) ||
+      p.personalDetails?.email?.toLowerCase().includes(searchLower) ||
+      p.personalDetails?.contactNumber?.includes(searchLower) ||
+      p.vehicleDetails?.vehicleNumber?.toLowerCase().includes(searchLower);
+    return matchesFilter && matchesSearch;
+  });
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="font-serif text-2xl font-bold text-neutral-900 dark:text-white">Delivery Partners</h1>
+        <input
+          type="text"
+          placeholder="Search by name, email, phone, or vehicle number..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="input w-64"
+        />
       </div>
 
       <div className="flex gap-2 overflow-x-auto scrollbar-hide">
@@ -1477,7 +1659,7 @@ function DeliveryPartnersManagement() {
                       <span className={`text-xs px-2 py-1 rounded-full ${
                         partner.status === 'active' ? 'bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-300' :
                         partner.status === 'pending' ? 'bg-yellow-100 text-yellow-600 dark:bg-yellow-900 dark:text-yellow-300' :
-                        partner.status === 'approved' ? 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300' :
+                        partner.status === 'approved' ? 'bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-300' :
                         partner.status === 'payment_pending' ? 'bg-purple-100 text-purple-600 dark:bg-purple-900 dark:text-purple-300' :
                         partner.status === 'suspended' ? 'bg-orange-100 text-orange-600 dark:bg-orange-900 dark:text-orange-300' :
                         'bg-red-100 text-red-600 dark:bg-red-900 dark:text-red-300'
@@ -1497,7 +1679,10 @@ function DeliveryPartnersManagement() {
                         <button onClick={() => viewPartnerDetails(partner)} className="text-blue-600 hover:text-blue-700" title="View Details">
                           <Eye size={16} />
                         </button>
-                        <button onClick={() => downloadPartnerPDF(partner._id, partner.personalDetails?.fullName)} className="text-purple-600 hover:text-purple-700" title="Download PDF">
+                        <button onClick={() => previewPartnerPDF(partner._id)} className="text-purple-600 hover:text-purple-700" title="Preview PDF">
+                          <Download size={16} />
+                        </button>
+                        <button onClick={() => downloadPartnerPDF(partner._id, partner.personalDetails?.fullName)} className="text-green-600 hover:text-green-700" title="Download PDF">
                           <Download size={16} />
                         </button>
                         <button onClick={() => editPartnerDetails(partner)} className="text-green-600 hover:text-green-700" title="Edit Details">
@@ -1510,7 +1695,7 @@ function DeliveryPartnersManagement() {
                             </button>
                             <button onClick={() => {
                               const reason = prompt('Enter rejection reason:');
-                              if (reason) updatePartnerStatus(partner._id, 'rejected', reason);
+                              if (reason) rejectPartner(partner._id, reason);
                             }} className="text-red-600 hover:text-red-700" title="Reject">
                               <XCircle size={16} />
                             </button>
@@ -1665,6 +1850,16 @@ function DeliveryPartnersManagement() {
                     </div>
                   )}
                 </div>
+                {selectedPartner.kycDetails?.selfie && (
+                  <div className="mt-4">
+                    <p className="text-neutral-500 dark:text-neutral-400 mb-2">Profile Picture (Face Identity)</p>
+                    <img 
+                      src={selectedPartner.kycDetails.selfie} 
+                      alt="Profile" 
+                      className="w-32 h-32 object-cover rounded-lg border border-neutral-200 dark:border-neutral-700"
+                    />
+                  </div>
+                )}
               </div>
 
               {/* Account Status */}
@@ -1916,25 +2111,371 @@ function DeliveryPartnersManagement() {
           </div>
         </div>
       )}
+
+      {/* PDF Preview Modal */}
+      {showPDFPreview && previewPDF && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-neutral-800 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="sticky top-0 bg-white dark:bg-neutral-800 p-4 border-b border-neutral-200 dark:border-neutral-700 flex items-center justify-between">
+              <h2 className="text-xl font-bold">Delivery Partner PDF Preview</h2>
+              <button onClick={() => { setShowPDFPreview(false); if (previewPDF) URL.revokeObjectURL(previewPDF); setPreviewPDF(null); }} className="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="flex-1 overflow-auto p-4">
+              <iframe src={previewPDF} className="w-full h-full min-h-[600px] border-0" title="PDF Preview" />
+            </div>
+            <div className="p-4 border-t border-neutral-200 dark:border-neutral-700 flex gap-2 justify-end">
+              <button onClick={() => { setShowPDFPreview(false); if (previewPDF) URL.revokeObjectURL(previewPDF); setPreviewPDF(null); }} className="btn-secondary">
+                Close
+              </button>
+              <button onClick={() => {
+                if (selectedPartner) {
+                  downloadPartnerPDF(selectedPartner._id, selectedPartner.personalDetails?.fullName);
+                }
+              }} className="btn-primary">
+                Download PDF
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function FeedbackManagement() {
+  const [feedback, setFeedback] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedFeedback, setSelectedFeedback] = useState<any>(null);
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [responseText, setResponseText] = useState('');
+  const [responding, setResponding] = useState(false);
+  const { showToast } = useToast();
+
+  useEffect(() => {
+    const fetchFeedback = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('http://localhost:5000/api/feedback/all', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+          }
+        });
+        const data = await response.json();
+        if (data.success) {
+          setFeedback(data.data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch feedback:', error);
+        showToast('Failed to load feedback', 'error');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchFeedback();
+  }, [showToast]);
+
+  const handleStatusUpdate = async (feedbackId: string, status: string) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/feedback/${feedbackId}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+        },
+        body: JSON.stringify({ status })
+      });
+      const data = await response.json();
+      if (data.success) {
+        setFeedback(feedback.map(f => f._id === feedbackId ? data.data : f));
+        showToast('Status updated', 'success');
+      }
+    } catch (error) {
+      showToast('Failed to update status', 'error');
+    }
+  };
+
+  const handleRespond = async () => {
+    if (!selectedFeedback || !responseText.trim()) return;
+    
+    setResponding(true);
+    try {
+      const response = await fetch(`http://localhost:5000/api/feedback/${selectedFeedback._id}/respond`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+        },
+        body: JSON.stringify({ response: responseText })
+      });
+      const data = await response.json();
+      if (data.success) {
+        setFeedback(feedback.map(f => f._id === selectedFeedback._id ? data.data : f));
+        setSelectedFeedback(data.data);
+        setResponseText('');
+        showToast('Response sent successfully', 'success');
+      }
+    } catch (error) {
+      showToast('Failed to send response', 'error');
+    } finally {
+      setResponding(false);
+    }
+  };
+
+  const filteredFeedback = statusFilter === 'all' 
+    ? feedback 
+    : feedback.filter(f => f.status === statusFilter);
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'pending': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
+      case 'reviewed': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
+      case 'resolved': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+      default: return 'bg-neutral-100 text-neutral-800 dark:bg-neutral-700 dark:text-neutral-200';
+    }
+  };
+
+  const StarRating = ({ rating }: { rating: number }) => (
+    <div className="flex gap-0.5">
+      {[1, 2, 3, 4, 5].map((star) => (
+        <Star
+          key={star}
+          size={16}
+          className={star <= rating ? 'fill-yellow-400 text-yellow-400' : 'text-neutral-300'}
+        />
+      ))}
+    </div>
+  );
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h1 className="font-serif text-2xl font-bold text-neutral-900 dark:text-white">Customer Feedback</h1>
+        <div className="flex gap-2">
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="input px-3 py-2"
+          >
+            <option value="all">All Status</option>
+            <option value="pending">Pending</option>
+            <option value="reviewed">Reviewed</option>
+            <option value="resolved">Resolved</option>
+          </select>
+        </div>
+      </div>
+
+      {selectedFeedback ? (
+        <div className="card p-6">
+          <button
+            onClick={() => setSelectedFeedback(null)}
+            className="text-sm text-brand-600 hover:text-brand-700 mb-4"
+          >
+            ← Back to list
+          </button>
+          
+          <div className="space-y-6">
+            <div className="flex items-start justify-between">
+              <div>
+                <h2 className="text-xl font-semibold text-neutral-900 dark:text-white">
+                  {selectedFeedback.userName}
+                </h2>
+                <p className="text-sm text-neutral-500">{selectedFeedback.userEmail}</p>
+              </div>
+              <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(selectedFeedback.status)}`}>
+                {selectedFeedback.status.charAt(0).toUpperCase() + selectedFeedback.status.slice(1)}
+              </span>
+            </div>
+
+            <div className="bg-neutral-50 dark:bg-neutral-800 rounded-lg p-4">
+              <p className="text-sm text-neutral-500 mb-2">Order: {selectedFeedback.orderId?.orderNumber || 'N/A'}</p>
+              <p className="text-sm text-neutral-500">
+                Submitted: {new Date(selectedFeedback.createdAt).toLocaleDateString()}
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-4">
+              <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4">
+                <p className="text-sm font-medium text-purple-900 dark:text-purple-200 mb-2">Product Quality</p>
+                <StarRating rating={selectedFeedback.productQuality?.rating || 0} />
+                {selectedFeedback.productQuality?.comments && (
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-2">
+                    {selectedFeedback.productQuality.comments}
+                  </p>
+                )}
+              </div>
+              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
+                <p className="text-sm font-medium text-blue-900 dark:text-blue-200 mb-2">Delivery Experience</p>
+                <StarRating rating={selectedFeedback.deliveryExperience?.rating || 0} />
+                {selectedFeedback.deliveryExperience?.comments && (
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-2">
+                    {selectedFeedback.deliveryExperience.comments}
+                  </p>
+                )}
+              </div>
+              <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-4">
+                <p className="text-sm font-medium text-red-900 dark:text-red-200 mb-2">Overall Service</p>
+                <StarRating rating={selectedFeedback.overallService?.rating || 0} />
+                {selectedFeedback.overallService?.comments && (
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-2">
+                    {selectedFeedback.overallService.comments}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {selectedFeedback.queries && (
+              <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-4">
+                <p className="text-sm font-medium text-yellow-900 dark:text-yellow-200 mb-2">Queries/Concerns</p>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">{selectedFeedback.queries}</p>
+              </div>
+            )}
+
+            {selectedFeedback.suggestions && (
+              <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4">
+                <p className="text-sm font-medium text-green-900 dark:text-green-200 mb-2">Suggestions</p>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">{selectedFeedback.suggestions}</p>
+              </div>
+            )}
+
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                Would recommend:
+              </span>
+              {selectedFeedback.wouldRecommend ? (
+                <span className="text-green-600 font-medium">Yes ✓</span>
+              ) : (
+                <span className="text-red-600 font-medium">No ✗</span>
+              )}
+            </div>
+
+            {selectedFeedback.adminResponse?.responded && (
+              <div className="bg-brand-50 dark:bg-brand-900/20 rounded-lg p-4">
+                <p className="text-sm font-medium text-brand-900 dark:text-brand-200 mb-2">
+                  Your Response ({new Date(selectedFeedback.adminResponse.respondedAt).toLocaleDateString()})
+                </p>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                  {selectedFeedback.adminResponse.response}
+                </p>
+              </div>
+            )}
+
+            <div className="flex gap-2">
+              <select
+                value={selectedFeedback.status}
+                onChange={(e) => handleStatusUpdate(selectedFeedback._id, e.target.value)}
+                className="input px-3 py-2"
+              >
+                <option value="pending">Pending</option>
+                <option value="reviewed">Reviewed</option>
+                <option value="resolved">Resolved</option>
+              </select>
+            </div>
+
+            <div className="border-t border-neutral-200 dark:border-neutral-700 pt-4">
+              <h3 className="font-semibold text-neutral-900 dark:text-white mb-3">Respond to Customer</h3>
+              <textarea
+                value={responseText}
+                onChange={(e) => setResponseText(e.target.value)}
+                placeholder="Type your response to the customer..."
+                className="input w-full min-h-[100px] mb-3"
+              />
+              <button
+                onClick={handleRespond}
+                disabled={responding || !responseText.trim()}
+                className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {responding ? 'Sending...' : 'Send Response'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="card overflow-hidden">
+          {loading ? (
+            <div className="p-8 text-center">
+              <p className="text-neutral-500">Loading feedback...</p>
+            </div>
+          ) : filteredFeedback.length === 0 ? (
+            <div className="p-8 text-center">
+              <MessageSquare size={40} className="mx-auto text-neutral-300 dark:text-neutral-600 mb-2" />
+              <p className="text-neutral-500">No feedback yet</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-neutral-50 dark:bg-neutral-800">
+                  <tr className="text-left text-neutral-500">
+                    <th className="p-3 font-medium">Customer</th>
+                    <th className="p-3 font-medium">Order</th>
+                    <th className="p-3 font-medium">Ratings</th>
+                    <th className="p-3 font-medium">Status</th>
+                    <th className="p-3 font-medium">Date</th>
+                    <th className="p-3 font-medium">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredFeedback.map((f) => (
+                    <tr key={f._id} className="border-t border-neutral-100 dark:border-neutral-700">
+                      <td className="p-3">
+                        <div>
+                          <p className="font-medium text-neutral-900 dark:text-white">{f.userName}</p>
+                          <p className="text-xs text-neutral-500">{f.userEmail}</p>
+                        </div>
+                      </td>
+                      <td className="p-3 text-neutral-600 dark:text-neutral-400">
+                        {f.orderId?.orderNumber || 'N/A'}
+                      </td>
+                      <td className="p-3">
+                        <div className="flex gap-1">
+                          <StarRating rating={f.productQuality?.rating || 0} />
+                        </div>
+                      </td>
+                      <td className="p-3">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(f.status)}`}>
+                          {f.status.charAt(0).toUpperCase() + f.status.slice(1)}
+                        </span>
+                      </td>
+                      <td className="p-3 text-neutral-600 dark:text-neutral-400">
+                        {new Date(f.createdAt).toLocaleDateString()}
+                      </td>
+                      <td className="p-3">
+                        <button
+                          onClick={() => setSelectedFeedback(f)}
+                          className="text-brand-600 hover:text-brand-700 font-medium"
+                        >
+                          View Details
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
 
 function UsersManagement() {
   const [users, setUsers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await api.get<{ success: boolean; orders: Order[] }>('/orders');
-        const userMap = new Map();
-        response.orders?.forEach((o) => {
-          if (!userMap.has(o.user_id)) userMap.set(o.user_id, { id: o.user_id, orders: 0, spent: 0 });
-          const u = userMap.get(o.user_id);
-          u.orders += 1; u.spent += o.total;
-        });
-        setUsers(Array.from(userMap.values()));
+        setLoading(true);
+        const response = await api.get<{ success: boolean; users: any[] }>('/users/all');
+        if (response.success) {
+          // Filter out admin users from the list
+          setUsers((response.users ?? []).filter(u => u.role !== 'admin'));
+        }
       } catch (error) {
         console.error('Failed to fetch users:', error);
+      } finally {
+        setLoading(false);
       }
     };
     fetchUsers();
@@ -1942,26 +2483,192 @@ function UsersManagement() {
   return (
     <div className="space-y-4">
       <h1 className="font-serif text-2xl font-bold text-neutral-900 dark:text-white">Customers</h1>
-      {users.length === 0 ? (
+      {loading ? (
+        <div className="card p-8 text-center"><p className="text-neutral-500">Loading customers...</p></div>
+      ) : users.length === 0 ? (
         <div className="card p-8 text-center"><Users size={40} className="mx-auto text-neutral-300 dark:text-neutral-600 mb-2" /><p className="text-neutral-500">No customers yet</p></div>
       ) : (
         <div className="card overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-neutral-50 dark:bg-neutral-800"><tr className="text-left text-neutral-500">
-                <th className="p-3 font-medium">Customer ID</th><th className="p-3 font-medium">Orders</th><th className="p-3 font-medium">Total Spent</th>
+                <th className="p-3 font-medium">Customer</th><th className="p-3 font-medium">Email</th><th className="p-3 font-medium">Phone</th><th className="p-3 font-medium">Location</th><th className="p-3 font-medium">Address</th><th className="p-3 font-medium">Pincode</th>
               </tr></thead>
               <tbody>{users.map((u) => (
-                <tr key={u.id} className="border-t border-neutral-100 dark:border-neutral-700">
-                  <td className="p-3 font-mono text-xs">{u.id.slice(0, 8)}...</td>
-                  <td className="p-3">{u.orders}</td>
-                  <td className="p-3 font-medium">{formatPrice(u.spent)}</td>
+                <tr key={u._id} className="border-t border-neutral-100 dark:border-neutral-700">
+                  <td className="p-3">
+                    <div className="flex items-center gap-2">
+                      {u.profilePicture ? (
+                        <img src={u.profilePicture} alt="" className="w-8 h-8 rounded-full object-cover" />
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-brand-100 dark:bg-brand-900 flex items-center justify-center text-brand-600 dark:text-brand-300 font-medium text-xs">
+                          {u.name?.[0] || u.email?.[0]}
+                        </div>
+                      )}
+                      <span className="font-medium text-neutral-900 dark:text-white">{u.name || 'N/A'}</span>
+                    </div>
+                  </td>
+                  <td className="p-3 text-neutral-600 dark:text-neutral-400">{u.email}</td>
+                  <td className="p-3 text-neutral-600 dark:text-neutral-400">{u.phone || 'N/A'}</td>
+                  <td className="p-3 text-neutral-600 dark:text-neutral-400">{u.location || 'N/A'}</td>
+                  <td className="p-3 text-neutral-600 dark:text-neutral-400 text-xs max-w-xs truncate">
+                    {u.addresses && u.addresses.length > 0 ? u.addresses[0].address_line : 'N/A'}
+                  </td>
+                  <td className="p-3 text-neutral-600 dark:text-neutral-400">
+                    {u.addresses && u.addresses.length > 0 ? u.addresses[0].pincode : 'N/A'}
+                  </td>
                 </tr>
               ))}</tbody>
             </table>
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function AdminProfile() {
+  const { user } = useAuth();
+  const { showToast } = useToast();
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({
+    name: '',
+    email: '',
+    profilePicture: '',
+    phone: '',
+    location: ''
+  });
+
+  useEffect(() => {
+    const fetchAdminProfile = async () => {
+      try {
+        setLoading(true);
+        const response = await api.get<{ success: boolean; user: any }>('/users/me');
+        if (response.success && response.user) {
+          setForm({
+            name: response.user.name || '',
+            email: response.user.email || '',
+            profilePicture: response.user.profilePicture || '',
+            phone: response.user.phone || '',
+            location: response.user.location || ''
+          });
+        }
+      } catch (error) {
+        console.error('Failed to fetch admin profile:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAdminProfile();
+  }, []);
+
+  const handleSave = async () => {
+    try {
+      setSaving(true);
+      await api.put('/users/me', {
+        name: form.name,
+        profilePicture: form.profilePicture,
+        phone: form.phone,
+        location: form.location
+      });
+      showToast('Profile updated successfully', 'success');
+    } catch (error) {
+      console.error('Failed to update profile:', error);
+      showToast('Failed to update profile', 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        <h1 className="font-serif text-2xl font-bold text-neutral-900 dark:text-white">Profile</h1>
+        <div className="card p-8 text-center"><p className="text-neutral-500">Loading profile...</p></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <h1 className="font-serif text-2xl font-bold text-neutral-900 dark:text-white">Admin Profile</h1>
+      <div className="card p-6 max-w-2xl">
+        <div className="flex items-center gap-6 mb-6">
+          <div className="relative">
+            {form.profilePicture ? (
+              <img src={form.profilePicture} alt="Profile" className="w-24 h-24 rounded-full object-cover border-4 border-neutral-200 dark:border-neutral-700" />
+            ) : (
+              <div className="w-24 h-24 rounded-full bg-brand-100 dark:bg-brand-900 flex items-center justify-center text-brand-600 dark:text-brand-300 font-medium text-3xl border-4 border-neutral-200 dark:border-neutral-700">
+                {form.name?.[0] || form.email?.[0]}
+              </div>
+            )}
+          </div>
+          <div>
+            <h2 className="font-serif text-xl font-bold text-neutral-900 dark:text-white">{form.name || 'Admin'}</h2>
+            <p className="text-neutral-600 dark:text-neutral-400">{form.email}</p>
+            <p className="text-sm text-brand-600 dark:text-brand-400 mt-1">Administrator</p>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <div>
+            <label className="text-sm font-medium mb-1 block">Name</label>
+            <input
+              className="input"
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              placeholder="Your name"
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium mb-1 block">Email</label>
+            <input
+              className="input bg-neutral-100 dark:bg-neutral-800 cursor-not-allowed"
+              value={form.email}
+              disabled
+            />
+            <p className="text-xs text-neutral-500 mt-1">Email cannot be changed</p>
+          </div>
+          <div>
+            <label className="text-sm font-medium mb-1 block">Profile Picture URL</label>
+            <input
+              className="input"
+              value={form.profilePicture}
+              onChange={(e) => setForm({ ...form, profilePicture: e.target.value })}
+              placeholder="https://example.com/profile.jpg"
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium mb-1 block">Phone</label>
+            <input
+              className="input"
+              value={form.phone}
+              onChange={(e) => setForm({ ...form, phone: e.target.value })}
+              placeholder="+91 9876543210"
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium mb-1 block">Location</label>
+            <input
+              className="input"
+              value={form.location}
+              onChange={(e) => setForm({ ...form, location: e.target.value })}
+              placeholder="Aligarh, UP, India"
+            />
+          </div>
+          <div className="pt-4">
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="btn-primary flex items-center gap-2"
+            >
+              <Save size={18} />
+              {saving ? 'Saving...' : 'Save Changes'}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { TrendingUp, TrendingDown, DollarSign, ShoppingBag, Users, Package } from 'lucide-react';
+import { api } from '../lib/api';
 
 interface AnalyticsData {
   salesOverTime: { date: string; sales: number; orders: number }[];
@@ -14,45 +15,21 @@ export function AdminAnalytics() {
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d'>('30d');
 
   useEffect(() => {
-    // Simulate fetching analytics data
-    setTimeout(() => {
-      setData({
-        salesOverTime: generateSalesData(timeRange),
-        topProducts: [
-          { name: 'Classic White Shirt', sales: 156, revenue: 234000 },
-          { name: 'Denim Jacket', sales: 98, revenue: 196000 },
-          { name: 'Summer Dress', sales: 87, revenue: 130500 },
-          { name: 'Casual Sneakers', sales: 76, revenue: 114000 },
-          { name: 'Wool Sweater', sales: 65, revenue: 97500 },
-        ],
-        categoryPerformance: [
-          { category: 'Men', revenue: 450000, percentage: 35 },
-          { category: 'Women', revenue: 520000, percentage: 40 },
-          { category: 'Kids', revenue: 180000, percentage: 14 },
-          { category: 'Accessories', revenue: 130000, percentage: 11 },
-        ],
-        customerGrowth: generateCustomerData(timeRange),
-      });
-      setLoading(false);
-    }, 1000);
+    const fetchAnalytics = async () => {
+      try {
+        setLoading(true);
+        const response = await api.get<{ success: boolean; data: AnalyticsData }>(`/users/analytics?range=${timeRange}`);
+        if (response.success && response.data) {
+          setData(response.data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch analytics:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAnalytics();
   }, [timeRange]);
-
-  const generateSalesData = (range: string) => {
-    const days = range === '7d' ? 7 : range === '30d' ? 30 : 90;
-    return Array.from({ length: days }, (_, i) => ({
-      date: new Date(Date.now() - (days - i) * 86400000).toLocaleDateString(),
-      sales: Math.floor(Math.random() * 50000) + 20000,
-      orders: Math.floor(Math.random() * 200) + 50,
-    }));
-  };
-
-  const generateCustomerData = (range: string) => {
-    const days = range === '7d' ? 7 : range === '30d' ? 30 : 90;
-    return Array.from({ length: days }, (_, i) => ({
-      date: new Date(Date.now() - (days - i) * 86400000).toLocaleDateString(),
-      customers: Math.floor(Math.random() * 50) + 10,
-    }));
-  };
 
   if (loading) {
     return <div className="p-6">Loading analytics...</div>;

@@ -75,6 +75,9 @@ import twoFactorRoutes from './routes/twoFactorAuth.js';
 import recommendationRoutes from './routes/recommendations.js';
 import otpRoutes from './routes/otp.js';
 import googleAuthRoutes from './routes/googleAuth.js';
+import newsletterRoutes from './routes/newsletter.js';
+import contactRoutes from './routes/contact.js';
+import feedbackRoutes from './routes/feedback.js';
 import { apiLimiter, authLimiter, orderLimiter } from './middleware/rateLimit.js';
 import { auth } from './middleware/auth.js';
 
@@ -98,6 +101,9 @@ app.use('/api/delivery-partners', deliveryPartnerRoutes);
 app.use('/api/combos', comboRoutes);
 app.use('/api/gift-cards', giftCardRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/newsletter', newsletterRoutes);
+app.use('/api/contact', contactRoutes);
+app.use('/api/feedback', auth, feedbackRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

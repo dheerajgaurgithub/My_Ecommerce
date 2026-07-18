@@ -180,6 +180,22 @@ const deliveryPartnerSchema = new mongoose.Schema({
   rejectionReason: {
     type: String
   },
+  adminApproval: {
+    approvedBy: {
+      type: String,
+      default: 'Dheeraj Gaur'
+    },
+    approvedByTitle: {
+      type: String,
+      default: 'Co-founder/Founder of Mahir & Friends'
+    },
+    approvedAt: {
+      type: Date
+    },
+    rejectedAt: {
+      type: Date
+    }
+  },
   joiningFee: {
     amount: {
       type: Number,

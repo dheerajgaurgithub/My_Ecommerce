@@ -32,6 +32,41 @@ export function ProductPage() {
   const [deliveryInfo, setDeliveryInfo] = useState<{ available: boolean; charge: number; days: number; free: boolean } | null>(null);
   const [zoom, setZoom] = useState(false);
   const [activeTab, setActiveTab] = useState<'description' | 'specs' | 'reviews' | 'questions'>('description');
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+
+  const minSwipeDistance = 50;
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd || !product) return;
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+
+    if (isLeftSwipe && activeImage < product.images.length - 1) {
+      setActiveImage(activeImage + 1);
+    }
+    if (isRightSwipe && activeImage > 0) {
+      setActiveImage(activeImage - 1);
+    }
+  };
+
+  const goToPreviousImage = () => {
+    if (activeImage > 0) setActiveImage(activeImage - 1);
+  };
+
+  const goToNextImage = () => {
+    if (product && activeImage < product.images.length - 1) setActiveImage(activeImage + 1);
+  };
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -157,7 +192,13 @@ export function ProductPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
         {/* Images */}
         <div>
-          <div className="relative aspect-square rounded-xl overflow-hidden bg-neutral-100 dark:bg-neutral-800 group cursor-zoom-in" onClick={() => setZoom(!zoom)}>
+          <div
+            className="relative aspect-square rounded-xl overflow-hidden bg-neutral-100 dark:bg-neutral-800 group cursor-zoom-in"
+            onClick={() => setZoom(!zoom)}
+            onTouchStart={onTouchStart}
+            onTouchMove={onTouchMove}
+            onTouchEnd={onTouchEnd}
+          >
             <img
               src={product.images[activeImage]}
               alt={product.name}
@@ -170,6 +211,31 @@ export function ProductPage() {
               <span className="absolute top-3 left-3 bg-brand-600 text-white text-sm font-semibold px-3 py-1.5 rounded">
                 {discount}% OFF
               </span>
+            )}
+            {/* Navigation arrows */}
+            {product.images.length > 1 && (
+              <>
+                <button
+                  onClick={(e) => { e.stopPropagation(); goToPreviousImage(); }}
+                  className={`absolute left-3 top-1/2 -translate-y-1/2 bg-white/90 dark:bg-neutral-800/90 p-2 rounded-full shadow-lg transition-opacity ${activeImage === 0 ? 'opacity-30 cursor-not-allowed' : 'opacity-100 hover:opacity-100'}`}
+                  disabled={activeImage === 0}
+                >
+                  <ChevronRight size={20} className="rotate-180" />
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); goToNextImage(); }}
+                  className={`absolute right-3 top-1/2 -translate-y-1/2 bg-white/90 dark:bg-neutral-800/90 p-2 rounded-full shadow-lg transition-opacity ${activeImage === product.images.length - 1 ? 'opacity-30 cursor-not-allowed' : 'opacity-100 hover:opacity-100'}`}
+                  disabled={activeImage === product.images.length - 1}
+                >
+                  <ChevronRight size={20} />
+                </button>
+              </>
+            )}
+            {/* Image indicator */}
+            {product.images.length > 1 && (
+              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-black/50 text-white text-xs px-3 py-1 rounded-full">
+                {activeImage + 1} / {product.images.length}
+              </div>
             )}
           </div>
           {product.images.length > 1 && (

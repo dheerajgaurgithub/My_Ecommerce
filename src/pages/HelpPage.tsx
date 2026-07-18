@@ -1,15 +1,82 @@
 import { useState } from 'react';
-import { Mail, Phone, MessageCircle, Clock, MapPin, Send } from 'lucide-react';
+import { Mail, Phone, MessageCircle, Clock, MapPin, Send, ChevronDown, ChevronUp } from 'lucide-react';
+import { useToast } from '../lib/toast';
 
 export function HelpPage() {
+  const { showToast } = useToast();
   const [formData, setFormData] = useState({ name: '', email: '', subject: '', message: '' });
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const faqs = [
+    {
+      id: 1,
+      question: "How do I track my order?",
+      answer: "You can track your order by visiting the 'Track Order' page and entering your order number. You'll receive real-time updates on your order status, including when it's been shipped, out for delivery, and delivered."
+    },
+    {
+      id: 2,
+      question: "What is your return policy?",
+      answer: "We offer a 7-day return policy for most items. Products must be unworn, unwashed, and in original packaging with tags attached. To initiate a return, visit the 'Returns & Refunds' page or contact our customer support."
+    },
+    {
+      id: 3,
+      question: "How long does delivery take?",
+      answer: "Standard delivery takes 3-5 business days for most locations. Express delivery is available for select areas and takes 1-2 business days. Delivery times may vary during peak seasons or holidays."
+    },
+    {
+      id: 4,
+      question: "What payment methods do you accept?",
+      answer: "We accept all major credit cards (Visa, MasterCard, American Express), debit cards, UPI payments, net banking, and cash on delivery for select locations."
+    },
+    {
+      id: 5,
+      question: "How do I become a delivery partner?",
+      answer: "To become a delivery partner, visit our 'Become a Delivery Partner' page and complete the registration process. You'll need to provide your personal details, KYC documents, vehicle information, and bank details. After approval, you can start accepting orders."
+    },
+    {
+      id: 6,
+      question: "Can I cancel my order after placing it?",
+      answer: "Orders can be cancelled within 1 hour of placement if they haven't been processed yet. Once an order is shipped, it cannot be cancelled but can be returned according to our return policy."
+    },
+    {
+      id: 7,
+      question: "How do I contact customer support?",
+      answer: "You can reach our customer support team via email at replybymahirandfriends@gmail.com, phone at +91 6397684456, or through the contact form on this page. Our support team is available Monday-Saturday, 9AM-8PM IST."
+    },
+    {
+      id: 8,
+      question: "Do you offer international shipping?",
+      answer: "Currently, we only ship within India. We're working on expanding our shipping capabilities to international locations in the future."
+    }
+  ];
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
-    setTimeout(() => setSubmitted(false), 3000);
-    setFormData({ name: '', email: '', subject: '', message: '' });
+    setSubmitting(true);
+    try {
+      const response = await fetch('http://localhost:5000/api/contact/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+      const data = await response.json();
+      if (data.success) {
+        setSubmitted(true);
+        showToast('Message sent successfully!', 'success');
+        setTimeout(() => {
+          setSubmitted(false);
+          setFormData({ name: '', email: '', subject: '', message: '' });
+        }, 3000);
+      } else {
+        showToast(data.message || 'Failed to send message', 'error');
+      }
+    } catch (error) {
+      showToast('Error sending message', 'error');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -29,14 +96,14 @@ export function HelpPage() {
               <Mail size={18} className="text-neutral-500 mt-1" />
               <div>
                 <p className="text-sm font-medium text-neutral-900 dark:text-white">Email</p>
-                <p className="text-sm text-neutral-600 dark:text-neutral-400">care@mahirandfriends.com</p>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">replybymahirandfriends@gmail.com</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
               <Phone size={18} className="text-neutral-500 mt-1" />
               <div>
                 <p className="text-sm font-medium text-neutral-900 dark:text-white">Phone</p>
-                <p className="text-sm text-neutral-600 dark:text-neutral-400">+91 98765 43210</p>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">+91 6397684456</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
@@ -111,7 +178,13 @@ export function HelpPage() {
                   placeholder="Describe your issue..."
                 />
               </div>
-              <button type="submit" className="btn-primary w-full">Send Message</button>
+              <button 
+                type="submit" 
+                disabled={submitting}
+                className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {submitting ? 'Sending...' : 'Send Message'}
+              </button>
             </form>
           )}
         </div>
@@ -165,6 +238,29 @@ export function HelpPage() {
               <p className="text-xs text-neutral-500">Common questions</p>
             </div>
           </a>
+        </div>
+      </div>
+
+      {/* FAQ Section */}
+      <div className="card p-6">
+        <h2 className="font-semibold text-lg text-neutral-900 dark:text-white mb-6">Frequently Asked Questions</h2>
+        <div className="space-y-4">
+          {faqs.map((faq) => (
+            <div key={faq.id} className="border border-neutral-200 dark:border-neutral-700 rounded-lg overflow-hidden">
+              <button
+                onClick={() => setExpandedFaq(expandedFaq === faq.id ? null : faq.id)}
+                className="w-full flex items-center justify-between p-4 text-left bg-neutral-50 dark:bg-neutral-800 hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors"
+              >
+                <span className="font-medium text-neutral-900 dark:text-white">{faq.question}</span>
+                {expandedFaq === faq.id ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+              </button>
+              {expandedFaq === faq.id && (
+                <div className="p-4 bg-white dark:bg-neutral-900 border-t border-neutral-200 dark:border-neutral-700">
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400">{faq.answer}</p>
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       </div>
     </div>

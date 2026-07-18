@@ -6,12 +6,30 @@ import { useToast } from '../lib/toast';
 export function Footer() {
   const { showToast } = useToast();
   const [email, setEmail] = useState('');
+  const [subscribing, setSubscribing] = useState(false);
 
-  const subscribe = (e: React.FormEvent) => {
+  const subscribe = async (e: React.FormEvent) => {
     e.preventDefault();
     if (email) {
-      showToast('Subscribed! Check your inbox for exclusive offers.', 'success');
-      setEmail('');
+      setSubscribing(true);
+      try {
+        const response = await fetch('http://localhost:5000/api/newsletter/subscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        });
+        const data = await response.json();
+        if (data.success) {
+          showToast('Subscribed! Check your inbox for exclusive offers.', 'success');
+          setEmail('');
+        } else {
+          showToast(data.message || 'Subscription failed', 'error');
+        }
+      } catch (error) {
+        showToast('Error subscribing to newsletter', 'error');
+      } finally {
+        setSubscribing(false);
+      }
     }
   };
 
@@ -33,8 +51,12 @@ export function Footer() {
               placeholder="Enter your email"
               className="px-4 py-3 rounded-lg bg-neutral-800 text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-brand-500 w-full md:w-72"
             />
-            <button type="submit" className="bg-brand-600 hover:bg-brand-700 text-white px-5 py-3 rounded-lg font-medium flex items-center gap-2 transition-colors">
-              <Send size={18} /> Subscribe
+            <button 
+              type="submit" 
+              disabled={subscribing}
+              className="bg-brand-600 hover:bg-brand-700 text-white px-5 py-3 rounded-lg font-medium flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {subscribing ? <span className="animate-spin">⏳</span> : <Send size={18} />} Subscribe
             </button>
           </form>
         </div>
@@ -84,8 +106,8 @@ export function Footer() {
           <h4 className="font-medium text-white mb-4">Contact</h4>
           <ul className="space-y-3 text-sm">
             <li className="flex items-start gap-2"><MapPin size={16} className="mt-0.5 flex-shrink-0" /> Aligarh, Uttar Pradesh, India - 202001</li>
-            <li className="flex items-center gap-2"><Phone size={16} /> +91 98765 43210</li>
-            <li className="flex items-center gap-2"><Mail size={16} /> care@mahirandfriends.com</li>
+            <li className="flex items-center gap-2"><Phone size={16} /> +91 6397684456</li>
+            <li className="flex items-center gap-2"><Mail size={16} /> replybymahirandfriends@gmail.com</li>
           </ul>
         </div>
       </div>

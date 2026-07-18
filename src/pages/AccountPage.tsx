@@ -470,7 +470,7 @@ export function AccountPage() {
                         value={profileForm.phone}
                         onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
                         className="input w-full"
-                        placeholder="+91 98765 43210"
+                        placeholder="+91 6397684456"
                       />
                     </div>
                     <div>

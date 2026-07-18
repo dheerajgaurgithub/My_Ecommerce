@@ -122,7 +122,7 @@ export function HomePage() {
       <section className="relative h-[500px] sm:h-[600px] overflow-hidden">
         {heroSlides.map((slide, idx) => (
           <div
-            key={idx}
+            key={slide.title}
             className={`absolute inset-0 transition-opacity duration-1000 ${idx === heroSlide ? 'opacity-100' : 'opacity-0'}`}
           >
             <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent z-10" />
@@ -144,9 +144,9 @@ export function HomePage() {
           </div>
         ))}
         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 flex gap-2">
-          {heroSlides.map((_, idx) => (
+          {heroSlides.map((slide, idx) => (
             <button
-              key={idx}
+              key={slide.title}
               onClick={() => setHeroSlide(idx)}
               className={`h-2 rounded-full transition-all ${idx === heroSlide ? 'w-8 bg-white' : 'w-2 bg-white/50'}`}
             />
@@ -162,8 +162,8 @@ export function HomePage() {
             { icon: Shield, title: 'Secure Payment', desc: '100% protected' },
             { icon: RefreshCw, title: 'Easy Returns', desc: '7-day return policy' },
             { icon: Headphones, title: '24/7 Support', desc: 'Dedicated assistance' },
-          ].map((item, i) => (
-            <div key={i} className="flex items-center gap-3">
+          ].map((item) => (
+            <div key={item.title} className="flex items-center gap-3">
               <div className="w-11 h-11 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center flex-shrink-0">
                 <item.icon size={20} className="text-brand-600" />
               </div>
@@ -185,8 +185,8 @@ export function HomePage() {
           </Link>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-          {featuredCategories.map((cat) => (
-            <Link key={cat.id} to={`/shop?category=${cat.slug}`} className="group">
+          {featuredCategories.map((cat, index) => (
+            <Link key={`cat-${cat._id || cat.slug}-${index}`} to={`/shop?category=${cat.slug}`} className="group">
               <div className="aspect-square rounded-xl overflow-hidden bg-neutral-100 dark:bg-neutral-800 mb-2 relative">
                 {cat.image_url && (
                   <img src={cat.image_url} alt={cat.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
@@ -218,7 +218,7 @@ export function HomePage() {
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
               {loading
                 ? Array.from({ length: 4 }).map((_, i) => <ProductCardSkeleton key={i} />)
-                : flashSale.map((p) => <ProductCard key={p.id} product={p} />)}
+                : flashSale.map((p, index) => <ProductCard key={`flash-${p._id || p.id}-${index}`} product={p} />)}
             </div>
           </div>
         </section>
@@ -234,10 +234,10 @@ export function HomePage() {
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {comboPacks.map((combo) => {
+            {comboPacks.map((combo, index) => {
               const savings = combo.compare_at_price ? combo.compare_at_price - combo.price : 0;
               return (
-                <div key={combo.id} className="card overflow-hidden group hover:shadow-lg transition-all">
+                <div key={`combo-${combo._id || combo.id}-${index}`} className="card overflow-hidden group hover:shadow-lg transition-all">
                   <div className="relative aspect-[4/3] overflow-hidden bg-neutral-100 dark:bg-neutral-700">
                     {combo.image_url && <img src={combo.image_url} alt={combo.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />}
                     <span className="absolute top-2 left-2 bg-brand-600 text-white text-xs font-semibold px-2 py-1 rounded">COMBO</span>
@@ -274,8 +274,8 @@ export function HomePage() {
               <p className="text-sm text-neutral-400 mt-1">The perfect gift for every occasion</p>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              {giftCards.map((card) => (
-                <div key={card.id} className="bg-gradient-to-br from-brand-600 to-brand-800 rounded-xl p-5 text-center hover:scale-105 transition-transform cursor-pointer">
+              {giftCards.map((card, index) => (
+                <div key={`gift-${card._id || card.id}-${index}`} className="bg-gradient-to-br from-brand-600 to-brand-800 rounded-xl p-5 text-center hover:scale-105 transition-transform cursor-pointer">
                   <p className="text-white/80 text-xs uppercase tracking-wide">BAGWATI & SONS</p>
                   <p className="text-3xl font-bold text-white mt-2">{formatPrice(card.denomination)}</p>
                   <p className="text-white/70 text-xs mt-1">{card.description}</p>
@@ -301,7 +301,7 @@ export function HomePage() {
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
           {loading
             ? Array.from({ length: 8 }).map((_, i) => <ProductCardSkeleton key={i} />)
-            : trending.map((p) => <ProductCard key={p.id} product={p} />)}
+            : trending.map((p, index) => <ProductCard key={`trending-${p._id || p.id}-${index}`} product={p} />)}
         </div>
       </section>
 
@@ -347,7 +347,7 @@ export function HomePage() {
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
           {loading
             ? Array.from({ length: 8 }).map((_, i) => <ProductCardSkeleton key={i} />)
-            : newArrivals.map((p) => <ProductCard key={p.id} product={p} />)}
+            : newArrivals.map((p, index) => <ProductCard key={`new-${p._id || p.id}-${index}`} product={p} />)}
         </div>
       </section>
 
@@ -365,7 +365,7 @@ export function HomePage() {
               </Link>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-              {premium.map((p) => <ProductCard key={p.id} product={p} />)}
+              {premium.map((p, index) => <ProductCard key={`premium-${p._id || p.id}-${index}`} product={p} />)}
             </div>
           </div>
         </section>
@@ -385,7 +385,7 @@ export function HomePage() {
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
           {loading
             ? Array.from({ length: 8 }).map((_, i) => <ProductCardSkeleton key={i} />)
-            : bestsellers.map((p) => <ProductCard key={p.id} product={p} />)}
+            : bestsellers.map((p, index) => <ProductCard key={`bestseller-${p._id || p.id}-${index}`} product={p} />)}
         </div>
       </section>
 
@@ -398,8 +398,8 @@ export function HomePage() {
               { name: 'Priya Sharma', location: 'Aligarh', review: 'The quality is exceptional! My order arrived within 24 hours in Aligarh. The fabric feels premium and the fit is perfect.', rating: 5 },
               { name: 'Rahul Verma', location: 'Delhi', review: 'MAHIR & FRIENDS has become my go-to for clothing. The designs are unique and the prices are very reasonable for the quality.', rating: 5 },
               { name: 'Anjali Gupta', location: 'Lucknow', review: 'Amazing customer service and fast delivery. The winter collection is absolutely stunning. Highly recommend!', rating: 4 },
-            ].map((review, i) => (
-              <div key={i} className="card p-6">
+            ].map((review) => (
+              <div key={review.name} className="card p-6">
                 <StarRating rating={review.rating} size={18} />
                 <p className="text-neutral-700 dark:text-neutral-300 mt-3 text-sm leading-relaxed">"{review.review}"</p>
                 <div className="mt-4 flex items-center gap-3">
@@ -431,8 +431,8 @@ export function HomePage() {
             'https://images.pexels.com/photos/2529148/pexels-photo-2529148.jpeg?auto=compress&cs=tinysrgb&w=300',
             'https://images.pexels.com/photos/277390/pexels-photo-277390.jpeg?auto=compress&cs=tinysrgb&w=300',
             'https://images.pexels.com/photos/904350/pexels-photo-904350.jpeg?auto=compress&cs=tinysrgb&w=300',
-          ].map((img, i) => (
-            <a key={i} href="#" className="aspect-square rounded-lg overflow-hidden group relative">
+          ].map((img) => (
+            <a key={img} href="#" className="aspect-square rounded-lg overflow-hidden group relative">
               <img src={img} alt="Instagram" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
                 <Instagram size={24} className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />

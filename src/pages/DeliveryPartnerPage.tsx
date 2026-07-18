@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { User, MapPin, Package, DollarSign, Clock, Settings, LogOut, Bell, XCircle, Moon, Sun, Power } from 'lucide-react';
 import { useTheme } from '../lib/theme';
 
 export function DeliveryPartnerPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { theme, toggleTheme } = useTheme();
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [ordersSubTab, setOrdersSubTab] = useState('available');
   const [partnerData, setPartnerData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isOnline, setIsOnline] = useState(false);
@@ -16,7 +18,17 @@ export function DeliveryPartnerPage() {
   useEffect(() => {
     fetchPartnerData();
     fetchNotifications();
-  }, []);
+    
+    // Handle URL parameters for tab navigation
+    const tab = searchParams.get('tab');
+    const subtab = searchParams.get('subtab');
+    if (tab) {
+      setActiveTab(tab);
+      if (tab === 'orders' && subtab) {
+        setOrdersSubTab(subtab);
+      }
+    }
+  }, [searchParams]);
 
   const fetchNotifications = async () => {
     try {
@@ -313,11 +325,21 @@ export function DeliveryPartnerPage() {
       <header className="bg-white dark:bg-neutral-800 shadow-sm sticky top-0 z-50">
         <div className="container-responsive py-4">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-xl font-bold">Delivery Partner</h1>
-              <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                {partnerData?.personalDetails?.fullName || 'Partner'}
-              </p>
+            <div className="flex items-center gap-4">
+              {/* Selfie Display */}
+              {partnerData?.kycDetails?.selfie && (
+                <img 
+                  src={partnerData.kycDetails.selfie} 
+                  alt="Profile" 
+                  className="w-12 h-12 rounded-full object-cover border-2 border-brand-500"
+                />
+              )}
+              <div>
+                <h1 className="text-xl font-bold">Delivery Partner</h1>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                  {partnerData?.personalDetails?.fullName || 'Partner'}
+                </p>
+              </div>
             </div>
             <div className="flex items-center gap-2">
               {/* Online/Offline Toggle */}
@@ -412,6 +434,17 @@ export function DeliveryPartnerPage() {
                   Dashboard
                 </button>
                 <button
+                  onClick={() => setActiveTab('profile')}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
+                    activeTab === 'profile'
+                      ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-900'
+                      : 'hover:bg-neutral-100 dark:hover:bg-neutral-700'
+                  }`}
+                >
+                  <User className="w-5 h-5" />
+                  Profile
+                </button>
+                <button
                   onClick={() => setActiveTab('orders')}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
                     activeTab === 'orders'
@@ -456,34 +489,306 @@ export function DeliveryPartnerPage() {
                   Settings
                 </button>
               </nav>
-
-              {/* Online Status Toggle */}
-              <div className="mt-6 pt-6 border-t border-neutral-200 dark:border-neutral-700">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium">Online Status</span>
-                  <div className={`w-3 h-3 rounded-full ${isOnline ? 'bg-green-500' : 'bg-neutral-400'}`} />
-                </div>
-                <button
-                  onClick={toggleOnlineStatus}
-                  className={`w-full py-2 px-4 rounded-xl font-medium transition-all ${
-                    isOnline
-                      ? 'bg-green-500 text-white'
-                      : 'bg-neutral-200 dark:bg-neutral-700'
-                  }`}
-                >
-                  {isOnline ? 'Go Offline' : 'Go Online'}
-                </button>
-              </div>
             </div>
           </div>
 
           {/* Main Content */}
           <div className="lg:col-span-3">
             {activeTab === 'dashboard' && <DashboardContent partnerData={partnerData} />}
-            {activeTab === 'orders' && <OrdersContent />}
+            {activeTab === 'profile' && <ProfileContent partnerData={partnerData} />}
+            {activeTab === 'orders' && <OrdersContent initialSubTab={ordersSubTab} />}
             {activeTab === 'earnings' && <EarningsContent />}
             {activeTab === 'payouts' && <PayoutsContent />}
             {activeTab === 'settings' && <SettingsContent partnerData={partnerData} />}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ProfileContent({ partnerData }: { partnerData: any }) {
+  const [editingEmergency, setEditingEmergency] = useState(false);
+  const [emergencyForm, setEmergencyForm] = useState({
+    name: partnerData?.emergencyContact?.name || '',
+    relationship: partnerData?.emergencyContact?.relationship || '',
+    contactNumber: partnerData?.emergencyContact?.contactNumber || ''
+  });
+
+  const handleEmergencyUpdate = async () => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch('http://localhost:5000/api/delivery-partners/emergency-contact', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(emergencyForm)
+      });
+      const data = await response.json();
+      if (data.success) {
+        alert('Emergency contact updated successfully');
+        setEditingEmergency(false);
+        // Refresh partner data
+        window.location.reload();
+      } else {
+        alert(data.message || 'Failed to update emergency contact');
+      }
+    } catch (error) {
+      alert('Error updating emergency contact');
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Profile Header */}
+      <div className="bg-white dark:bg-neutral-800 rounded-2xl p-6 shadow-sm">
+        <div className="flex items-center gap-6">
+          {partnerData?.kycDetails?.selfie && (
+            <img 
+              src={partnerData.kycDetails.selfie} 
+              alt="Profile" 
+              className="w-24 h-24 rounded-full object-cover border-4 border-brand-500"
+            />
+          )}
+          <div>
+            <h2 className="text-2xl font-bold">{partnerData?.personalDetails?.fullName || 'N/A'}</h2>
+            <p className="text-neutral-600 dark:text-neutral-400">{partnerData?.personalDetails?.email || 'N/A'}</p>
+            <p className="text-neutral-600 dark:text-neutral-400">{partnerData?.personalDetails?.contactNumber || 'N/A'}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Personal Details */}
+      <div className="bg-white dark:bg-neutral-800 rounded-2xl p-6 shadow-sm">
+        <h3 className="text-lg font-semibold mb-4">Personal Details</h3>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <p className="text-sm text-neutral-600 dark:text-neutral-400">Full Name</p>
+            <p className="font-medium">{partnerData?.personalDetails?.fullName || 'N/A'}</p>
+          </div>
+          <div>
+            <p className="text-sm text-neutral-600 dark:text-neutral-400">Email</p>
+            <p className="font-medium">{partnerData?.personalDetails?.email || 'N/A'}</p>
+          </div>
+          <div>
+            <p className="text-sm text-neutral-600 dark:text-neutral-400">Contact Number</p>
+            <p className="font-medium">{partnerData?.personalDetails?.contactNumber || 'N/A'}</p>
+          </div>
+          <div>
+            <p className="text-sm text-neutral-600 dark:text-neutral-400">Date of Birth</p>
+            <p className="font-medium">{partnerData?.personalDetails?.dateOfBirth ? new Date(partnerData.personalDetails.dateOfBirth).toLocaleDateString() : 'N/A'}</p>
+          </div>
+          <div>
+            <p className="text-sm text-neutral-600 dark:text-neutral-400">Gender</p>
+            <p className="font-medium capitalize">{partnerData?.personalDetails?.gender || 'N/A'}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* KYC Details */}
+      <div className="bg-white dark:bg-neutral-800 rounded-2xl p-6 shadow-sm">
+        <h3 className="text-lg font-semibold mb-4">KYC Details</h3>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <p className="text-sm text-neutral-600 dark:text-neutral-400">Aadhar Number</p>
+            <p className="font-medium">{partnerData?.kycDetails?.aadharNumber || 'N/A'}</p>
+          </div>
+          <div>
+            <p className="text-sm text-neutral-600 dark:text-neutral-400">PAN Number</p>
+            <p className="font-medium">{partnerData?.kycDetails?.panNumber || 'N/A'}</p>
+          </div>
+          <div>
+            <p className="text-sm text-neutral-600 dark:text-neutral-400">KYC Status</p>
+            <p className="font-medium capitalize">{partnerData?.kycDetails?.kycStatus || 'N/A'}</p>
+          </div>
+          {partnerData?.kycDetails?.verifiedAt && (
+            <div>
+              <p className="text-sm text-neutral-600 dark:text-neutral-400">Verified At</p>
+              <p className="font-medium">{new Date(partnerData.kycDetails.verifiedAt).toLocaleString()}</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Vehicle Details */}
+      <div className="bg-white dark:bg-neutral-800 rounded-2xl p-6 shadow-sm">
+        <h3 className="text-lg font-semibold mb-4">Vehicle Details</h3>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <p className="text-sm text-neutral-600 dark:text-neutral-400">Vehicle Type</p>
+            <p className="font-medium capitalize">{partnerData?.vehicleDetails?.vehicleType || 'N/A'}</p>
+          </div>
+          <div>
+            <p className="text-sm text-neutral-600 dark:text-neutral-400">Vehicle Number</p>
+            <p className="font-medium">{partnerData?.vehicleDetails?.vehicleNumber || 'N/A'}</p>
+          </div>
+          <div>
+            <p className="text-sm text-neutral-600 dark:text-neutral-400">Vehicle Model</p>
+            <p className="font-medium">{partnerData?.vehicleDetails?.vehicleModel || 'N/A'}</p>
+          </div>
+          <div>
+            <p className="text-sm text-neutral-600 dark:text-neutral-400">Vehicle Color</p>
+            <p className="font-medium">{partnerData?.vehicleDetails?.vehicleColor || 'N/A'}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Address */}
+      <div className="bg-white dark:bg-neutral-800 rounded-2xl p-6 shadow-sm">
+        <h3 className="text-lg font-semibold mb-4">Address</h3>
+        <div className="space-y-2">
+          <div>
+            <p className="text-sm text-neutral-600 dark:text-neutral-400">Street</p>
+            <p className="font-medium">{partnerData?.address?.street || 'N/A'}</p>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-sm text-neutral-600 dark:text-neutral-400">City</p>
+              <p className="font-medium">{partnerData?.address?.city || 'N/A'}</p>
+            </div>
+            <div>
+              <p className="text-sm text-neutral-600 dark:text-neutral-400">State</p>
+              <p className="font-medium">{partnerData?.address?.state || 'N/A'}</p>
+            </div>
+            <div>
+              <p className="text-sm text-neutral-600 dark:text-neutral-400">Pincode</p>
+              <p className="font-medium">{partnerData?.address?.pincode || 'N/A'}</p>
+            </div>
+            <div>
+              <p className="text-sm text-neutral-600 dark:text-neutral-400">Landmark</p>
+              <p className="font-medium">{partnerData?.address?.landmark || 'N/A'}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Bank Details */}
+      <div className="bg-white dark:bg-neutral-800 rounded-2xl p-6 shadow-sm">
+        <h3 className="text-lg font-semibold mb-4">Bank Details</h3>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <p className="text-sm text-neutral-600 dark:text-neutral-400">Account Number</p>
+            <p className="font-medium">{partnerData?.bankDetails?.accountNumber || 'N/A'}</p>
+          </div>
+          <div>
+            <p className="text-sm text-neutral-600 dark:text-neutral-400">Account Holder Name</p>
+            <p className="font-medium">{partnerData?.bankDetails?.accountHolderName || 'N/A'}</p>
+          </div>
+          <div>
+            <p className="text-sm text-neutral-600 dark:text-neutral-400">IFSC Code</p>
+            <p className="font-medium">{partnerData?.bankDetails?.ifscCode || 'N/A'}</p>
+          </div>
+          <div>
+            <p className="text-sm text-neutral-600 dark:text-neutral-400">Bank Name</p>
+            <p className="font-medium">{partnerData?.bankDetails?.bankName || 'N/A'}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Emergency Contact */}
+      <div className="bg-white dark:bg-neutral-800 rounded-2xl p-6 shadow-sm">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold">Emergency Contact</h3>
+          {!editingEmergency && (
+            <button
+              onClick={() => setEditingEmergency(true)}
+              className="text-sm text-brand-600 hover:text-brand-700 font-medium"
+            >
+              Edit
+            </button>
+          )}
+        </div>
+        
+        {editingEmergency ? (
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Name</label>
+              <input
+                type="text"
+                value={emergencyForm.name}
+                onChange={(e) => setEmergencyForm({...emergencyForm, name: e.target.value})}
+                className="input"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Relationship</label>
+              <input
+                type="text"
+                value={emergencyForm.relationship}
+                onChange={(e) => setEmergencyForm({...emergencyForm, relationship: e.target.value})}
+                className="input"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Contact Number</label>
+              <input
+                type="text"
+                value={emergencyForm.contactNumber}
+                onChange={(e) => setEmergencyForm({...emergencyForm, contactNumber: e.target.value})}
+                className="input"
+              />
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={handleEmergencyUpdate}
+                className="btn-primary"
+              >
+                Save
+              </button>
+              <button
+                onClick={() => {
+                  setEditingEmergency(false);
+                  setEmergencyForm({
+                    name: partnerData?.emergencyContact?.name || '',
+                    relationship: partnerData?.emergencyContact?.relationship || '',
+                    contactNumber: partnerData?.emergencyContact?.contactNumber || ''
+                  });
+                }}
+                className="btn-secondary"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-sm text-neutral-600 dark:text-neutral-400">Name</p>
+              <p className="font-medium">{partnerData?.emergencyContact?.name || 'N/A'}</p>
+            </div>
+            <div>
+              <p className="text-sm text-neutral-600 dark:text-neutral-400">Relationship</p>
+              <p className="font-medium">{partnerData?.emergencyContact?.relationship || 'N/A'}</p>
+            </div>
+            <div>
+              <p className="text-sm text-neutral-600 dark:text-neutral-400">Contact Number</p>
+              <p className="font-medium">{partnerData?.emergencyContact?.contactNumber || 'N/A'}</p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Account Status */}
+      <div className="bg-white dark:bg-neutral-800 rounded-2xl p-6 shadow-sm">
+        <h3 className="text-lg font-semibold mb-4">Account Status</h3>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <p className="text-sm text-neutral-600 dark:text-neutral-400">Status</p>
+            <p className="font-medium capitalize">{partnerData?.status || 'N/A'}</p>
+          </div>
+          <div>
+            <p className="text-sm text-neutral-600 dark:text-neutral-400">Registration Date</p>
+            <p className="font-medium">{partnerData?.createdAt ? new Date(partnerData.createdAt).toLocaleString() : 'N/A'}</p>
+          </div>
+          <div>
+            <p className="text-sm text-neutral-600 dark:text-neutral-400">Total Deliveries</p>
+            <p className="font-medium">{partnerData?.workDetails?.totalDeliveries || 0}</p>
+          </div>
+          <div>
+            <p className="text-sm text-neutral-600 dark:text-neutral-400">Total Earnings</p>
+            <p className="font-medium">₹{partnerData?.workDetails?.totalEarnings || 0}</p>
           </div>
         </div>
       </div>
@@ -495,6 +800,8 @@ function DashboardContent({ partnerData }: { partnerData: any }) {
   const daysUntilRenewal = partnerData?.renewalFee?.nextDueDate
     ? Math.ceil((new Date(partnerData.renewalFee.nextDueDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
     : null;
+
+  const navigate = useNavigate();
 
   return (
     <div className="space-y-6">
@@ -582,11 +889,17 @@ function DashboardContent({ partnerData }: { partnerData: any }) {
       <div className="bg-white dark:bg-neutral-800 rounded-2xl p-6 shadow-sm">
         <h2 className="text-lg font-semibold mb-4">Quick Actions</h2>
         <div className="grid sm:grid-cols-2 gap-4">
-          <button className="flex items-center gap-3 p-4 border border-neutral-200 dark:border-neutral-700 rounded-xl hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-all">
+          <button 
+            onClick={() => navigate('/delivery-partner?tab=orders&subtab=available')}
+            className="flex items-center gap-3 p-4 border border-neutral-200 dark:border-neutral-700 rounded-xl hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-all cursor-pointer"
+          >
             <MapPin className="w-5 h-5 text-blue-500" />
             <span>View Available Orders</span>
           </button>
-          <button className="flex items-center gap-3 p-4 border border-neutral-200 dark:border-neutral-700 rounded-xl hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-all">
+          <button 
+            onClick={() => navigate('/delivery-partner?tab=orders&subtab=active')}
+            className="flex items-center gap-3 p-4 border border-neutral-200 dark:border-neutral-700 rounded-xl hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-all cursor-pointer"
+          >
             <Package className="w-5 h-5 text-green-500" />
             <span>Active Deliveries</span>
           </button>
@@ -596,16 +909,19 @@ function DashboardContent({ partnerData }: { partnerData: any }) {
   );
 }
 
-function OrdersContent() {
-  const [activeTab, setActiveTab] = useState('available');
+function OrdersContent({ initialSubTab = 'available' }: { initialSubTab?: string }) {
+  const [activeTab, setActiveTab] = useState(initialSubTab);
   const [availableOrders, setAvailableOrders] = useState<any[]>([]);
   const [activeOrders, setActiveOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    if (initialSubTab) {
+      setActiveTab(initialSubTab);
+    }
     fetchAvailableOrders();
     fetchActiveOrders();
-  }, []);
+  }, [initialSubTab]);
 
   const fetchAvailableOrders = async () => {
     try {

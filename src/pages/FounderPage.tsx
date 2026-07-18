@@ -1,167 +1,177 @@
-import { Code, Heart, Mail, Linkedin, Github, Twitter, MapPin, Calendar, Award } from 'lucide-react';
+import { Code, Heart, Mail, Linkedin, Github, Twitter, MapPin, Calendar, Tag, Quote } from 'lucide-react';
 
-export function FounderPage() {
+const palette = {
+  ink: '#1C1420',
+  panel: '#241A2C',
+  panelSoft: '#2C2036',
+  gold: '#C9A227',
+  goldLight: '#E7C873',
+  cream: '#F2EAE0',
+  creamMuted: '#C9BFC0',
+  hair: 'rgba(201,162,39,0.35)',
+};
+
+const skillGroups = [
+  { label: 'Frontend', items: ['React', 'TypeScript', 'Tailwind CSS', 'Next.js'] },
+  { label: 'Backend', items: ['Node.js', 'Express', 'MongoDB', 'REST APIs'] },
+  { label: 'Commerce', items: ['Payment Integration', 'Inventory Management', 'Order Processing'] },
+  { label: 'Craft', items: ['UI/UX Design', 'Database Design', 'Cloud Deployment'] },
+];
+
+const facts = [
+  { icon: MapPin, label: 'Location', value: 'Aligarh, UP, India' },
+  { icon: Calendar, label: 'Founded', value: '2026' },
+  { icon: Code, label: 'Project', value: 'Mahir & Friends' },
+];
+
+const socials = [
+  { icon: Mail, label: 'Email', href: 'mailto:dheeraj@mahirandfriends.com' },
+  { icon: Linkedin, label: 'LinkedIn', href: '#' },
+  { icon: Github, label: 'GitHub', href: '#' },
+  { icon: Twitter, label: 'Twitter', href: '#' },
+];
+
+const AVATAR = '/founder.jpeg';
+
+export default function FounderPage() {
   return (
-    <div className="max-w-5xl mx-auto px-6 py-12">
-      <div className="card p-8 md:p-12">
-        {/* Header Section */}
-        <div className="flex flex-col md:flex-row gap-8 items-center md:items-start mb-12">
-          <div className="flex-shrink-0">
+    <div style={{ backgroundColor: palette.ink, color: palette.cream }} className="min-h-screen">
+      <div className="max-w-4xl mx-auto px-6 py-16">
+
+        <div className="flex items-center justify-between pb-4 mb-14" style={{ borderBottom: `1px solid ${palette.hair}` }}>
+          <span className="font-mono text-[11px] uppercase tracking-[0.3em]" style={{ color: palette.goldLight }}>
+            Mahir &amp; Friends
+          </span>
+          <span className="font-mono text-[11px] uppercase tracking-[0.3em]" style={{ color: palette.creamMuted }}>
+            Founder Profile
+          </span>
+        </div>
+
+        <div className="grid md:grid-cols-[220px_1fr] gap-10 items-start mb-16">
+          <div className="relative mx-auto md:mx-0">
             <img
-              src="/founder.jpeg"
+              src={AVATAR}
               alt="Dheeraj Gaur - MAHIR"
-              className="w-48 h-48 md:w-56 md:h-56 rounded-full object-cover shadow-xl border-4 border-brand-200 dark:border-brand-800"
+              className="w-48 h-48 md:w-[220px] md:h-[220px] object-cover"
+              style={{ border: `1px solid ${palette.hair}` }}
             />
+            <div
+              className="absolute -top-3 -right-6 rotate-[10deg] px-3 py-1 shadow-lg flex items-center gap-1"
+              style={{ backgroundColor: palette.gold, color: palette.ink }}
+            >
+              <Tag size={12} strokeWidth={2.5} />
+              <span className="font-mono text-[10px] uppercase tracking-widest font-bold">Mahir</span>
+            </div>
           </div>
-          <div className="flex-1 text-center md:text-left">
-            <h1 className="font-serif text-3xl md:text-4xl font-bold text-neutral-900 dark:text-white mb-2">
+
+          <div>
+            <p className="font-mono text-xs uppercase tracking-[0.25em] mb-3" style={{ color: palette.gold }}>
+              Founder &amp; Lead Developer
+            </p>
+            <h1 className="font-serif text-5xl md:text-6xl leading-[0.95] mb-3" style={{ color: palette.cream }}>
               Dheeraj Gaur
             </h1>
-            <p className="text-xl text-brand-600 dark:text-brand-400 font-medium mb-4">
-              "MAHIR"
+            <p className="font-serif italic text-xl mb-6" style={{ color: palette.goldLight }}>
+              known as &ldquo;Mahir&rdquo;
             </p>
-            <div className="flex flex-wrap gap-2 justify-center md:justify-start mb-6">
-              <span className="px-3 py-1 bg-brand-100 dark:bg-brand-900 text-brand-700 dark:text-brand-300 rounded-full text-sm font-medium">
-                Founder
-              </span>
-              <span className="px-3 py-1 bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 rounded-full text-sm font-medium">
-                Developer
-              </span>
-              <span className="px-3 py-1 bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 rounded-full text-sm font-medium">
-                Visionary
-              </span>
-            </div>
-            <p className="text-neutral-600 dark:text-neutral-400 text-lg leading-relaxed">
-              The creative mind behind <strong className="text-neutral-900 dark:text-white">Mahir & Friends</strong>. 
-              Passionate about building exceptional digital experiences and bringing fashion to the fingertips of millions.
-            </p>
-          </div>
-        </div>
-
-        {/* About Section */}
-        <div className="mb-12">
-          <h2 className="font-serif text-2xl font-bold text-neutral-900 dark:text-white mb-6 flex items-center gap-2">
-            <Heart size={24} className="text-brand-600" /> About
-          </h2>
-          <div className="prose prose-neutral dark:prose-invert max-w-none">
-            <p className="text-neutral-700 dark:text-neutral-300 leading-relaxed mb-4">
-              Dheeraj Gaur, fondly known as <strong className="text-brand-600">MAHIR</strong>, is the founder and lead developer of Mahir & Friends. 
-              With a deep passion for technology and fashion, he envisioned a platform that would make quality fashion accessible to everyone across India.
-            </p>
-            <p className="text-neutral-700 dark:text-neutral-300 leading-relaxed mb-4">
-              Starting from humble beginnings in Aligarh, Uttar Pradesh, Dheeraj built this e-commerce platform from scratch, 
-              handling everything from backend development to frontend design. His dedication to creating a seamless shopping experience 
-              has been the driving force behind the company's success.
-            </p>
-            <p className="text-neutral-700 dark:text-neutral-300 leading-relaxed">
-              When he's not coding or strategizing the next big feature, you can find him exploring new technologies, 
-              mentoring aspiring developers, or spending time with family and friends.
-            </p>
-          </div>
-        </div>
-
-        {/* Skills & Expertise */}
-        <div className="mb-12">
-          <h2 className="font-serif text-2xl font-bold text-neutral-900 dark:text-white mb-6 flex items-center gap-2">
-            <Code size={24} className="text-brand-600" /> Skills & Expertise
-          </h2>
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="p-4 bg-neutral-50 dark:bg-neutral-800 rounded-lg">
-              <h3 className="font-semibold text-neutral-900 dark:text-white mb-3">Frontend Development</h3>
-              <div className="flex flex-wrap gap-2">
-                <span className="px-2 py-1 bg-white dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 rounded text-xs">React</span>
-                <span className="px-2 py-1 bg-white dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 rounded text-xs">TypeScript</span>
-                <span className="px-2 py-1 bg-white dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 rounded text-xs">Tailwind CSS</span>
-                <span className="px-2 py-1 bg-white dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 rounded text-xs">Next.js</span>
-              </div>
-            </div>
-            <div className="p-4 bg-neutral-50 dark:bg-neutral-800 rounded-lg">
-              <h3 className="font-semibold text-neutral-900 dark:text-white mb-3">Backend Development</h3>
-              <div className="flex flex-wrap gap-2">
-                <span className="px-2 py-1 bg-white dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 rounded text-xs">Node.js</span>
-                <span className="px-2 py-1 bg-white dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 rounded text-xs">Express</span>
-                <span className="px-2 py-1 bg-white dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 rounded text-xs">MongoDB</span>
-                <span className="px-2 py-1 bg-white dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 rounded text-xs">REST APIs</span>
-              </div>
-            </div>
-            <div className="p-4 bg-neutral-50 dark:bg-neutral-800 rounded-lg">
-              <h3 className="font-semibold text-neutral-900 dark:text-white mb-3">E-commerce</h3>
-              <div className="flex flex-wrap gap-2">
-                <span className="px-2 py-1 bg-white dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 rounded text-xs">Payment Integration</span>
-                <span className="px-2 py-1 bg-white dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 rounded text-xs">Inventory Management</span>
-                <span className="px-2 py-1 bg-white dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 rounded text-xs">Order Processing</span>
-              </div>
-            </div>
-            <div className="p-4 bg-neutral-50 dark:bg-neutral-800 rounded-lg">
-              <h3 className="font-semibold text-neutral-900 dark:text-white mb-3">Other Skills</h3>
-              <div className="flex flex-wrap gap-2">
-                <span className="px-2 py-1 bg-white dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 rounded text-xs">UI/UX Design</span>
-                <span className="px-2 py-1 bg-white dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 rounded text-xs">Database Design</span>
-                <span className="px-2 py-1 bg-white dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 rounded text-xs">Cloud Deployment</span>
-              </div>
+            <div className="flex flex-wrap gap-2">
+              {['Founder', 'Developer', 'Visionary'].map((tag) => (
+                <span key={tag} className="font-mono text-[10px] uppercase tracking-widest px-3 py-1" style={{ border: `1px dashed ${palette.hair}`, color: palette.creamMuted }}>
+                  {tag}
+                </span>
+              ))}
             </div>
           </div>
         </div>
 
-        {/* Quick Facts */}
-        <div className="mb-12">
-          <h2 className="font-serif text-2xl font-bold text-neutral-900 dark:text-white mb-6 flex items-center gap-2">
-            <Award size={24} className="text-brand-600" /> Quick Facts
-          </h2>
-          <div className="grid md:grid-cols-3 gap-4">
-            <div className="flex items-center gap-3 p-4 bg-neutral-50 dark:bg-neutral-800 rounded-lg">
-              <MapPin size={20} className="text-brand-600" />
-              <div>
-                <p className="text-sm text-neutral-500">Location</p>
-                <p className="font-medium text-neutral-900 dark:text-white">Aligarh, UP, India</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3 p-4 bg-neutral-50 dark:bg-neutral-800 rounded-lg">
-              <Calendar size={20} className="text-brand-600" />
-              <div>
-                <p className="text-sm text-neutral-500">Founded</p>
-                <p className="font-medium text-neutral-900 dark:text-white">2026</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3 p-4 bg-neutral-50 dark:bg-neutral-800 rounded-lg">
-              <Code size={20} className="text-brand-600" />
-              <div>
-                <p className="text-sm text-neutral-500">Projects</p>
-                <p className="font-medium text-neutral-900 dark:text-white">Mahir & Friends</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Contact & Social */}
-        <div className="p-6 bg-brand-50 dark:bg-brand-900/20 border border-brand-200 dark:border-brand-800 rounded-lg">
-          <h2 className="font-serif text-xl font-bold text-brand-900 dark:text-brand-100 mb-4">Get in Touch</h2>
-          <p className="text-brand-800 dark:text-brand-200 mb-6">
-            Interested in collaborating or have a question? Feel free to reach out!
-          </p>
-          <div className="flex flex-wrap gap-4">
-            <a href="mailto:dheeraj@mahirandfriends.com" className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors">
-              <Mail size={18} /> Email
-            </a>
-            <a href="#" className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors">
-              <Linkedin size={18} /> LinkedIn
-            </a>
-            <a href="#" className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors">
-              <Github size={18} /> GitHub
-            </a>
-            <a href="#" className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors">
-              <Twitter size={18} /> Twitter
-            </a>
-          </div>
-        </div>
-
-        {/* Quote */}
-        <div className="mt-12 text-center">
-          <blockquote className="text-2xl font-serif italic text-neutral-600 dark:text-neutral-400">
-            "Fashion is not just about clothes, it's about expressing who you are. 
-            I built Mahir & Friends to help everyone find their unique style."
+        <div className="mb-16 relative px-6 md:px-12">
+          <Quote size={40} style={{ color: palette.gold, opacity: 0.4 }} className="mb-2" />
+          <blockquote className="font-serif italic text-2xl md:text-3xl leading-snug" style={{ color: palette.cream }}>
+            Fashion is not just about clothes, it&rsquo;s about expressing who you are.
+            I built Mahir &amp; Friends to help everyone find their unique style.
           </blockquote>
-          <p className="mt-4 text-brand-600 font-medium">— Dheeraj Gaur (MAHIR)</p>
+          <p className="font-mono text-[11px] uppercase tracking-[0.25em] mt-4" style={{ color: palette.gold }}>
+            — Dheeraj Gaur (Mahir)
+          </p>
+        </div>
+
+        <section className="mb-16">
+          <div className="flex items-center gap-3 mb-6">
+            <Heart size={16} style={{ color: palette.gold }} />
+            <h2 className="font-mono text-xs uppercase tracking-[0.3em]" style={{ color: palette.goldLight }}>About</h2>
+            <div className="flex-1 h-px" style={{ backgroundColor: palette.hair }} />
+          </div>
+          <div className="space-y-4 font-sans text-[15px] leading-relaxed" style={{ color: palette.creamMuted }}>
+            <p>
+              <span className="float-left font-serif text-6xl leading-[0.8] mr-3 mt-1" style={{ color: palette.gold }}>D</span>
+              heeraj Gaur, fondly known as <strong style={{ color: palette.cream }}>MAHIR</strong>, is the founder and lead developer of Mahir &amp; Friends. With a deep passion for technology and fashion, he envisioned a platform that would make quality fashion accessible to everyone across India.
+            </p>
+            <p>
+              Starting from humble beginnings in Aligarh, Uttar Pradesh, Dheeraj built this e-commerce platform from scratch, handling everything from backend development to frontend design. His dedication to creating a seamless shopping experience has been the driving force behind the company&rsquo;s success.
+            </p>
+            <p>
+              When he&rsquo;s not coding or strategizing the next big feature, you can find him exploring new technologies, mentoring aspiring developers, or spending time with family and friends.
+            </p>
+          </div>
+        </section>
+
+        <section className="mb-16">
+          <div className="flex items-center gap-3 mb-6">
+            <Code size={16} style={{ color: palette.gold }} />
+            <h2 className="font-mono text-xs uppercase tracking-[0.3em]" style={{ color: palette.goldLight }}>Skills &amp; Expertise</h2>
+            <div className="flex-1 h-px" style={{ backgroundColor: palette.hair }} />
+          </div>
+          <div className="grid sm:grid-cols-2 gap-4">
+            {skillGroups.map((group) => (
+              <div key={group.label} className="p-5" style={{ border: `1px dashed ${palette.hair}`, backgroundColor: palette.panel }}>
+                <p className="font-mono text-[10px] uppercase tracking-[0.25em] mb-3" style={{ color: palette.gold }}>{group.label}</p>
+                <div className="flex flex-wrap gap-x-3 gap-y-1">
+                  {group.items.map((item, i) => (
+                    <span key={item} className="font-sans text-sm" style={{ color: palette.cream }}>
+                      {item}
+                      {i < group.items.length - 1 && <span style={{ color: palette.hair }} className="ml-3">/</span>}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="mb-16">
+          <div className="p-6 font-mono text-xs" style={{ border: `1px solid ${palette.hair}`, backgroundColor: palette.panelSoft }}>
+            <p className="uppercase tracking-[0.3em] mb-4" style={{ color: palette.gold }}>Spec Sheet</p>
+            <div className="space-y-2">
+              {facts.map(({ icon: Icon, label, value }) => (
+                <div key={label} className="flex items-center justify-between py-2" style={{ borderTop: `1px dashed ${palette.hair}` }}>
+                  <span className="flex items-center gap-2 uppercase tracking-widest" style={{ color: palette.creamMuted }}>
+                    <Icon size={13} />
+                    {label}
+                  </span>
+                  <span style={{ color: palette.cream }}>{value}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="p-8 text-center" style={{ border: `1px solid ${palette.gold}`, backgroundColor: palette.panel }}>
+          <h2 className="font-serif text-2xl mb-2" style={{ color: palette.cream }}>Get in Touch</h2>
+          <p className="font-sans text-sm mb-6" style={{ color: palette.creamMuted }}>
+            Interested in collaborating or have a question? Reach out below.
+          </p>
+          <div className="flex flex-wrap justify-center gap-3">
+            {socials.map(({ icon: Icon, label, href }) => (
+              <a key={label} href={href} className="flex items-center gap-2 px-4 py-2 font-mono text-[11px] uppercase tracking-widest transition-colors" style={{ border: `1px solid ${palette.hair}`, color: palette.cream }}>
+                <Icon size={14} style={{ color: palette.gold }} />
+                {label}
+              </a>
+            ))}
+          </div>
+        </section>
+
+        <div className="mt-14 pt-6 text-center font-mono text-[10px] uppercase tracking-[0.3em]" style={{ borderTop: `1px solid ${palette.hair}`, color: palette.creamMuted }}>
+          Est. 2026 · Aligarh, Uttar Pradesh, India
         </div>
       </div>
     </div>
