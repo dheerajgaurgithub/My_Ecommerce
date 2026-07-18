@@ -127,22 +127,24 @@ export function Header() {
   return (
     <>
       {/* Announcement bar */}
-      <div className="bg-neutral-900 dark:bg-black text-white text-xs sm:text-sm py-2 text-center px-4">
-        <p className="font-medium">
-          {deliveryAvailable === true && freeDelivery ? `FREE DELIVERY in ${userLocation}` :
-           deliveryAvailable === true && !freeDelivery ? `DELIVERY AVAILABLE in ${userLocation}` :
-           deliveryAvailable === false ? `DELIVERY NOT AVAILABLE in ${userLocation}` :
-           `FREE DELIVERY in ${userLocation}`}
-          {' '}&bull; Quality Clothing Since 2026
-        </p>
+      <div className="bg-neutral-900 dark:bg-black text-white text-[10px] sm:text-xs py-1.5 sm:py-2 overflow-hidden">
+        <div className="animate-marquee whitespace-nowrap">
+          <p className="font-medium inline-block">
+            {deliveryAvailable === true && freeDelivery ? `FREE DELIVERY in ${userLocation}` :
+             deliveryAvailable === true && !freeDelivery ? `DELIVERY AVAILABLE in ${userLocation}` :
+             deliveryAvailable === false ? `DELIVERY NOT AVAILABLE in ${userLocation}` :
+             `FREE DELIVERY in ${userLocation}`}
+            {' '}&bull; Quality Clothing Since 2026
+          </p>
+        </div>
       </div>
 
       <header className={`sticky top-0 z-50 transition-all duration-300 ${scrolled ? 'glass shadow-md' : 'bg-white dark:bg-neutral-900'}`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="flex items-center justify-between h-16 gap-4">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
+          <div className="flex items-center justify-between h-14 sm:h-16 gap-2 sm:gap-4">
             {/* Mobile menu button */}
             <button
-              className="lg:hidden text-neutral-700 dark:text-neutral-200"
+              className="lg:hidden text-neutral-700 dark:text-neutral-200 p-2"
               onClick={() => setShowMobileMenu(true)}
             >
               <Menu size={24} />
@@ -150,12 +152,12 @@ export function Header() {
 
             {/* Logo */}
             <Link to="/" className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-              <img src="/logo.png" alt="Mahir & Friends" className="h-8 w-8 sm:h-10 sm:w-10 object-contain" />
+              <img src="/logo.png" alt="Mahir & Friends" className="h-7 w-7 sm:h-8 sm:w-8 lg:h-10 lg:w-10 object-contain" />
               <div className="flex flex-col">
-                <span className="font-serif text-base sm:text-xl lg:text-2xl font-bold tracking-tight text-neutral-900 dark:text-white leading-tight">
+                <span className="font-serif text-sm sm:text-base lg:text-xl xl:text-2xl font-bold tracking-tight text-neutral-900 dark:text-white leading-tight">
                   MAHIR <span className="text-brand-600">& FRIENDS</span>
                 </span>
-                <span className="text-[10px] sm:text-xs text-neutral-500 dark:text-neutral-400 leading-tight hidden sm:block">
+                <span className="text-[9px] sm:text-[10px] lg:text-xs text-neutral-500 dark:text-neutral-400 leading-tight hidden sm:block">
                   Everything You Need, Delivered Today
                 </span>
               </div>
@@ -266,7 +268,7 @@ export function Header() {
                       <img
                         src={user.profilePicture}
                         alt="Profile"
-                        className="w-8 h-8 rounded-full object-cover"
+                        className="w-8 h-8 rounded-full object-cover aspect-square"
                       />
                     ) : (
                       <User size={20} />
@@ -281,10 +283,10 @@ export function Header() {
                             <img
                               src={user.profilePicture}
                               alt="Profile"
-                              className="w-10 h-10 rounded-full object-cover"
+                              className="w-10 h-10 rounded-full object-cover aspect-square"
                             />
                           ) : (
-                            <div className="w-10 h-10 rounded-full bg-brand-100 dark:bg-brand-900 flex items-center justify-center">
+                            <div className="w-10 h-10 rounded-full bg-brand-100 dark:bg-brand-900 flex items-center justify-center aspect-square">
                               <User size={20} className="text-brand-600 dark:text-brand-300" />
                             </div>
                           )}
