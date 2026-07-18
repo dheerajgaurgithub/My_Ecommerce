@@ -210,6 +210,12 @@ const deliveryPartnerSchema = new mongoose.Schema({
     },
     paymentId: {
       type: String
+    },
+    razorpayOrderId: {
+      type: String
+    },
+    signature: {
+      type: String
     }
   },
   renewalFee: {
@@ -226,6 +232,15 @@ const deliveryPartnerSchema = new mongoose.Schema({
     isPaid: {
       type: Boolean,
       default: true
+    },
+    paymentId: {
+      type: String
+    },
+    razorpayOrderId: {
+      type: String
+    },
+    signature: {
+      type: String
     }
   },
   emergencyContact: {

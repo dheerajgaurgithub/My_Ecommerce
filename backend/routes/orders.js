@@ -68,11 +68,12 @@ router.get('/:orderNumber', auth, async (req, res) => {
 // Create order
 router.post('/', auth, async (req, res) => {
   try {
-    const { 
-      address_id, 
-      payment_method, 
-      delivery_type, 
-      coupon_code 
+    const {
+      address_id,
+      payment_method,
+      delivery_type,
+      coupon_code,
+      payment_details
     } = req.body;
 
     // Get user to check for first order discount
@@ -152,6 +153,7 @@ router.post('/', auth, async (req, res) => {
       payment_method: payment_method,
       payment_status: isOnline ? 'paid' : 'pending',
       paid_at: isOnline ? new Date() : null,
+      payment_details: payment_details || null,
       address_snapshot: { address_id }, // Store address ID reference
       timeline,
       items: orderItems

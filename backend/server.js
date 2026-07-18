@@ -78,6 +78,7 @@ import googleAuthRoutes from './routes/googleAuth.js';
 import newsletterRoutes from './routes/newsletter.js';
 import contactRoutes from './routes/contact.js';
 import feedbackRoutes from './routes/feedback.js';
+import paymentRoutes from './routes/payments.js';
 import { apiLimiter, authLimiter, orderLimiter } from './middleware/rateLimit.js';
 import { auth } from './middleware/auth.js';
 
@@ -104,6 +105,8 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/newsletter', newsletterRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/feedback', auth, feedbackRoutes);
+app.use('/api/payments', auth, paymentRoutes);
+app.use('/api/payments/webhook', paymentRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

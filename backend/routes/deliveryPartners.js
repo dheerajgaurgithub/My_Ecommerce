@@ -11,6 +11,8 @@ import bcrypt from 'bcryptjs';
 import PDFDocument from 'pdfkit';
 import { generateDeliveryPartnerPDF } from '../utils/generatePartnerPDF.js';
 import { sendEmail, sendFeedbackRequestEmail } from '../services/emailService.js';
+import { createFeePaymentOrder, createUPIPaymentQR } from '../utils/qrCode.js';
+import { verifyRazorpaySignature } from '../utils/razorpay.js';
 
 const router = express.Router();
 
@@ -752,7 +754,88 @@ router.put('/admin/:id/reject', async (req, res) => {
   }
 });
 
-// Pay joining fee
+// Generate payment QR code for joining fee
+router.post('/joining-fee-qr', auth, isDeliveryPartner, async (req, res) => {
+  try {
+    const partner = req.deliveryPartner;
+
+    if (partner.status !== 'approved' && partner.status !== 'payment_pending') {
+      return res.status(400).json({ success: false, message: 'You must be approved before paying the joining fee' });
+    }
+
+    if (partner.joiningFee?.paid) {
+      return res.status(400).json({ success: false, message: 'Joining fee already paid' });
+    }
+
+    const amount = partner.joiningFee?.amount || 500;
+
+    // Create Razorpay order and generate QR code
+    const paymentDetails = await createFeePaymentOrder(amount, 'joining_fee', partner._id);
+
+    res.json({
+      success: true,
+      message: 'Payment QR code generated successfully',
+      data: paymentDetails
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Verify joining fee payment
+router.post('/verify-joining-fee', auth, isDeliveryPartner, [
+  body('razorpay_order_id').notEmpty().withMessage('Razorpay order ID required'),
+  body('razorpay_payment_id').notEmpty().withMessage('Razorpay payment ID required'),
+  body('razorpay_signature').notEmpty().withMessage('Razorpay signature required')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ success: false, errors: errors.array() });
+    }
+
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+    const partner = req.deliveryPartner;
+
+    // Verify signature
+    const isValid = verifyRazorpaySignature(razorpay_order_id, razorpay_payment_id, razorpay_signature);
+    if (!isValid) {
+      return res.status(400).json({ success: false, message: 'Invalid payment signature' });
+    }
+
+    if (partner.joiningFee?.paid) {
+      return res.status(400).json({ success: false, message: 'Joining fee already paid' });
+    }
+
+    // Update partner payment status
+    partner.joiningFee = {
+      amount: partner.joiningFee?.amount || 500,
+      paid: true,
+      paidAt: new Date(),
+      paymentId: razorpay_payment_id,
+      razorpayOrderId: razorpay_order_id,
+      signature: razorpay_signature
+    };
+
+    partner.status = 'active';
+
+    // Set renewal fee due date (30 days from now)
+    partner.renewalFee = {
+      amount: partner.renewalFee?.amount || 200,
+      lastPaidAt: new Date(),
+      nextDueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      isPaid: true
+    };
+
+    await partner.save();
+
+    res.json({ success: true, message: 'Joining fee paid successfully. You can now start working!', data: partner });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Pay joining fee (legacy route - kept for backward compatibility)
 router.post('/pay-joining-fee', auth, isDeliveryPartner, async (req, res) => {
   try {
     const partner = req.deliveryPartner;
@@ -793,7 +876,71 @@ router.post('/pay-joining-fee', auth, isDeliveryPartner, async (req, res) => {
   }
 });
 
-// Pay renewal fee
+// Generate payment QR code for renewal fee
+router.post('/renewal-fee-qr', auth, isDeliveryPartner, async (req, res) => {
+  try {
+    const partner = req.deliveryPartner;
+
+    if (partner.status !== 'active') {
+      return res.status(400).json({ success: false, message: 'Your account must be active to pay renewal fee' });
+    }
+
+    const amount = partner.renewalFee?.amount || 200;
+
+    // Create Razorpay order and generate QR code
+    const paymentDetails = await createFeePaymentOrder(amount, 'renewal_fee', partner._id);
+
+    res.json({
+      success: true,
+      message: 'Payment QR code generated successfully',
+      data: paymentDetails
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Verify renewal fee payment
+router.post('/verify-renewal-fee', auth, isDeliveryPartner, [
+  body('razorpay_order_id').notEmpty().withMessage('Razorpay order ID required'),
+  body('razorpay_payment_id').notEmpty().withMessage('Razorpay payment ID required'),
+  body('razorpay_signature').notEmpty().withMessage('Razorpay signature required')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ success: false, errors: errors.array() });
+    }
+
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+    const partner = req.deliveryPartner;
+
+    // Verify signature
+    const isValid = verifyRazorpaySignature(razorpay_order_id, razorpay_payment_id, razorpay_signature);
+    if (!isValid) {
+      return res.status(400).json({ success: false, message: 'Invalid payment signature' });
+    }
+
+    // Update partner payment status
+    partner.renewalFee = {
+      amount: partner.renewalFee?.amount || 200,
+      lastPaidAt: new Date(),
+      nextDueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      isPaid: true,
+      paymentId: razorpay_payment_id,
+      razorpayOrderId: razorpay_order_id,
+      signature: razorpay_signature
+    };
+
+    await partner.save();
+
+    res.json({ success: true, message: 'Renewal fee paid successfully. Your account is active for another 30 days!', data: partner });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Pay renewal fee (legacy route - kept for backward compatibility)
 router.post('/pay-renewal-fee', auth, isDeliveryPartner, async (req, res) => {
   try {
     const partner = req.deliveryPartner;
