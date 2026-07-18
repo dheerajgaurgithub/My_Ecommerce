@@ -141,6 +141,19 @@ const createTransporter = () => {
 
 const transporter = createTransporter();
 
+const verifyTransporter = async () => {
+  if (!transporter) return false;
+
+  try {
+    await transporter.verify();
+    console.log('✅ Email transporter verified successfully');
+    return true;
+  } catch (error) {
+    console.warn('⚠️ Email transporter verification failed (non-blocking):', error.message);
+    return false;
+  }
+};
+
 const buildGmailMime = ({ from, to, subject, text, html }) => {
   const boundary = 'mixed_' + Math.random().toString(16).slice(2);
   if (html && text) {
@@ -800,9 +813,11 @@ if (EMAIL_CONFIG.enableEmailSending) {
   console.log(`   • SMTP: ${!!transporter ? '✅' : '❌'}`);
   console.log(`   • From: ${EMAIL_CONFIG.from}`);
 
-  // Skip email verification completely - Render blocks SMTP connections
-  // Email sending will still work, just won't verify on startup
-  console.log('⚠️ Email verification skipped (SMTP may be blocked on deployment platform)');
+  // Run email verification in background - don't block server startup
+  // This allows deployment to succeed even if SMTP is blocked
+  setTimeout(() => {
+    verifyTransporter();
+  }, 2000);
 } else {
   console.log('📪 Email sending is disabled');
 }
