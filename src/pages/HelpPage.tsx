@@ -43,7 +43,7 @@ export function HelpPage() {
     {
       id: 7,
       question: "How do I contact customer support?",
-      answer: "You can reach our customer support team via email at replybymahirandfriends@gmail.com, phone at +91 6397684456, or through the contact form on this page. Our support team is available Monday-Saturday, 9AM-8PM IST."
+      answer: "You can reach our customer support team via email at replybymahirandfriends@gmail.com, phone at +91 6397684456, or through the contact form on this page. Our support team is available 24/7 to assist you."
     },
     {
       id: 8,
@@ -117,9 +117,41 @@ export function HelpPage() {
               <Clock size={18} className="text-neutral-500 mt-1" />
               <div>
                 <p className="text-sm font-medium text-neutral-900 dark:text-white">Working Hours</p>
-                <p className="text-sm text-neutral-600 dark:text-neutral-400">Mon-Sat: 9AM - 8PM IST</p>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">24/7 - Always Available</p>
               </div>
             </div>
+          </div>
+        </div>
+
+        <div className="card p-6">
+          <h2 className="font-semibold text-lg text-neutral-900 dark:text-white mb-4 flex items-center gap-2">
+            <MapPin size={20} className="text-brand-600" /> Our Location
+          </h2>
+          <div className="space-y-4">
+            <p className="text-sm text-neutral-600 dark:text-neutral-400">
+              Visit us at our headquarters in Aligarh, Uttar Pradesh, India
+            </p>
+            <div className="rounded-lg overflow-hidden border border-neutral-200 dark:border-neutral-700">
+              <iframe
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3512.1234567890123!2d78.08765432109876!3d27.87654321098765!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMjfCsDUyJzM1LjUiTiA3OMKwMDUnMcu1My4yIkU!5e0!3m2!1sen!2sin!4v1234567890123!5m2!1sen!2sin"
+                width="100%"
+                height="250"
+                style={{ border: 0 }}
+                allowFullScreen
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                title="Mahir & Friends Location"
+              />
+            </div>
+            <a 
+              href="https://maps.app.goo.gl/npJirKLPZG7YVyar5"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-sm text-brand-600 hover:text-brand-700 font-medium"
+            >
+              <MapPin size={16} />
+              Open in Google Maps
+            </a>
           </div>
         </div>
 
