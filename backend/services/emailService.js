@@ -209,13 +209,13 @@ const createOTPEmailTemplate = (otp, type = 'password-reset', name = '') => {
         <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
           <div style="max-width: 600px; margin: 40px auto; background-color: white; padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
             <div style="text-align: center; margin-bottom: 30px;">
-              <img src="https://mahirandfriends.onrender.com/logo.png" alt="Mahir & Friends Logo" style="width: 80px; height: 80px; margin-bottom: 15px;">
+              <div style="font-size: 50px; margin-bottom: 10px;">🔒</div>
               <h1 style="color: #667eea; margin: 0; font-size: 32px; font-weight: bold;">Mahir & Friends</h1>
               <p style="color: #764ba2; margin-top: 5px; font-size: 16px;">Premium Fashion Store</p>
             </div>
-            
+
             <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 25px; border-radius: 15px; margin-bottom: 30px; text-align: center;">
-              <p style="color: white; margin: 0; font-size: 18px; font-weight: bold;">Your Password Reset Code</p>
+              <p style="color: white; margin: 0; font-size: 18px; font-weight: bold;">🔒 Password Reset Code - Mahir & Friends</p>
             </div>
             
             <p style="color: #374151; line-height: 1.6; margin-bottom: 25px; font-size: 15px;">
