@@ -141,19 +141,6 @@ const createTransporter = () => {
 
 const transporter = createTransporter();
 
-const verifyTransporter = async () => {
-  if (!transporter) return false;
-  
-  try {
-    await transporter.verify();
-    console.log('✅ Email transporter verified successfully');
-    return true;
-  } catch (error) {
-    console.error('❌ Email transporter verification failed:', error.message);
-    return false;
-  }
-};
-
 const buildGmailMime = ({ from, to, subject, text, html }) => {
   const boundary = 'mixed_' + Math.random().toString(16).slice(2);
   if (html && text) {
