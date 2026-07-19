@@ -9,7 +9,7 @@ const razorpay = new Razorpay({
 
 /**
  * Create a Razorpay order
- * @param {number} amount - Amount in paise (1 INR = 100 paise)
+ * @param {number} amount - Amount in rupees (will be converted to paise internally)
  * @param {string} currency - Currency code (default: INR)
  * @param {string} receipt - Receipt ID for order tracking
  * @param {object} notes - Additional notes for the order
@@ -18,7 +18,7 @@ const razorpay = new Razorpay({
 export const createRazorpayOrder = async (amount, currency = 'INR', receipt = '', notes = {}) => {
   try {
     const options = {
-      amount: amount * 100, // Convert to paise
+      amount: amount * 100, // Convert rupees to paise (1 INR = 100 paise)
       currency,
       receipt,
       notes,

@@ -102,56 +102,40 @@ export function CartPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
-      <h1 className="font-serif text-2xl sm:text-3xl font-bold text-neutral-900 dark:text-white mb-6">Shopping Cart</h1>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
+      <h1 className="font-serif text-2xl sm:text-3xl lg:text-4xl font-bold text-neutral-900 dark:text-white mb-6 lg:mb-8">Shopping Cart</h1>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
         {/* Cart items */}
-        <div className="lg:col-span-2 space-y-4">
+        <div className="lg:col-span-2 space-y-4 lg:space-y-6">
           {items.map((item) => {
             const product = typeof item.product_id === 'object' ? item.product_id : item.product;
             return (
-              <div key={item._id} className="card p-4 flex gap-4">
-                <Link to={`/product/${product?.slug}`} className="flex-shrink-0">
-                  <img src={product?.images?.[0]} alt={product?.name} className="w-24 h-32 object-cover rounded-lg" />
-                </Link>
-                <div className="flex-1 min-w-0">
-                  <Link to={`/product/${product?.slug}`}>
-                    <h3 className="font-medium text-neutral-900 dark:text-white hover:text-brand-600 line-clamp-2">{product?.name}</h3>
+              <div key={item._id} className="card p-4 lg:p-6">
+                <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
+                  <Link to={`/product/${product?.slug}`} className="flex-shrink-0 mx-auto lg:mx-0">
+                    <img src={product?.images?.[0]} alt={product?.name} className="w-full h-64 lg:h-80 object-cover rounded-xl" />
                   </Link>
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">{product?.brand}</p>
-                  <div className="flex gap-3 mt-2 text-sm text-neutral-600 dark:text-neutral-400">
-                    {item.size && <span>Size: {item.size}</span>}
-                    {item.color && <span>Color: {item.color}</span>}
-                  </div>
-                  <div className="flex items-center gap-2 mt-2">
-                    <span className="font-semibold text-neutral-900 dark:text-white">{formatPrice(product?.price ?? 0)}</span>
-                    {product?.compare_at_price && (
-                      <span className="text-sm text-neutral-400 line-through">{formatPrice(product.compare_at_price)}</span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-3 mt-3 flex-wrap">
-                    <div className="flex items-center border border-neutral-300 dark:border-neutral-600 rounded-lg">
-                      <button onClick={() => updateQuantity(item._id, item.quantity - 1)} className="p-1.5 hover:bg-neutral-50 dark:hover:bg-neutral-700 rounded-l-lg">
-                        <Minus size={14} />
-                      </button>
-                      <span className="px-3 text-sm font-medium">{item.quantity}</span>
-                      <button onClick={() => updateQuantity(item._id, item.quantity + 1)} className="p-1.5 hover:bg-neutral-50 dark:hover:bg-neutral-700 rounded-r-lg">
-                        <Plus size={14} />
+                  <div className="flex-1 flex flex-col items-center lg:items-start text-center lg:text-left">
+                    <Link to={`/product/${product?.slug}`}>
+                      <h3 className="font-medium text-lg lg:text-xl text-neutral-900 dark:text-white hover:text-brand-600">{product?.name}</h3>
+                    </Link>
+                    <p className="text-base lg:text-lg font-semibold text-neutral-900 dark:text-white mt-2 lg:mt-3">{formatPrice(product?.price ?? 0)}</p>
+                    
+                    <div className="flex items-center gap-3 lg:gap-4 mt-4 lg:mt-6">
+                      <div className="flex items-center border border-neutral-300 dark:border-neutral-600 rounded-lg">
+                        <button onClick={() => updateQuantity(item._id, item.quantity - 1)} className="p-2 lg:p-2.5 hover:bg-neutral-50 dark:hover:bg-neutral-700 rounded-l-lg transition-colors">
+                          <Minus size={18} />
+                        </button>
+                        <span className="px-4 text-base lg:text-lg font-medium">{item.quantity}</span>
+                        <button onClick={() => updateQuantity(item._id, item.quantity + 1)} className="p-2 lg:p-2.5 hover:bg-neutral-50 dark:hover:bg-neutral-700 rounded-r-lg transition-colors">
+                          <Plus size={18} />
+                        </button>
+                      </div>
+                      <button onClick={() => removeItem(item._id)} className="text-red-500 hover:text-red-600 flex items-center gap-1 transition-colors text-sm lg:text-base">
+                        <Trash2 size={18} /> Remove
                       </button>
                     </div>
-                    <button
-                      onClick={() => toggleGiftWrap(item._id, !item.gift_wrap)}
-                      className={`flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg border transition-all ${item.gift_wrap ? 'border-accent-500 bg-accent-50 dark:bg-accent-900 text-accent-700 dark:text-accent-300' : 'border-neutral-300 dark:border-neutral-600 text-neutral-600 dark:text-neutral-400'}`}
-                    >
-                      <Gift size={14} /> Gift Wrap (+Rs 50)
-                    </button>
-                    <button onClick={() => saveForLater(item._id, true)} className="text-xs text-neutral-500 hover:text-brand-600">
-                      Save for Later
-                    </button>
-                    <button onClick={() => removeItem(item._id)} className="text-xs text-red-500 hover:text-red-600 flex items-center gap-1">
-                      <Trash2 size={14} /> Remove
-                    </button>
                   </div>
                 </div>
               </div>
@@ -161,19 +145,19 @@ export function CartPage() {
 
         {/* Summary */}
         <div className="lg:col-span-1">
-          <div className="card p-5 sticky top-24">
-            <h2 className="font-semibold text-lg text-neutral-900 dark:text-white mb-4">Order Summary</h2>
+          <div className="card p-5 lg:p-6 sticky top-24 lg:top-28">
+            <h2 className="font-semibold text-lg lg:text-xl text-neutral-900 dark:text-white mb-4 lg:mb-6">Order Summary</h2>
 
             {/* Coupon */}
-            <div className="mb-4">
+            <div className="mb-4 lg:mb-6">
               {appliedCoupon ? (
-                <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/30 rounded-lg">
+                <div className="flex items-center justify-between p-3 lg:p-4 bg-green-50 dark:bg-green-900/30 rounded-lg">
                   <div className="flex items-center gap-2">
-                    <Tag size={16} className="text-green-600" />
-                    <span className="text-sm font-medium text-green-700 dark:text-green-400">{appliedCoupon.code}</span>
+                    <Tag size={18} className="text-green-600" />
+                    <span className="text-sm lg:text-base font-medium text-green-700 dark:text-green-400">{appliedCoupon.code}</span>
                   </div>
-                  <button onClick={removeCoupon} className="text-green-600 hover:text-green-700">
-                    <X size={16} />
+                  <button onClick={removeCoupon} className="text-green-600 hover:text-green-700 transition-colors">
+                    <X size={18} />
                   </button>
                 </div>
               ) : (
@@ -184,19 +168,19 @@ export function CartPage() {
                       placeholder="Coupon code"
                       value={couponCode}
                       onChange={(e) => setCouponCode(e.target.value)}
-                      className="flex-1 px-3 py-2 text-sm rounded-lg border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800"
+                      className="flex-1 px-3 lg:px-4 py-2.5 lg:py-3 text-sm lg:text-base rounded-lg border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-brand-500"
                     />
-                    <button onClick={applyCoupon} className="px-4 py-2 text-sm bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 rounded-lg font-medium">
+                    <button onClick={applyCoupon} className="px-4 lg:px-6 py-2.5 lg:py-3 text-sm lg:text-base bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 rounded-lg font-medium hover:bg-neutral-800 dark:hover:bg-neutral-100 transition-colors">
                       Apply
                     </button>
                   </div>
-                  {couponError && <p className="text-xs text-red-500 mt-1">{couponError}</p>}
-                  <p className="text-xs text-neutral-500 mt-2">Try: WELCOME10, FLAT100, FESTIVE25</p>
+                  {couponError && <p className="text-xs lg:text-sm text-red-500 mt-2">{couponError}</p>}
+                  <p className="text-xs lg:text-sm text-neutral-500 mt-2 lg:mt-3">Try: WELCOME10, FLAT100, FESTIVE25</p>
                 </>
               )}
             </div>
 
-            <div className="space-y-2 text-sm border-t border-neutral-100 dark:border-neutral-700 pt-4">
+            <div className="space-y-3 lg:space-y-4 text-sm lg:text-base border-t border-neutral-100 dark:border-neutral-700 pt-4 lg:pt-6">
               <div className="flex justify-between">
                 <span className="text-neutral-600 dark:text-neutral-400">Subtotal</span>
                 <span className="font-medium text-neutral-900 dark:text-white">{formatPrice(baseSubtotal)}</span>
@@ -224,19 +208,19 @@ export function CartPage() {
                 </span>
               </div>
               {shipping > 0 && (
-                <p className="text-xs text-neutral-500">Add {formatPrice(999 - taxableAmount)} more for free delivery</p>
+                <p className="text-xs lg:text-sm text-neutral-500">Add {formatPrice(999 - taxableAmount)} more for free delivery</p>
               )}
             </div>
 
-            <div className="flex justify-between border-t border-neutral-100 dark:border-neutral-700 pt-4 mt-4">
-              <span className="font-semibold text-neutral-900 dark:text-white">Total</span>
-              <span className="font-bold text-lg text-neutral-900 dark:text-white">{formatPrice(total)}</span>
+            <div className="flex justify-between border-t border-neutral-100 dark:border-neutral-700 pt-4 lg:pt-6 mt-4 lg:mt-6">
+              <span className="font-semibold text-lg lg:text-xl text-neutral-900 dark:text-white">Total</span>
+              <span className="font-bold text-xl lg:text-2xl text-neutral-900 dark:text-white">{formatPrice(total)}</span>
             </div>
 
-            <button onClick={handleCheckout} className="w-full btn-primary mt-5 flex items-center justify-center gap-2">
-              Proceed to Checkout <ArrowRight size={18} />
+            <button onClick={handleCheckout} className="w-full btn-primary mt-5 lg:mt-6 flex items-center justify-center gap-2 text-base lg:text-lg">
+              Proceed to Checkout <ArrowRight size={20} />
             </button>
-            <Link to="/shop" className="block text-center text-sm text-neutral-500 hover:text-brand-600 mt-3">
+            <Link to="/shop" className="block text-center text-sm lg:text-base text-neutral-500 hover:text-brand-600 mt-3 lg:mt-4 transition-colors">
               Continue Shopping
             </Link>
           </div>

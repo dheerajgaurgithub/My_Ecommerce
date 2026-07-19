@@ -53,59 +53,59 @@ export function TrackOrderPage() {
   };
 
   return (
-    <div className="max-w-3xl mx-auto px-6 py-12">
-      <div className="mb-8 text-center">
-        <h1 className="font-serif text-3xl sm:text-4xl font-bold text-neutral-900 dark:text-white mb-2">Track Your Order</h1>
-        <p className="text-neutral-600 dark:text-neutral-400">Enter your order number to check the status</p>
+    <div className="max-w-4xl lg:max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
+      <div className="mb-8 lg:mb-12 text-center">
+        <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold text-neutral-900 dark:text-white mb-2 lg:mb-3">Track Your Order</h1>
+        <p className="text-base lg:text-lg text-neutral-600 dark:text-neutral-400">Enter your order number to check the status</p>
       </div>
 
-      <div className="card p-6 mb-8">
-        <form onSubmit={handleTrack} className="flex gap-3">
+      <div className="card p-5 lg:p-8 mb-6 lg:mb-8">
+        <form onSubmit={handleTrack} className="flex gap-3 lg:gap-4">
           <div className="flex-1">
             <input
               type="text"
               value={orderNumber}
               onChange={(e) => setOrderNumber(e.target.value.toUpperCase())}
               placeholder="Enter Order Number (e.g., MF123456789012)"
-              className="input w-full"
+              className="input w-full text-base lg:text-lg"
               required
             />
           </div>
-          <button type="submit" disabled={loading} className="btn-primary flex items-center gap-2">
-            {loading ? 'Tracking...' : <><Search size={18} /> Track</>}
+          <button type="submit" disabled={loading} className="btn-primary flex items-center gap-2 px-6 lg:px-8">
+            {loading ? 'Tracking...' : <><Search size={20} /> Track</>}
           </button>
         </form>
-        {error && <p className="text-red-600 text-sm mt-3">{error}</p>}
+        {error && <p className="text-red-600 text-sm lg:text-base mt-3">{error}</p>}
       </div>
 
       {order && (
-        <div className="card p-6">
-          <div className="flex items-center justify-between mb-6 pb-4 border-b border-neutral-200 dark:border-neutral-700">
+        <div className="card p-6 lg:p-8">
+          <div className="flex items-center justify-between mb-6 lg:mb-8 pb-4 lg:pb-6 border-b border-neutral-200 dark:border-neutral-700">
             <div>
-              <p className="text-sm text-neutral-500">Order Number</p>
-              <p className="font-semibold text-lg text-neutral-900 dark:text-white">{order.order_number}</p>
+              <p className="text-sm lg:text-base text-neutral-500">Order Number</p>
+              <p className="font-semibold text-xl lg:text-2xl text-neutral-900 dark:text-white">{order.order_number}</p>
             </div>
-            <div className={`px-4 py-2 rounded-full text-sm font-medium capitalize ${getStatusColor(order.status)}`}>
+            <div className={`px-4 lg:px-6 py-2 lg:py-3 rounded-full text-sm lg:text-base font-medium capitalize ${getStatusColor(order.status)}`}>
               {order.status.replace('_', ' ')}
             </div>
           </div>
 
-          <div className="mb-6">
-            <h3 className="font-semibold text-neutral-900 dark:text-white mb-4 flex items-center gap-2">
-              <Package size={20} /> Order Timeline
+          <div className="mb-6 lg:mb-8">
+            <h3 className="font-semibold text-lg lg:text-xl text-neutral-900 dark:text-white mb-4 lg:mb-6 flex items-center gap-2">
+              <Package size={22} /> Order Timeline
             </h3>
-            <div className="space-y-4">
+            <div className="space-y-4 lg:space-y-5">
               {order.timeline?.map((event: any, index: number) => (
-                <div key={index} className="flex gap-4">
+                <div key={index} className="flex gap-4 lg:gap-6">
                   <div className="flex flex-col items-center">
-                    <div className="w-8 h-8 rounded-full bg-brand-100 dark:bg-brand-900 flex items-center justify-center">
+                    <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-brand-100 dark:bg-brand-900 flex items-center justify-center">
                       {getStatusIcon(event.status.toLowerCase().replace(' ', '_'))}
                     </div>
-                    {index < order.timeline.length - 1 && <div className="w-0.5 h-8 bg-neutral-200 dark:bg-neutral-700" />}
+                    {index < order.timeline.length - 1 && <div className="w-0.5 h-10 lg:h-12 bg-neutral-200 dark:bg-neutral-700" />}
                   </div>
-                  <div className="flex-1 pb-4">
-                    <p className="font-medium text-neutral-900 dark:text-white">{event.status}</p>
-                    <p className="text-sm text-neutral-500">{new Date(event.timestamp).toLocaleString()}</p>
+                  <div className="flex-1 pb-4 lg:pb-6">
+                    <p className="font-medium text-base lg:text-lg text-neutral-900 dark:text-white">{event.status}</p>
+                    <p className="text-sm lg:text-base text-neutral-500">{new Date(event.timestamp).toLocaleString()}</p>
                   </div>
                 </div>
               ))}
@@ -114,21 +114,21 @@ export function TrackOrderPage() {
 
           {/* Live Tracking Section */}
           {order.status === 'out_for_delivery' || order.status === 'reached_store' || order.status === 'picked_up' || order.status === 'in_transit' ? (
-            <div className="mb-6 pt-4 border-t border-neutral-200 dark:border-neutral-700">
-              <h3 className="font-semibold text-neutral-900 dark:text-white mb-4 flex items-center gap-2">
-                <Navigation size={20} /> Live Delivery Tracking
+            <div className="mb-6 lg:mb-8 pt-4 lg:pt-6 border-t border-neutral-200 dark:border-neutral-700">
+              <h3 className="font-semibold text-lg lg:text-xl text-neutral-900 dark:text-white mb-4 lg:mb-6 flex items-center gap-2">
+                <Navigation size={22} /> Live Delivery Tracking
               </h3>
-              <div className="bg-neutral-50 dark:bg-neutral-700 rounded-xl p-4">
-                <div className="flex items-start gap-4">
+              <div className="bg-neutral-50 dark:bg-neutral-700 rounded-xl p-4 lg:p-6">
+                <div className="flex items-start gap-4 lg:gap-6">
                   <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-3">
-                      <MapPin size={18} className="text-brand-600" />
-                      <span className="text-sm font-medium text-neutral-900 dark:text-white">Delivery Partner Location</span>
+                    <div className="flex items-center gap-2 mb-3 lg:mb-4">
+                      <MapPin size={20} className="text-brand-600" />
+                      <span className="text-base lg:text-lg font-medium text-neutral-900 dark:text-white">Delivery Partner Location</span>
                     </div>
-                    <div className="bg-white dark:bg-neutral-800 rounded-lg h-48 flex items-center justify-center mb-3">
+                    <div className="bg-white dark:bg-neutral-800 rounded-lg h-48 lg:h-56 flex items-center justify-center mb-3 lg:mb-4">
                       <div className="text-center">
-                        <Truck size={32} className="text-brand-600 mx-auto mb-2" />
-                        <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                        <Truck size={36} className="text-brand-600 mx-auto mb-2" />
+                        <p className="text-sm lg:text-base text-neutral-600 dark:text-neutral-400">
                           {order.status === 'out_for_delivery' ? 'Partner is on the way to store' :
                            order.status === 'reached_store' ? 'Partner at store, picking up order' :
                            order.status === 'picked_up' ? 'Order picked up, heading to you' :
@@ -136,7 +136,7 @@ export function TrackOrderPage() {
                         </p>
                       </div>
                     </div>
-                    <div className="space-y-2 text-sm">
+                    <div className="space-y-2 lg:space-y-3 text-sm lg:text-base">
                       <div className="flex justify-between">
                         <span className="text-neutral-500">Estimated Arrival</span>
                         <span className="text-neutral-900 dark:text-white font-medium">
@@ -150,15 +150,15 @@ export function TrackOrderPage() {
                         </span>
                       </div>
                       {order.delivery?.pickupOTP && (
-                        <div className="flex justify-between items-center bg-yellow-50 dark:bg-yellow-900/20 p-2 rounded-lg">
+                        <div className="flex justify-between items-center bg-yellow-50 dark:bg-yellow-900/20 p-3 lg:p-4 rounded-lg">
                           <span className="text-neutral-700 dark:text-neutral-300">Pickup OTP</span>
-                          <span className="font-mono font-bold text-yellow-700 dark:text-yellow-300">{order.delivery.pickupOTP}</span>
+                          <span className="font-mono font-bold text-lg lg:text-xl text-yellow-700 dark:text-yellow-300">{order.delivery.pickupOTP}</span>
                         </div>
                       )}
                       {order.delivery?.deliveryOTP && (
-                        <div className="flex justify-between items-center bg-green-50 dark:bg-green-900/20 p-2 rounded-lg">
+                        <div className="flex justify-between items-center bg-green-50 dark:bg-green-900/20 p-3 lg:p-4 rounded-lg">
                           <span className="text-neutral-700 dark:text-neutral-300">Delivery OTP</span>
-                          <span className="font-mono font-bold text-green-700 dark:text-green-300">{order.delivery.deliveryOTP}</span>
+                          <span className="font-mono font-bold text-lg lg:text-xl text-green-700 dark:text-green-300">{order.delivery.deliveryOTP}</span>
                         </div>
                       )}
                     </div>
@@ -168,22 +168,22 @@ export function TrackOrderPage() {
             </div>
           ) : null}
 
-          <div className="grid md:grid-cols-2 gap-4 pt-4 border-t border-neutral-200 dark:border-neutral-700">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 pt-4 lg:pt-6 border-t border-neutral-200 dark:border-neutral-700">
             <div>
-              <p className="text-sm text-neutral-500">Total Amount</p>
-              <p className="font-semibold text-neutral-900 dark:text-white">₹{order.total}</p>
+              <p className="text-sm lg:text-base text-neutral-500">Total Amount</p>
+              <p className="font-semibold text-lg lg:text-xl text-neutral-900 dark:text-white">₹{order.total}</p>
             </div>
             <div>
-              <p className="text-sm text-neutral-500">Payment Method</p>
-              <p className="font-semibold text-neutral-900 dark:text-white capitalize">{order.payment_method}</p>
+              <p className="text-sm lg:text-base text-neutral-500">Payment Method</p>
+              <p className="font-semibold text-base lg:text-lg text-neutral-900 dark:text-white capitalize">{order.payment_method}</p>
             </div>
             <div>
-              <p className="text-sm text-neutral-500">Payment Status</p>
-              <p className="font-semibold text-neutral-900 dark:text-white capitalize">{order.payment_status}</p>
+              <p className="text-sm lg:text-base text-neutral-500">Payment Status</p>
+              <p className="font-semibold text-base lg:text-lg text-neutral-900 dark:text-white capitalize">{order.payment_status}</p>
             </div>
             <div>
-              <p className="text-sm text-neutral-500">Order Date</p>
-              <p className="font-semibold text-neutral-900 dark:text-white">{new Date(order.createdAt).toLocaleDateString()}</p>
+              <p className="text-sm lg:text-base text-neutral-500">Order Date</p>
+              <p className="font-semibold text-base lg:text-lg text-neutral-900 dark:text-white">{new Date(order.createdAt).toLocaleDateString()}</p>
             </div>
           </div>
         </div>

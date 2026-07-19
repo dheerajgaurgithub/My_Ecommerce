@@ -20,6 +20,31 @@ interface RazorpayOptions {
   modal: {
     ondismiss: () => void;
   };
+  method?: {
+    upi?: boolean;
+    card?: boolean;
+    netbanking?: boolean;
+    wallet?: boolean;
+    emi?: boolean;
+    paylater?: boolean;
+  };
+  config?: {
+    display: {
+      blocks: {
+        [key: string]: {
+          name: string;
+          instruments: Array<{
+            method: string;
+            flows?: string[];
+          }>;
+        };
+      };
+      sequence: string[];
+      preferences: {
+        show_default_blocks: boolean;
+      };
+    };
+  };
 }
 
 interface PaymentProps {
@@ -58,6 +83,7 @@ export function RazorpayPayment({
     script.async = true;
     script.onload = () => {
       console.log('Razorpay script loaded');
+      initiatePayment();
     };
     script.onerror = () => {
       console.error('Failed to load Razorpay script');
@@ -70,7 +96,7 @@ export function RazorpayPayment({
         script.parentNode.removeChild(script);
       }
     };
-  }, [onFailure]);
+  }, []);
 
   const initiatePayment = async () => {
     try {
@@ -88,7 +114,7 @@ export function RazorpayPayment({
 
       const { order, keyId } = response;
 
-      // Initialize Razorpay checkout
+      // Initialize Razorpay checkout with all payment methods
       const options: RazorpayOptions = {
         key: keyId,
         amount: order.amount,
@@ -107,6 +133,46 @@ export function RazorpayPayment({
         },
         theme: {
           color: '#4F46E5',
+        },
+        // Enable all payment methods
+        method: {
+          upi: true,
+          card: true,
+          netbanking: true,
+          wallet: true,
+          emi: true,
+          paylater: true,
+        },
+        // Configure UPI
+        config: {
+          display: {
+            blocks: {
+              utib: {
+                name: 'Pay via UPI',
+                instruments: [
+                  {
+                    method: 'upi',
+                    flows: ['qr', 'collect'],
+                  },
+                ],
+              },
+              other: {
+                name: 'Other Payment Methods',
+                instruments: [
+                  {
+                    method: 'card',
+                  },
+                  {
+                    method: 'netbanking',
+                  },
+                ],
+              },
+            },
+            sequence: ['block.utib', 'block.other'],
+            preferences: {
+              show_default_blocks: false,
+            },
+          },
         },
         modal: {
           ondismiss: () => {

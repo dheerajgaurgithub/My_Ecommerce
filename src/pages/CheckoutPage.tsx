@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Check, MapPin, CreditCard, Truck, Wallet, Banknote, Shield, Loader2, Lock } from 'lucide-react';
+import { Check, MapPin, CreditCard, Truck, Wallet, Banknote, Shield } from 'lucide-react';
 import { useCart } from '../lib/cart';
 import { useAuth } from '../lib/auth';
 import { useToast } from '../lib/toast';
@@ -20,7 +20,6 @@ export function CheckoutPage() {
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [newAddress, setNewAddress] = useState({ full_name: '', phone: '', pincode: '', address_line: '', city: '', state: '' });
   const [paymentMethod, setPaymentMethod] = useState('cod');
-  const [processingPayment, setProcessingPayment] = useState(false);
   const [placing, setPlacing] = useState(false);
   const [orderPlaced, setOrderPlaced] = useState<{ orderNumber: string; total: number; paymentMethod: string; paymentStatus: string; firstOrderDiscount?: number } | null>(null);
   const [hasFirstOrderDiscount, setHasFirstOrderDiscount] = useState(false);
@@ -142,19 +141,13 @@ export function CheckoutPage() {
       return;
     }
 
-    // For Razorpay payment, initiate Razorpay checkout
-    if (paymentMethod === 'razorpay') {
+    // For Razorpay payment (UPI, Card, Net Banking), initiate Razorpay checkout
+    if (paymentMethod === 'upi' || paymentMethod === 'card' || paymentMethod === 'netbanking') {
       setShowRazorpay(true);
       return;
     }
 
-    // For other online payments, show processing animation before creating the order
-    if (paymentMethod !== 'cod') {
-      setProcessingPayment(true);
-      await new Promise((r) => setTimeout(r, 2500));
-      setProcessingPayment(false);
-    }
-
+    // For COD, place order directly
     setPlacing(true);
 
     try {
@@ -367,21 +360,66 @@ export function CheckoutPage() {
             <div className="space-y-2">
               {[
                 { id: 'cod', label: 'Cash on Delivery', icon: Banknote, desc: 'Pay when you receive' },
-                { id: 'upi', label: 'UPI', icon: Wallet, desc: 'GPay, PhonePe, Paytm' },
+                { id: 'upi', label: 'UPI', icon: Wallet, desc: 'GPay, PhonePe, Paytm - Scan QR or enter UPI ID' },
                 { id: 'card', label: 'Debit / Credit Card', icon: CreditCard, desc: 'Visa, Mastercard, RuPay' },
                 { id: 'netbanking', label: 'Net Banking', icon: Wallet, desc: 'All major banks' },
-                { id: 'razorpay', label: 'Razorpay', icon: Shield, desc: 'Secure payment gateway' },
               ].map((method) => (
-                <label key={method.id} className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${paymentMethod === method.id ? 'border-brand-600 bg-brand-50 dark:bg-brand-900' : 'border-neutral-200 dark:border-neutral-700'}`}>
+                <label key={method.id} className={`flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${paymentMethod === method.id ? 'border-brand-600 bg-brand-50 dark:bg-brand-900' : 'border-neutral-200 dark:border-neutral-700'}`}>
                   <input type="radio" checked={paymentMethod === method.id} onChange={() => setPaymentMethod(method.id)} className="accent-brand-600" />
-                  <method.icon size={20} className="text-neutral-600 dark:text-neutral-400" />
-                  <div>
-                    <p className="text-sm font-medium text-neutral-900 dark:text-white">{method.label}</p>
-                    <p className="text-xs text-neutral-500">{method.desc}</p>
+                  <method.icon size={24} className="text-neutral-600 dark:text-neutral-400" />
+                  <div className="flex-1">
+                    <p className="text-base font-medium text-neutral-900 dark:text-white">{method.label}</p>
+                    <p className="text-sm text-neutral-500">{method.desc}</p>
                   </div>
+                  {paymentMethod === method.id && (method.id === 'upi' || method.id === 'card' || method.id === 'netbanking') && (
+                    <div className="text-right">
+                      <p className="text-xs text-neutral-500">Pay</p>
+                      <p className="font-bold text-lg text-brand-600">{formatPrice(total)}</p>
+                    </div>
+                  )}
                 </label>
               ))}
             </div>
+            
+            {/* Payment Method Details */}
+            {paymentMethod === 'upi' && (
+              <div className="mt-4 p-4 bg-neutral-50 dark:bg-neutral-800 rounded-lg">
+                <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-2">
+                  You will be redirected to Razorpay secure payment gateway where you can:
+                </p>
+                <ul className="text-sm text-neutral-600 dark:text-neutral-400 space-y-1 ml-4 list-disc">
+                  <li>Scan QR code with GPay, PhonePe, or Paytm</li>
+                  <li>Enter your UPI ID directly</li>
+                  <li>Amount will be automatically populated: <span className="font-bold text-brand-600">{formatPrice(total)}</span></li>
+                </ul>
+              </div>
+            )}
+            
+            {paymentMethod === 'card' && (
+              <div className="mt-4 p-4 bg-neutral-50 dark:bg-neutral-800 rounded-lg">
+                <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-2">
+                  You will be redirected to Razorpay secure payment gateway where you can:
+                </p>
+                <ul className="text-sm text-neutral-600 dark:text-neutral-400 space-y-1 ml-4 list-disc">
+                  <li>Enter your card number, expiry, and CVV</li>
+                  <li>Complete OTP verification</li>
+                  <li>Amount will be automatically charged: <span className="font-bold text-brand-600">{formatPrice(total)}</span></li>
+                </ul>
+              </div>
+            )}
+            
+            {paymentMethod === 'netbanking' && (
+              <div className="mt-4 p-4 bg-neutral-50 dark:bg-neutral-800 rounded-lg">
+                <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-2">
+                  You will be redirected to Razorpay secure payment gateway where you can:
+                </p>
+                <ul className="text-sm text-neutral-600 dark:text-neutral-400 space-y-1 ml-4 list-disc">
+                  <li>Select your bank from the list</li>
+                  <li>Login to your bank account</li>
+                  <li>Authorize payment of: <span className="font-bold text-brand-600">{formatPrice(total)}</span></li>
+                </ul>
+              </div>
+            )}
           </section>
         </div>
 
@@ -425,24 +463,6 @@ export function CheckoutPage() {
           </div>
         </div>
       </div>
-
-      {/* Payment Processing Modal */}
-      {processingPayment && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-neutral-800 rounded-2xl p-8 max-w-sm w-full text-center">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-brand-100 dark:bg-brand-900 flex items-center justify-center">
-              <Loader2 className="animate-spin text-brand-600" size={32} />
-            </div>
-            <h2 className="font-serif text-xl font-bold text-neutral-900 dark:text-white mb-2">Processing Payment</h2>
-            <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-4">
-              {paymentMethod === 'upi' ? 'Completing UPI payment...' : paymentMethod === 'card' ? 'Processing card payment...' : 'Processing payment...'}
-            </p>
-            <div className="flex items-center justify-center gap-2 text-xs text-neutral-400">
-              <Lock size={12} /> Secured with 256-bit encryption
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Razorpay Payment Modal */}
       {showRazorpay && (
