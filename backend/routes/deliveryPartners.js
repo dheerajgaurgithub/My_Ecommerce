@@ -49,7 +49,7 @@ router.post('/register', [
 
     const { password, ...partnerData } = req.body;
 
-    // Check if email or contact already exists
+    // Check if email or contact already exists in delivery partners
     const existingPartner = await DeliveryPartner.findOne({
       $or: [
         { 'personalDetails.contactNumber': partnerData.personalDetails.contactNumber },
@@ -59,6 +59,12 @@ router.post('/register', [
 
     if (existingPartner) {
       return res.status(400).json({ success: false, message: 'Contact number or email already registered' });
+    }
+
+    // Check if email already exists in users collection
+    const existingUser = await User.findOne({ email: partnerData.personalDetails.email });
+    if (existingUser) {
+      return res.status(400).json({ success: false, message: 'Email already registered as a user' });
     }
 
     // Create user account for delivery partner
