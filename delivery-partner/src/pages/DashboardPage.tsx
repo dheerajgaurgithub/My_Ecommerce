@@ -2,15 +2,17 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Package, MapPin, Phone, DollarSign, Clock, LogOut, Power,
-  TrendingUp, Truck
+  TrendingUp, Truck, User, Sun, Moon, CreditCard, LayoutDashboard
 } from 'lucide-react';
 import { useAuth } from '../lib/auth';
+import { useTheme } from '../lib/theme';
 import { useToast } from '../lib/toast';
 import { api } from '../lib/api';
 
 export function DashboardPage() {
   const navigate = useNavigate();
   const { signOut } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [ordersSubTab, setOrdersSubTab] = useState('available');
@@ -18,6 +20,8 @@ export function DashboardPage() {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isOnline, setIsOnline] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentType, setPaymentType] = useState<'joining' | 'renewal' | null>(null);
 
   useEffect(() => {
     fetchPartnerData();
@@ -96,6 +100,29 @@ export function DashboardPage() {
     }
   };
 
+  const handlePayment = async (type: 'joining' | 'renewal') => {
+    setPaymentType(type);
+    setShowPaymentModal(true);
+  };
+
+  const processPayment = async () => {
+    try {
+      const amount = paymentType === 'joining' ? 500 : 200;
+      const response = await api.post<{ success: boolean; paymentId?: string }>('/delivery-partners/payment', {
+        type: paymentType,
+        amount
+      });
+      
+      if (response.success) {
+        showToast('Payment successful!', 'success');
+        setShowPaymentModal(false);
+        fetchPartnerData();
+      }
+    } catch (error) {
+      showToast('Payment failed', 'error');
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 flex items-center justify-center">
@@ -105,23 +132,95 @@ export function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
-      {/* Header */}
-      <header className="bg-white dark:bg-neutral-800 border-b border-neutral-200 dark:border-neutral-700 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-brand-600 rounded-xl flex items-center justify-center">
-                <Truck className="w-6 h-6 text-white" />
-              </div>
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 flex">
+      {/* Sidebar */}
+      <aside className="w-64 bg-white dark:bg-neutral-800 border-r border-neutral-200 dark:border-neutral-700 fixed inset-y-0 left-0 z-40 flex flex-col">
+        {/* Logo */}
+        <div className="p-6 border-b border-neutral-200 dark:border-neutral-700">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-brand-600 rounded-xl flex items-center justify-center">
+              <Truck className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h1 className="font-serif text-xl font-bold text-neutral-900 dark:text-white">MAHIR & FRIENDS</h1>
+              <p className="text-xs text-neutral-600 dark:text-neutral-400">Delivery Partner</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Profile Section */}
+        <div className="p-4 border-b border-neutral-200 dark:border-neutral-700">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-brand-100 dark:bg-brand-900 rounded-full flex items-center justify-center">
+              <User className="w-6 h-6 text-brand-600 dark:text-brand-400" />
+            </div>
+            <div className="flex-1">
+              <p className="font-medium text-neutral-900 dark:text-white truncate">
+                {partnerData?.personalDetails?.fullName || 'Partner'}
+              </p>
+              <p className="text-sm text-neutral-600 dark:text-neutral-400 truncate">
+                {partnerData?.personalDetails?.email || 'email@example.com'}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Navigation */}
+        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+          {[
+            { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+            { id: 'orders', label: 'Orders', icon: Package },
+            { id: 'earnings', label: 'Earnings', icon: DollarSign },
+            { id: 'profile', label: 'Profile', icon: User },
+          ].map((item) => (
+            <button
+              key={item.id}
+              onClick={() => setActiveTab(item.id)}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                activeTab === item.id
+                  ? 'bg-brand-50 dark:bg-brand-900 text-brand-700 dark:text-brand-300'
+                  : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-700'
+              }`}
+            >
+              <item.icon className="w-5 h-5" />
+              {item.label}
+            </button>
+          ))}
+        </nav>
+
+        {/* Bottom Actions */}
+        <div className="p-4 border-t border-neutral-200 dark:border-neutral-700 space-y-2">
+          <button
+            onClick={toggleTheme}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-all"
+          >
+            {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+            {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+          </button>
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
+          >
+            <LogOut className="w-5 h-5" />
+            Logout
+          </button>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <div className="flex-1 lg:ml-64">
+        {/* Top Bar */}
+        <header className="bg-white dark:bg-neutral-800 border-b border-neutral-200 dark:border-neutral-700 sticky top-0 z-30">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
+            <div className="flex items-center justify-between">
               <div>
-                <h1 className="font-semibold text-neutral-900 dark:text-white">Delivery Partner Portal</h1>
+                <h2 className="text-xl font-semibold text-neutral-900 dark:text-white capitalize">
+                  {activeTab}
+                </h2>
                 <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                  {partnerData?.personalDetails?.fullName || 'Partner'}
+                  Welcome back, {partnerData?.personalDetails?.fullName?.split(' ')[0] || 'Partner'}
                 </p>
               </div>
-            </div>
-            <div className="flex items-center gap-3">
               <button
                 onClick={toggleOnlineStatus}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
@@ -133,43 +232,61 @@ export function DashboardPage() {
                 <Power className="w-5 h-5" />
                 {isOnline ? 'Online' : 'Offline'}
               </button>
-              <button
-                onClick={handleLogout}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300 font-medium hover:bg-red-200 dark:hover:bg-red-800 transition-colors"
-              >
-                <LogOut className="w-5 h-5" />
-                Logout
-              </button>
             </div>
           </div>
-        </div>
-      </header>
+        </header>
 
-      {/* Navigation Tabs */}
-      <div className="bg-white dark:bg-neutral-800 border-b border-neutral-200 dark:border-neutral-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <nav className="flex gap-1">
-            {['dashboard', 'orders', 'earnings', 'profile'].map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`px-4 py-3 font-medium capitalize transition-colors ${
-                  activeTab === tab
-                    ? 'text-brand-600 border-b-2 border-brand-600'
-                    : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
-                }`}
-              >
-                {tab}
-              </button>
-            ))}
-          </nav>
-        </div>
-      </div>
-
-      {/* Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+        {/* Content */}
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         {activeTab === 'dashboard' && (
           <div className="space-y-6">
+            {/* Payment Cards */}
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div className="card p-6 border-2 border-brand-200 dark:border-brand-800">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 bg-brand-100 dark:bg-brand-900 rounded-xl flex items-center justify-center">
+                    <CreditCard className="w-6 h-6 text-brand-600 dark:text-brand-400" />
+                  </div>
+                  <span className="px-3 py-1 bg-brand-100 dark:bg-brand-900 text-brand-700 dark:text-brand-300 rounded-full text-sm font-medium">
+                    One-time
+                  </span>
+                </div>
+                <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-2">Joining Fee</h3>
+                <p className="text-3xl font-bold text-brand-600 mb-4">₹500</p>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-4">
+                  Pay one-time joining fee to start accepting deliveries
+                </p>
+                <button
+                  onClick={() => handlePayment('joining')}
+                  className="w-full btn-primary"
+                >
+                  Pay Joining Fee
+                </button>
+              </div>
+
+              <div className="card p-6 border-2 border-green-200 dark:border-green-800">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-xl flex items-center justify-center">
+                    <CreditCard className="w-6 h-6 text-green-600 dark:text-green-400" />
+                  </div>
+                  <span className="px-3 py-1 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded-full text-sm font-medium">
+                    Monthly
+                  </span>
+                </div>
+                <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-2">Renewal Fee</h3>
+                <p className="text-3xl font-bold text-green-600 mb-4">₹200/month</p>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-4">
+                  Monthly renewal fee to continue as active delivery partner
+                </p>
+                <button
+                  onClick={() => handlePayment('renewal')}
+                  className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+                >
+                  Pay Renewal Fee
+                </button>
+              </div>
+            </div>
+
             {/* Stats Cards */}
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="card p-6">
@@ -416,6 +533,44 @@ export function DashboardPage() {
           </div>
         )}
       </main>
+
+      {/* Payment Modal */}
+      {showPaymentModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-neutral-800 rounded-2xl p-6 max-w-md w-full">
+            <h2 className="text-xl font-semibold mb-4 text-neutral-900 dark:text-white">
+              {paymentType === 'joining' ? 'Pay Joining Fee' : 'Pay Renewal Fee'}
+            </h2>
+            <div className="mb-6">
+              <div className="flex items-center justify-between p-4 bg-neutral-50 dark:bg-neutral-700 rounded-xl mb-4">
+                <span className="text-neutral-600 dark:text-neutral-400">Amount</span>
+                <span className="text-2xl font-bold text-brand-600">
+                  ₹{paymentType === 'joining' ? 500 : 200}
+                </span>
+              </div>
+              <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                {paymentType === 'joining' 
+                  ? 'This is a one-time joining fee to activate your delivery partner account.' 
+                  : 'This is a monthly renewal fee to continue your active delivery partner status.'}
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowPaymentModal(false)}
+                className="flex-1 btn-secondary"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={processPayment}
+                className="flex-1 btn-primary"
+              >
+                Pay Now
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
