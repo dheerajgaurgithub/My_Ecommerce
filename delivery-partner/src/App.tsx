@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './lib/auth';
 import { ToastProvider } from './lib/toast';
+import { LandingPage } from './pages/LandingPage';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { DashboardPage } from './pages/DashboardPage';
@@ -21,6 +22,7 @@ export default function App() {
       <AuthProvider>
         <ToastProvider>
           <Routes>
+            <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={
               <PublicRoute>
                 <LoginPage />
@@ -36,7 +38,6 @@ export default function App() {
                 <DashboardPage />
               </PrivateRoute>
             } />
-            <Route path="/" element={<Navigate to="/login" replace />} />
           </Routes>
         </ToastProvider>
       </AuthProvider>

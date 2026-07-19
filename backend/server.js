@@ -38,11 +38,11 @@ app.use(cors({
     'http://localhost:5173',
     'http://localhost:5174',
     'http://localhost:3000',
-    'http://localhost:3001',
     'http://localhost:5000',
     'https://mahirandfriends.vercel.app',
     'https://mahirandfriends.onrender.com',
-    'https://adminofmahirandfriends.netlify.app'
+    'https://adminofmahirandfriends.netlify.app',
+    'https://deliverypartnermahirandfriends.vercel.app'
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
