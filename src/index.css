@@ -83,6 +83,8 @@
     position: relative;
     margin: 0;
     padding: 0;
+    line-height: 1.6;
+    font-size: 16px;
 
     transition:
       background-color var(--transition-slow),
@@ -100,10 +102,33 @@
     font-weight: 600;
     overflow-wrap: break-word;
     word-break: break-word;
+    line-height: 1.2;
+    color: inherit;
   }
 
   h1 {
     font-weight: 700;
+    font-size: 2.5rem;
+  }
+
+  h2 {
+    font-size: 2rem;
+  }
+
+  h3 {
+    font-size: 1.75rem;
+  }
+
+  h4 {
+    font-size: 1.5rem;
+  }
+
+  h5 {
+    font-size: 1.25rem;
+  }
+
+  h6 {
+    font-size: 1rem;
   }
 
   img,
@@ -453,12 +478,44 @@ small {
    480 / 640 / 768 / 1024 / 1280 / 1536
 ========================================================= */
 
+/* ---------- Mobile base (default) ---------- */
+@media (max-width: 479px) {
+  body {
+    font-size: 14px;
+  }
+
+  h1 { font-size: 2rem; }
+  h2 { font-size: 1.75rem; }
+  h3 { font-size: 1.5rem; }
+  h4 { font-size: 1.25rem; }
+  h5 { font-size: 1.125rem; }
+  h6 { font-size: 1rem; }
+
+  .container-responsive {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
+  .card {
+    padding: 1rem;
+  }
+
+  button, a {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
 /* ---------- 480px: large phones ---------- */
 @media (min-width: 480px) {
   .container-responsive {
     padding-left: 1.25rem;
     padding-right: 1.25rem;
   }
+
+  h1 { font-size: 2.75rem; }
+  h2 { font-size: 2.25rem; }
+  h3 { font-size: 1.875rem; }
 }
 
 /* ---------- 640px: small tablets / phablets ---------- */
@@ -466,6 +523,10 @@ small {
   .responsive-grid-sm {
     grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   }
+
+  h1 { font-size: 3rem; }
+  h2 { font-size: 2.5rem; }
+  h3 { font-size: 2rem; }
 }
 
 /* ---------- 768px: tablets ---------- */
@@ -473,6 +534,10 @@ small {
   .container-responsive {
     max-width: 100%;
   }
+
+  h1 { font-size: 3.5rem; }
+  h2 { font-size: 2.75rem; }
+  h3 { font-size: 2.25rem; }
 }
 
 /* ---------- 1024px: small laptops ---------- */
@@ -480,10 +545,18 @@ small {
   .card {
     padding: var(--space-md);
   }
+
+  h1 { font-size: 4rem; }
+  h2 { font-size: 3rem; }
+  h3 { font-size: 2.5rem; }
 }
 
 /* ---------- 1280px: desktop ---------- */
 @media (min-width: 1280px) {
+  h1 { font-size: 4.5rem; }
+  h2 { font-size: 3.5rem; }
+  h3 { font-size: 2.75rem; }
+
   .section {
     padding-block: var(--space-2xl);
   }
