@@ -44,9 +44,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const token = api.getToken();
     if (token) {
       try {
-        const response = await api.get<{ success: boolean; deliveryPartner?: DeliveryPartner }>('/delivery-partner/me');
-        if (response.success && response.deliveryPartner) {
-          setUser(response.deliveryPartner);
+        const response = await api.get<{ success: boolean; user?: any }>('/auth/me');
+        if (response.success && response.user) {
+          setUser(response.user);
         }
       } catch (error) {
         api.clearToken();
@@ -57,10 +57,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signIn = async (email: string, password: string) => {
     try {
-      const response = await api.post<{ success: boolean; token?: string; deliveryPartner?: DeliveryPartner }>('/delivery-partner/login', { email, password });
-      if (response.success && response.token && response.deliveryPartner) {
+      const response = await api.post<{ success: boolean; token?: string; user?: any }>('/auth/login', { email, password });
+      if (response.success && response.token) {
         api.setToken(response.token);
-        setUser(response.deliveryPartner);
+        setUser(response.user);
         return {};
       }
       return { error: 'Login failed' };
@@ -71,7 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signUp = async (data: any) => {
     try {
-      const response = await api.post<{ success: boolean; token?: string; deliveryPartner?: DeliveryPartner }>('/delivery-partner/register', data);
+      const response = await api.post<{ success: boolean; token?: string; deliveryPartner?: DeliveryPartner }>('/delivery-partners/register', data);
       if (response.success && response.token && response.deliveryPartner) {
         api.setToken(response.token);
         setUser(response.deliveryPartner);

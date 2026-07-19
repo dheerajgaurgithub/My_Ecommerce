@@ -164,11 +164,6 @@ export function AccountPage() {
                   <t.icon size={18} /> {t.label}
                 </button>
               ))}
-              {isAdmin && (
-                <Link to="/admin" className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-brand-600 hover:bg-neutral-50 dark:hover:bg-neutral-800">
-                  <LayoutDashboard size={18} /> Admin Panel
-                </Link>
-              )}
               <button onClick={() => { signOut(); navigate('/'); }} className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-red-500 hover:bg-neutral-50 dark:hover:bg-neutral-800">
                 <LogOut size={18} /> Sign Out
               </button>

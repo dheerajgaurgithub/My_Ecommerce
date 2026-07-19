@@ -26,10 +26,10 @@ export function DashboardPage() {
 
   const fetchPartnerData = async () => {
     try {
-      const response = await api.get<{ success: boolean; deliveryPartner?: any }>('/delivery-partner/me');
-      if (response.success && response.deliveryPartner) {
-        setPartnerData(response.deliveryPartner);
-        setIsOnline(response.deliveryPartner.workDetails?.isOnline || false);
+      const response = await api.get<{ success: boolean; data?: any }>('/delivery-partners/profile');
+      if (response.success && response.data) {
+        setPartnerData(response.data);
+        setIsOnline(response.data.workDetails?.isOnline || false);
       }
     } catch (error) {
       console.error('Error fetching partner data:', error);
@@ -55,7 +55,7 @@ export function DashboardPage() {
       
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(async (position) => {
-          await api.put('/delivery-partner/online-status', {
+          await api.put('/delivery-partners/online-status', {
             isOnline: newStatus,
             latitude: position.coords.latitude,
             longitude: position.coords.longitude

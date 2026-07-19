@@ -24,9 +24,6 @@ const ShippingPage = lazy(() => import('./pages/ShippingPage').then(m => ({ defa
 const SizeGuidePage = lazy(() => import('./pages/SizeGuidePage').then(m => ({ default: m.SizeGuidePage })));
 const FAQPage = lazy(() => import('./pages/FAQPage').then(m => ({ default: m.FAQPage })));
 const FounderPage = lazy(() => import('./pages/FounderPage'));
-const DeliveryPartnerPage = lazy(() => import('./pages/DeliveryPartnerPage').then(m => ({ default: m.DeliveryPartnerPage })));
-const DeliveryPartnerRegisterPage = lazy(() => import('./pages/DeliveryPartnerRegisterPage').then(m => ({ default: m.DeliveryPartnerRegisterPage })));
-const DeliveryPartnerLoginPage = lazy(() => import('./pages/DeliveryPartnerLoginPage').then(m => ({ default: m.DeliveryPartnerLoginPage })));
 const GoogleCallbackPage = lazy(() => import('./pages/GoogleCallbackPage').then(m => ({ default: m.GoogleCallbackPage })));
 const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage').then(m => ({ default: m.ForgotPasswordPage })));
 const FeedbackPage = lazy(() => import('./pages/FeedbackPage').then(m => ({ default: m.FeedbackPage })));
@@ -51,14 +48,6 @@ function StoreLayout({ children }: { children: React.ReactNode }) {
   );
 }
 
-function DeliveryPartnerLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
-      {children}
-    </div>
-  );
-}
-
 export default function App() {
   return (
     <ErrorBoundary>
@@ -69,21 +58,10 @@ export default function App() {
               <BrowserRouter>
                 <ScrollToTop />
                 <Routes>
-                <Route path="/delivery-partner/login" element={<DeliveryPartnerLoginPage />} />
-                <Route path="/delivery-partner/*" element={
-                  <DeliveryPartnerLayout>
-                    <Suspense fallback={<div className="p-8 text-center">Loading...</div>}>
-                      <Routes>
-                        <Route path="/" element={<DeliveryPartnerPage />} />
-                        <Route path="/register" element={<DeliveryPartnerRegisterPage />} />
-                      </Routes>
-                    </Suspense>
-                  </DeliveryPartnerLayout>
-                } />
-                <Route path="/*" element={
-                  <StoreLayout>
-                    <Suspense fallback={<div className="p-8 text-center">Loading...</div>}>
-                      <Routes>
+                  <Route path="/*" element={
+                    <StoreLayout>
+                      <Suspense fallback={<div className="p-8 text-center">Loading...</div>}>
+                        <Routes>
                           <Route path="/" element={<HomePage />} />
                           <Route path="/shop" element={<ShopPage />} />
                           <Route path="/product/:slug" element={<ProductPage />} />
