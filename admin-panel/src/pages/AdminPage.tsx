@@ -1597,7 +1597,9 @@ function DeliveryPartnersManagement() {
   };
 
   const filteredPartners = partners.filter(p => {
-    const matchesFilter = filter === 'all' || p.status === filter;
+    const matchesFilter = filter === 'all' || 
+      p.status === filter || 
+      (filter === 'pending_payments' && !p.joiningFee?.paid);
     const searchLower = search.toLowerCase();
     const matchesSearch = !search || 
       p.personalDetails?.fullName?.toLowerCase().includes(searchLower) ||
@@ -1621,7 +1623,7 @@ function DeliveryPartnersManagement() {
       </div>
 
       <div className="flex gap-2 overflow-x-auto scrollbar-hide">
-        {['pending', 'approved', 'payment_pending', 'active', 'inactive', 'suspended', 'rejected', 'all'].map((status) => (
+        {['pending', 'approved', 'payment_pending', 'pending_payments', 'active', 'inactive', 'suspended', 'rejected', 'all'].map((status) => (
           <button key={status} onClick={() => setFilter(status)} className={`px-3 py-1.5 text-sm rounded-lg whitespace-nowrap transition-all ${filter === status ? 'bg-brand-600 text-white' : 'bg-white dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-700'}`}>
             {status.replace('_', ' ').toUpperCase()}
           </button>

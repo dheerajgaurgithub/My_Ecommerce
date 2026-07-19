@@ -44,7 +44,7 @@ export function DashboardPage() {
 
   const fetchOrders = async () => {
     try {
-      const response = await api.get<{ success: boolean; orders?: any[] }>('/orders/assigned');
+      const response = await api.get<{ success: boolean; orders?: any[] }>('/delivery-partners/active-orders');
       if (response.success && response.orders) {
         setOrders(response.orders);
       }
@@ -108,17 +108,82 @@ export function DashboardPage() {
   const processPayment = async () => {
     try {
       const amount = paymentType === 'joining' ? 500 : 200;
-      const response = await api.post<{ success: boolean; paymentId?: string }>('/delivery-partners/payment', {
-        type: paymentType,
-        amount
-      });
       
-      if (response.success) {
-        showToast('Payment successful!', 'success');
-        setShowPaymentModal(false);
-        fetchPartnerData();
+      // Create Razorpay order for delivery partner payment
+      const response = await api.post<{ success: boolean; order: any; keyId: string }>('/delivery-partners/create-payment-order', {
+        amount,
+        type: paymentType,
+        currency: 'INR',
+        receipt: `${paymentType}_fee_${Date.now()}`
+      });
+
+      if (!response.success) {
+        showToast('Failed to create payment order', 'error');
+        return;
       }
+
+      const { order, keyId } = response;
+
+      // Load Razorpay script dynamically
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.async = true;
+      script.onload = () => {
+        const options = {
+          key: keyId,
+          amount: order.amount,
+          currency: order.currency,
+          name: 'Mahir & Friends',
+          description: paymentType === 'joining' ? 'Delivery Partner Joining Fee' : 'Delivery Partner Renewal Fee',
+          order_id: order.id,
+          handler: async (response: any) => {
+            // Verify payment on backend
+            try {
+              const verifyResponse = await api.post<{ success: boolean; data?: any }>('/delivery-partners/verify-payment', {
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                type: paymentType
+              });
+
+              if (verifyResponse.success) {
+                showToast('Payment successful!', 'success');
+                setShowPaymentModal(false);
+                fetchPartnerData();
+              } else {
+                showToast('Payment verification failed', 'error');
+              }
+            } catch (error) {
+              showToast('Payment verification failed', 'error');
+            }
+          },
+          prefill: {
+            name: partnerData?.personalDetails?.fullName,
+            email: partnerData?.personalDetails?.email,
+            contact: partnerData?.personalDetails?.contactNumber
+          },
+          theme: {
+            color: '#4F46E5'
+          },
+          modal: {
+            ondismiss: () => {
+              showToast('Payment cancelled', 'info');
+            }
+          }
+        };
+
+        if (typeof (window as any).Razorpay !== 'undefined') {
+          const rzp = new (window as any).Razorpay(options);
+          rzp.open();
+        }
+      };
+      script.onerror = () => {
+        showToast('Failed to load payment gateway', 'error');
+      };
+      document.body.appendChild(script);
+
     } catch (error) {
+      console.error('Payment error:', error);
       showToast('Payment failed', 'error');
     }
   };
@@ -151,12 +216,12 @@ export function DashboardPage() {
         {/* Profile Section */}
         <div className="p-4 border-b border-neutral-200 dark:border-neutral-700">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-brand-100 dark:bg-brand-900 rounded-full flex items-center justify-center overflow-hidden">
+            <div className="w-12 h-12 bg-brand-100 dark:bg-brand-900 rounded-full flex items-center justify-center overflow-hidden aspect-square">
               {partnerData?.kycDetails?.selfie ? (
                 <img 
                   src={partnerData.kycDetails.selfie} 
                   alt="Profile" 
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover rounded-full"
                 />
               ) : (
                 <User className="w-6 h-6 text-brand-600 dark:text-brand-400" />
@@ -283,14 +348,24 @@ export function DashboardPage() {
                 </div>
                 <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-2">Renewal Fee</h3>
                 <p className="text-3xl font-bold text-green-600 mb-4">₹200/month</p>
-                <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-4">
+                <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-2">
                   Monthly renewal fee to continue as active delivery partner
                 </p>
+                {partnerData?.renewalFee?.nextDueDate && (
+                  <p className="text-sm text-green-600 dark:text-green-400 mb-4">
+                    Next due: {new Date(partnerData.renewalFee.nextDueDate).toLocaleDateString('en-IN', { 
+                      day: 'numeric', 
+                      month: 'short', 
+                      year: 'numeric' 
+                    })}
+                  </p>
+                )}
                 <button
                   onClick={() => handlePayment('renewal')}
                   className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+                  disabled={!partnerData?.joiningFee?.paid}
                 >
-                  Pay Renewal Fee
+                  {partnerData?.joiningFee?.paid ? 'Pay Renewal Fee' : 'Pay Joining Fee First'}
                 </button>
               </div>
             </div>
@@ -736,6 +811,7 @@ export function DashboardPage() {
           </div>
         )}
       </main>
+      </div>
 
       {/* Payment Modal */}
       {showPaymentModal && (

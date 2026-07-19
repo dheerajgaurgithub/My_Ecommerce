@@ -1,6 +1,7 @@
 import express from 'express';
 import Feedback from '../models/Feedback.js';
 import Order from '../models/Order.js';
+import DeliveryPartner from '../models/DeliveryPartner.js';
 import { body, validationResult } from 'express-validator';
 import { auth } from '../middleware/auth.js';
 
@@ -61,6 +62,38 @@ router.post('/submit', [
     });
 
     await feedback.save();
+
+    // Update delivery partner rating based on delivery experience
+    if (order.delivery && order.delivery.partnerId) {
+      try {
+        const partner = await DeliveryPartner.findById(order.delivery.partnerId);
+        if (partner) {
+          // Get all feedback for orders delivered by this partner
+          const partnerOrders = await Order.find({
+            'delivery.partnerId': partner._id,
+            status: 'delivered'
+          }).select('_id');
+          
+          const orderIds = partnerOrders.map(o => o._id);
+          const allFeedback = await Feedback.find({
+            orderId: { $in: orderIds }
+          });
+          
+          // Calculate average delivery experience rating
+          if (allFeedback.length > 0) {
+            const totalRating = allFeedback.reduce((sum, f) => sum + f.deliveryExperience.rating, 0);
+            const averageRating = totalRating / allFeedback.length;
+            
+            // Update partner rating
+            partner.workDetails.rating = Math.round(averageRating * 10) / 10; // Round to 1 decimal
+            await partner.save();
+          }
+        }
+      } catch (ratingError) {
+        console.error('Error updating partner rating:', ratingError);
+        // Don't fail the feedback submission if rating update fails
+      }
+    }
 
     res.json({ 
       success: true, 
