@@ -4,268 +4,506 @@
 @tailwind components;
 @tailwind utilities;
 
-/* =========================================================
-   ROOT / RESPONSIVE UTILITY VARIABLES
-========================================================= */
+/* ==========================================================
+   ROOT VARIABLES
+========================================================== */
 
 :root {
-  /* Fluid spacing scale */
+  /* =========================
+     Fluid Spacing
+  ========================= */
   --space-3xs: clamp(0.25rem, 0.2rem + 0.2vw, 0.375rem);
   --space-2xs: clamp(0.5rem, 0.4rem + 0.3vw, 0.75rem);
-  --space-xs:  clamp(0.75rem, 0.6rem + 0.5vw, 1rem);
-  --space-sm:  clamp(1rem, 0.85rem + 0.6vw, 1.5rem);
-  --space-md:  clamp(1.5rem, 1.2rem + 1vw, 2.25rem);
-  --space-lg:  clamp(2rem, 1.6rem + 1.6vw, 3.5rem);
-  --space-xl:  clamp(3rem, 2.2rem + 3vw, 5.5rem);
+  --space-xs: clamp(0.75rem, 0.6rem + 0.5vw, 1rem);
+  --space-sm: clamp(1rem, 0.85rem + 0.6vw, 1.5rem);
+  --space-md: clamp(1.5rem, 1.2rem + 1vw, 2.25rem);
+  --space-lg: clamp(2rem, 1.6rem + 1.6vw, 3.5rem);
+  --space-xl: clamp(3rem, 2.2rem + 3vw, 5.5rem);
   --space-2xl: clamp(4rem, 3rem + 4vw, 7.5rem);
 
-  /* Fluid radii */
+  /* =========================
+     Border Radius
+  ========================= */
   --radius-sm: clamp(0.375rem, 0.3rem + 0.3vw, 0.5rem);
   --radius-md: clamp(0.625rem, 0.5rem + 0.5vw, 0.875rem);
   --radius-lg: clamp(0.875rem, 0.7rem + 0.7vw, 1.25rem);
   --radius-xl: clamp(1.25rem, 1rem + 1vw, 1.75rem);
 
-  /* Container widths */
+  /* =========================
+     Layout
+  ========================= */
+  --container-sm: 640px;
+  --container-md: 768px;
+  --container-lg: 1024px;
+  --container-xl: 1280px;
+  --container-2xl: 1440px;
   --container-max: 1440px;
-  --container-max-xl: 1500px;
 
-  /* Safe-area helpers */
-  --safe-top: env(safe-area-inset-top, 0px);
-  --safe-right: env(safe-area-inset-right, 0px);
-  --safe-bottom: env(safe-area-inset-bottom, 0px);
-  --safe-left: env(safe-area-inset-left, 0px);
+  /* =========================
+     Header Height
+  ========================= */
+  --header-height: 72px;
 
-  /* Motion */
-  --transition-fast: 150ms ease;
-  --transition-base: 200ms ease;
-  --transition-slow: 300ms ease;
+  /* =========================
+     Safe Area
+  ========================= */
+  --safe-top: env(safe-area-inset-top);
+  --safe-right: env(safe-area-inset-right);
+  --safe-bottom: env(safe-area-inset-bottom);
+  --safe-left: env(safe-area-inset-left);
+
+  /* =========================
+     Transition
+  ========================= */
+  --transition-fast: 150ms ease-in-out;
+  --transition-base: 250ms ease-in-out;
+  --transition-slow: 400ms ease-in-out;
+
+  /* =========================
+     Shadow
+  ========================= */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 15px 40px rgba(0, 0, 0, 0.12);
+
+  /* =========================
+     Z-index
+  ========================= */
+  --z-navbar: 1000;
+  --z-dropdown: 1100;
+  --z-modal: 1200;
+  --z-toast: 1300;
+  --z-tooltip: 1400;
 
   color-scheme: light;
 }
+
+/* Dark Theme */
 
 .dark {
   color-scheme: dark;
 }
 
-/* =========================
+/* ==========================================================
    BASE
-========================= */
+========================================================== */
 
 @layer base {
+
+  /* =========================
+     Universal Reset
+  ========================= */
+
   *,
   *::before,
   *::after {
-    @apply border-neutral-200 dark:border-neutral-700;
     box-sizing: border-box;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    text-rendering: optimizeLegibility;
+    margin: 0;
+    padding: 0;
   }
+
+  /* =========================
+     HTML
+  ========================= */
 
   html {
     scroll-behavior: smooth;
-    -webkit-tap-highlight-color: transparent;
-    text-size-adjust: 100%;
-    -webkit-text-size-adjust: 100%;
     overflow-x: hidden;
-    width: 100%;
-    max-width: 100vw;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    scrollbar-gutter: stable;
   }
+
+  /* =========================
+     BODY
+  ========================= */
 
   body {
     @apply bg-neutral-50 text-neutral-900 dark:bg-neutral-900 dark:text-neutral-50 antialiased;
 
-    font-family: 'Montserrat', sans-serif;
-    min-height: 100dvh;
+    font-family: "Montserrat", sans-serif;
+    font-size: clamp(0.875rem, 0.82rem + 0.25vw, 1rem);
+    line-height: 1.6;
+
     width: 100%;
-    max-width: 100vw;
+    min-height: 100vh;
+    min-height: 100dvh;
+
     overflow-x: hidden;
     position: relative;
-    margin: 0;
-    padding: 0;
-    line-height: 1.6;
-    font-size: 16px;
+
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    -webkit-tap-highlight-color: transparent;
 
     transition:
       background-color var(--transition-slow),
       color var(--transition-slow);
   }
 
+  /* =========================
+     ROOT
+  ========================= */
+
   #root {
     width: 100%;
-    max-width: 100vw;
+    min-height: 100dvh;
     overflow-x: hidden;
+    isolation: isolate;
   }
 
-  h1, h2, h3, h4, h5, h6 {
-    font-family: 'Cormorant Garamond', serif;
+  /* =========================
+     Typography
+  ========================= */
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: "Cormorant Garamond", serif;
     font-weight: 600;
-    overflow-wrap: break-word;
-    word-break: break-word;
     line-height: 1.2;
     color: inherit;
+    overflow-wrap: anywhere;
+    hyphens: auto;
   }
 
   h1 {
+    font-size: clamp(2rem, 1.5rem + 2.5vw, 4rem);
     font-weight: 700;
-    font-size: 2.5rem;
+    line-height: 1.1;
   }
 
   h2 {
-    font-size: 2rem;
+    font-size: clamp(1.75rem, 1.4rem + 2vw, 3rem);
   }
 
   h3 {
-    font-size: 1.75rem;
+    font-size: clamp(1.4rem, 1.15rem + 1vw, 2.2rem);
   }
 
   h4 {
-    font-size: 1.5rem;
+    font-size: clamp(1.2rem, 1.05rem + .5vw, 1.6rem);
   }
 
   h5 {
-    font-size: 1.25rem;
+    font-size: clamp(1rem, .95rem + .4vw, 1.3rem);
   }
 
   h6 {
-    font-size: 1rem;
+    font-size: clamp(.9rem, .85rem + .2vw, 1.1rem);
   }
+
+  p {
+    font-size: clamp(.95rem, .9rem + .2vw, 1.05rem);
+    line-height: 1.8;
+  }
+
+  small {
+    font-size: clamp(.75rem, .72rem + .15vw, .875rem);
+  }
+
+  strong {
+    font-weight: 600;
+  }
+
+  /* =========================
+     Lists
+  ========================= */
+
+  ul,
+  ol {
+    list-style: none;
+  }
+
+  /* =========================
+     Media
+  ========================= */
 
   img,
   picture,
-  svg,
   video,
-  canvas {
+  canvas,
+  svg {
     display: block;
     max-width: 100%;
     height: auto;
   }
 
-  img,
-  video {
-    image-rendering: -webkit-optimize-contrast;
+  img {
+    object-fit: cover;
+    user-select: none;
   }
+
+  iframe {
+    max-width: 100%;
+    border: 0;
+  }
+
+  /* =========================
+     Forms
+  ========================= */
 
   button,
   input,
   textarea,
   select {
     font: inherit;
+    color: inherit;
     max-width: 100%;
   }
 
-  /* Prevent iOS/Android auto-zoom on focus while keeping legible size */
   input,
   textarea,
   select {
     font-size: max(16px, 1rem);
   }
 
-  a {
-    text-decoration: none;
-    color: inherit;
+  textarea {
+    resize: vertical;
   }
+
+  button {
+    cursor: pointer;
+    background: transparent;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+  }
+
+  /* =========================
+     Links
+  ========================= */
+
+  a {
+    color: inherit;
+    text-decoration: none;
+    transition: color var(--transition-fast);
+  }
+
+  /* =========================
+     Tables
+  ========================= */
 
   table {
     width: 100%;
     border-collapse: collapse;
+    table-layout: auto;
   }
 
-  /* Global focus visibility for accessibility */
+  /* =========================
+     Code
+  ========================= */
+
+  pre {
+    overflow-x: auto;
+    max-width: 100%;
+  }
+
+  code {
+    word-break: break-word;
+  }
+
+  /* =========================
+     Accessibility
+  ========================= */
+
   :focus-visible {
-    outline: 2px solid theme('colors.neutral.900');
-    outline-offset: 2px;
-    border-radius: 4px;
+    outline: 2px solid rgb(23 23 23);
+    outline-offset: 3px;
+    border-radius: 6px;
   }
 
   .dark :focus-visible {
-    outline-color: theme('colors.white');
+    outline-color: rgb(255 255 255);
   }
 
-  /* Any element that could overflow horizontally gets scoped */
-  pre, code {
-    max-width: 100%;
-    overflow-x: auto;
+  /* =========================
+     Text Overflow
+  ========================= */
+
+  p,
+  span,
+  a,
+  li,
+  td,
+  th,
+  div {
+    overflow-wrap: break-word;
+    word-break: break-word;
   }
+
+  /* =========================
+     Misc Reset
+  ========================= */
+
+  hr {
+    border: 0;
+    border-top: 1px solid rgb(229 229 229);
+  }
+
+  fieldset {
+    border: 0;
+  }
+
+  blockquote,
+  figure {
+    margin: 0;
+  }
+
+  /* =========================
+     Selection
+  ========================= */
+
+  ::selection {
+    background: rgb(23 23 23);
+    color: white;
+  }
+
+  .dark ::selection {
+    background: rgb(255 255 255);
+    color: rgb(23 23 23);
+  }
+
+  /* =========================
+     Mobile Optimizations
+  ========================= */
+
+  @media (max-width: 768px) {
+
+    html {
+      font-size: 15px;
+    }
+
+    body {
+      overflow-x: hidden;
+    }
+
+    button,
+    a {
+      min-height: 44px;
+    }
+
+  }
+
 }
-
-/* =========================
+/* ==========================================================
    COMPONENTS
-========================= */
+========================================================== */
 
 @layer components {
 
-  /* ---------- Layout Container ---------- */
+  /* =========================
+     Responsive Containers
+  ========================= */
 
   .container-responsive {
-    @apply w-full mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12;
+    width: 100%;
     max-width: var(--container-max);
-    min-width: 100%;
+    margin-inline: auto;
+    padding-inline: clamp(1rem, 3vw, 2rem);
   }
 
-  /* Full width container for mobile to prevent white space */
   .container-full-mobile {
-    @apply w-full mx-auto px-4 sm:px-6 lg:px-8;
-    max-width: 100vw;
+    width: 100%;
+    margin-inline: auto;
+    padding-inline: clamp(1rem, 2vw, 1.5rem);
   }
 
-  @media (max-width: 768px) {
-    .container-responsive {
-      padding-left: 1rem;
-      padding-right: 1rem;
-      max-width: 100vw;
-    }
+  .container-narrow {
+    width: 100%;
+    max-width: 960px;
+    margin-inline: auto;
+    padding-inline: clamp(1rem, 3vw, 2rem);
   }
 
-  /* ---------- Buttons ---------- */
+  /* =========================
+     Buttons
+  ========================= */
 
   .btn-primary,
   .btn-secondary,
   .btn-accent {
+
     @apply inline-flex items-center justify-center
-    font-medium
+    gap-2
     rounded-xl
+    font-medium
     transition-all
-    duration-200
+    duration-300
+    ease-in-out
     active:scale-95
-    disabled:opacity-50
-    disabled:pointer-events-none;
+    disabled:pointer-events-none
+    disabled:opacity-60;
 
     min-height: 48px;
-    padding: clamp(0.65rem, 0.55rem + 0.4vw, 0.8rem) clamp(1.1rem, 0.9rem + 0.8vw, 1.5rem);
+
+    padding:
+      clamp(.75rem,.6rem+.3vw,.9rem)
+      clamp(1.25rem,1rem+.7vw,1.75rem);
+
+    font-size: clamp(.95rem,.9rem+.2vw,1rem);
+
+    white-space: nowrap;
+
     touch-action: manipulation;
+
+    user-select: none;
+
+    flex-shrink: 0;
   }
 
   .btn-primary {
+
     @apply bg-neutral-900
-    dark:bg-white
     text-white
-    dark:text-neutral-900
     hover:bg-neutral-800
+    dark:bg-white
+    dark:text-neutral-900
     dark:hover:bg-neutral-100;
+
   }
 
   .btn-secondary {
+
     @apply bg-white
-    dark:bg-neutral-800
     text-neutral-900
-    dark:text-white
     border
     border-neutral-300
+    hover:bg-neutral-100
+    dark:bg-neutral-800
+    dark:text-white
     dark:border-neutral-600
-    hover:bg-neutral-50
     dark:hover:bg-neutral-700;
+
   }
 
   .btn-accent {
+
     @apply bg-accent-500
     text-white
     hover:bg-accent-600;
+
   }
 
-  /* ---------- Cards ---------- */
+  .btn-primary:focus-visible,
+  .btn-secondary:focus-visible,
+  .btn-accent:focus-visible {
+
+    outline-offset:3px;
+
+  }
+
+  /* =========================
+     Cards
+  ========================= */
 
   .card {
+
     @apply bg-white
     dark:bg-neutral-800
     border
@@ -273,16 +511,97 @@
     dark:border-neutral-700
     shadow-sm;
 
-    border-radius: var(--radius-lg);
-    padding: var(--space-sm);
-    width: 100%;
-    max-width: 100%;
+    width:100%;
+
+    overflow:hidden;
+
+    border-radius:var(--radius-lg);
+
+    padding:clamp(1rem,2vw,2rem);
+
+    transition:
+      transform var(--transition-base),
+      box-shadow var(--transition-base),
+      border-color var(--transition-base);
+
   }
 
-  /* ---------- Inputs ---------- */
+  .card:hover{
 
-  .input {
-    @apply w-full
+    transform:translateY(-4px);
+
+    box-shadow:var(--shadow-md);
+
+  }
+
+  .card img{
+
+    width:100%;
+
+    height:auto;
+
+    object-fit:cover;
+
+  }
+
+  .card-body{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:var(--space-sm);
+
+  }
+
+  .card-title{
+
+    font-weight:600;
+
+  }
+
+  .card-footer{
+
+    margin-top:auto;
+
+  }
+
+  /* =========================
+     Responsive
+  ========================= */
+
+  @media (max-width:768px){
+
+    .container-responsive{
+
+      padding-inline:1rem;
+
+    }
+
+    .btn-primary,
+    .btn-secondary,
+    .btn-accent{
+
+      width:100%;
+
+    }
+
+    .card{
+
+      padding:1rem;
+
+    }
+
+  }
+
+}
+
+ /* =========================
+   Inputs
+========================= */
+
+.input {
+  @apply w-full
     border
     border-neutral-300
     dark:border-neutral-600
@@ -290,146 +609,460 @@
     dark:bg-neutral-800
     text-neutral-900
     dark:text-white
-    transition-all
+    placeholder:text-neutral-400
+    dark:placeholder:text-neutral-500
     focus:outline-none
     focus:ring-2
     focus:ring-neutral-900
     dark:focus:ring-white;
 
-    border-radius: var(--radius-md);
-    padding: 0.75rem 1rem;
-    min-height: 48px;
-    font-size: max(16px, 1rem);
-    max-width: 100%;
-  }
+  width: 100%;
+  max-width: 100%;
 
-  /* ---------- Glass ---------- */
+  min-height: 48px;
+
+  padding: 0.875rem 1rem;
+
+  font-size: max(16px, 1rem);
+
+  border-radius: var(--radius-md);
+
+  appearance: none;
+
+  transition:
+    border-color var(--transition-base),
+    background-color var(--transition-base),
+    color var(--transition-base),
+    box-shadow var(--transition-base),
+    transform var(--transition-fast);
+}
+
+/* Hover */
+
+.input:hover {
+  @apply border-neutral-400 dark:border-neutral-500;
+}
+
+/* Focus */
+
+.input:focus {
+  @apply border-neutral-900 dark:border-white;
+}
+
+/* Disabled */
+
+.input:disabled {
+  @apply bg-neutral-100
+    dark:bg-neutral-700
+    text-neutral-400
+    cursor-not-allowed
+    opacity-70;
+}
+
+/* Invalid */
+
+.input:invalid {
+  @apply border-red-500;
+}
+
+/* Placeholder */
+
+.input::placeholder {
+  opacity: 1;
+}
+
+/* Autofill */
+
+.input:-webkit-autofill,
+.input:-webkit-autofill:hover,
+.input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px white inset;
+  -webkit-text-fill-color: #171717;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+.dark .input:-webkit-autofill,
+.dark .input:-webkit-autofill:hover,
+.dark .input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px #262626 inset;
+  -webkit-text-fill-color: white;
+}
+
+/* Textarea */
+
+textarea.input {
+  min-height: 120px;
+  resize: vertical;
+}
+
+/* Select */
+
+select.input {
+  cursor: pointer;
+}
+    /* ==========================================================
+     Glass Effect
+  ========================================================== */
 
   .glass {
     @apply bg-white/80
-    dark:bg-neutral-900/80
-    backdrop-blur-xl
-    border
-    border-white/20
-    dark:border-neutral-700/50;
+      dark:bg-neutral-900/80
+      border
+      border-white/20
+      dark:border-neutral-700/50
+      backdrop-blur-xl;
+
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+
+    box-shadow: var(--shadow-sm);
+
+    transition:
+      background-color var(--transition-base),
+      border-color var(--transition-base),
+      box-shadow var(--transition-base),
+      backdrop-filter var(--transition-base);
   }
 
-  /* ---------- Skeleton ---------- */
+  .glass:hover {
+    box-shadow: var(--shadow-md);
+  }
+
+  /* ==========================================================
+     Skeleton Loader
+  ========================================================== */
 
   .skeleton {
-    /* eslint-disable-next-line tailwindcss/no-custom-classname */
     @apply bg-neutral-200 dark:bg-neutral-700 animate-pulse;
+
+    border-radius: var(--radius-md);
+
+    user-select: none;
+
+    pointer-events: none;
   }
 
-  /* ---------- Hide Scrollbar ---------- */
+  /* Optional Variants */
+
+  .skeleton-text {
+    height: 1rem;
+    width: 100%;
+    border-radius: 999px;
+  }
+
+  .skeleton-title {
+    height: 1.6rem;
+    width: 60%;
+    border-radius: 999px;
+  }
+
+  .skeleton-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+  }
+
+  /* ==========================================================
+     Hide Scrollbar
+  ========================================================== */
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
 
   .scrollbar-hide::-webkit-scrollbar {
+    width: 0;
+    height: 0;
     display: none;
   }
 
-  .scrollbar-hide {
-    scrollbar-width: none;
-    -ms-overflow-style: none;
+  /* ==========================================================
+     Custom Scrollbar
+  ========================================================== */
+
+  .scrollbar-custom {
+    scrollbar-width: thin;
   }
 
-  /* ---------- Responsive Table Wrapper ---------- */
+  .scrollbar-custom::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .scrollbar-custom::-webkit-scrollbar-thumb {
+    background: rgb(203 213 225);
+    border-radius: 999px;
+  }
+
+  .dark .scrollbar-custom::-webkit-scrollbar-thumb {
+    background: rgb(82 82 91);
+  }
+
+  /* ==========================================================
+     Responsive Table
+  ========================================================== */
 
   .table-responsive {
     width: 100%;
     max-width: 100%;
     overflow-x: auto;
+    overflow-y: hidden;
+
     -webkit-overflow-scrolling: touch;
+
+    border-radius: var(--radius-lg);
+
+    scrollbar-width: thin;
   }
-}
 
-/* =========================================================
-   RESPONSIVE TYPOGRAPHY (fluid via clamp)
-========================================================= */
+  .table-responsive table {
+    width: 100%;
+    min-width: 700px;
+    border-collapse: collapse;
+  }
 
-h1 {
-  font-size: clamp(2rem, 1.55rem + 2.2vw, 4rem);
-  line-height: 1.1;
-}
+  @media (max-width: 768px) {
 
-h2 {
-  font-size: clamp(1.75rem, 1.45rem + 1.5vw, 3rem);
-  line-height: 1.15;
-}
+    .table-responsive table {
+      min-width: 600px;
+    }
 
-h3 {
-  font-size: clamp(1.3rem, 1.1rem + 1vw, 2rem);
-  line-height: 1.2;
-}
+  }
 
-h4 {
-  font-size: clamp(1.1rem, 1rem + 0.5vw, 1.5rem);
-  line-height: 1.3;
-}
+  @media (max-width: 480px) {
 
-h5 {
-  font-size: clamp(1rem, 0.92rem + 0.4vw, 1.25rem);
-  line-height: 1.35;
-}
+    .table-responsive table {
+      min-width: 500px;
+    }
 
-h6 {
-  font-size: clamp(0.9rem, 0.85rem + 0.25vw, 1.05rem);
-  line-height: 1.4;
-}
-
-p {
-  font-size: clamp(0.95rem, 0.9rem + 0.25vw, 1.05rem);
-  line-height: 1.7;
-}
-
-small {
-  font-size: clamp(0.75rem, 0.72rem + 0.15vw, 0.85rem);
-}
-
-/* =========================================================
-   RESPONSIVE HELPERS
-========================================================= */
+  }
 
 .responsive-grid {
   display: grid;
-  gap: var(--space-sm);
-  grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
+  width: 100%;
+  gap: var(--space-md);
+
+  grid-template-columns:
+    repeat(auto-fit, minmax(min(280px, 100%), 1fr));
+
+  align-items: stretch;
 }
 
 .responsive-grid-sm {
   display: grid;
-  gap: var(--space-xs);
-  grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
+  width: 100%;
+  gap: var(--space-sm);
+
+  grid-template-columns:
+    repeat(auto-fit, minmax(min(220px, 100%), 1fr));
+}
+
+.responsive-grid-lg {
+  display: grid;
+  width: 100%;
+  gap: var(--space-lg);
+
+  grid-template-columns:
+    repeat(auto-fit, minmax(min(360px, 100%), 1fr));
 }
 
 .responsive-flex {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-xs);
+  align-items: center;
+  gap: var(--space-sm);
 }
+
+.responsive-flex-between {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+
+.responsive-flex-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+
+
 
 .section {
-  padding-block: var(--space-xl);
+  width: 100%;
+  padding-block: clamp(3rem, 6vw, 7rem);
 }
+
+.section-sm {
+  padding-block: clamp(2rem, 4vw, 4rem);
+}
+
+.section-lg {
+  padding-block: clamp(5rem, 8vw, 9rem);
+}
+
+/* =========================
+   Full Height
+========================= */
 
 .full-height {
-  min-height: calc(100dvh - 80px);
+  min-height: calc(100vh - var(--header-height));
+  min-height: calc(100dvh - var(--header-height));
 }
 
-/* =========================================================
-   GLOBAL OVERFLOW SAFETY NET
-========================================================= */
+.screen-height {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
 
+/* =========================
+   Aspect Ratio Helpers
+========================= */
+
+.aspect-square {
+  aspect-ratio: 1;
+}
+
+.aspect-video {
+  aspect-ratio: 16 / 9;
+}
+
+.aspect-portrait {
+  aspect-ratio: 3 / 4;
+}
+
+/* =========================
+   Responsive Images
+========================= */
+
+.img-fluid {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+}
+
+/* =========================
+   Overflow Helpers
+========================= */
+
+.overflow-hidden {
+  overflow: hidden;
+}
+
+.overflow-auto {
+  overflow: auto;
+}
+
+.overflow-x-auto {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* =========================
+   Mobile
+========================= */
+
+@media (max-width: 768px) {
+
+  .responsive-grid,
+  .responsive-grid-sm,
+  .responsive-grid-lg {
+    grid-template-columns: 1fr;
+  }
+
+  .responsive-flex,
+  .responsive-flex-between {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .section {
+    padding-block: 3rem;
+  }
+
+  .section-lg {
+    padding-block: 4rem;
+  }
+
+}
+
+/* =========================
+   Tablet
+========================= */
+
+@media (min-width: 769px) and (max-width: 1023px) {
+
+  .responsive-grid-lg {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+
+}
+
+/* =========================
+   Large Desktop
+========================= */
+
+@media (min-width: 1440px) {
+
+  .section {
+    padding-block: 8rem;
+  }
+
+}
+
+/* ==========================================================
+   GLOBAL OVERFLOW SAFETY
+========================================================== */
+
+html,
+body,
 #root,
 #__next,
 .app-root {
   width: 100%;
-  max-width: 100vw;
+  min-height: 100%;
   overflow-x: hidden;
 }
 
-/* =========================================================
-   SCROLLBAR
-========================================================= */
+html {
+  scrollbar-gutter: stable;
+}
+
+/* Prevent common overflow issues */
+
+img,
+video,
+canvas,
+svg,
+iframe,
+table,
+pre,
+code {
+  max-width: 100%;
+}
+
+pre,
+code {
+  overflow-x: auto;
+}
+
+table {
+  display: block;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ==========================================================
+   GLOBAL SCROLLBAR
+========================================================== */
+
+/* Chrome, Edge, Safari */
 
 ::-webkit-scrollbar {
   width: 8px;
@@ -437,268 +1070,215 @@ small {
 }
 
 ::-webkit-scrollbar-track {
-  background-color: #f5f5f4;
+  background: rgb(245 245 244);
 }
 
 .dark ::-webkit-scrollbar-track {
-  background-color: #292524;
+  background: rgb(41 37 36);
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: #d6d3d1;
-  border-radius: 9999px;
+  background: rgb(214 211 209);
+  border-radius: 999px;
   border: 2px solid transparent;
   background-clip: padding-box;
 }
 
 .dark ::-webkit-scrollbar-thumb {
-  background-color: #57534e;
+  background: rgb(87 83 78);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background-color: #a8a29e;
+  background: rgb(168 162 158);
 }
 
 .dark ::-webkit-scrollbar-thumb:hover {
-  background-color: #44403c;
+  background: rgb(68 64 60);
 }
 
 /* Firefox */
-* {
+
+html {
   scrollbar-width: thin;
-  scrollbar-color: #d6d3d1 #f5f5f4;
+  scrollbar-color: rgb(214 211 209) rgb(245 245 244);
 }
 
-.dark * {
-  scrollbar-color: #57534e #292524;
+.dark html {
+  scrollbar-color: rgb(87 83 78) rgb(41 37 36);
 }
 
-/* =========================================================
-   BREAKPOINTS (mobile-first cascade)
-   480 / 640 / 768 / 1024 / 1280 / 1536
-========================================================= */
+/* ==========================================================
+   SCROLLABLE CONTAINERS
+========================================================== */
 
-/* ---------- Mobile base (default) ---------- */
-@media (max-width: 479px) {
-  body {
-    font-size: 14px;
-  }
-
-  h1 { font-size: 2rem; }
-  h2 { font-size: 1.75rem; }
-  h3 { font-size: 1.5rem; }
-  h4 { font-size: 1.25rem; }
-  h5 { font-size: 1.125rem; }
-  h6 { font-size: 1rem; }
-
-  .container-responsive {
-    padding-left: 0.75rem;
-    padding-right: 0.75rem;
-  }
-
-  .card {
-    padding: 1rem;
-  }
-
-  button, a {
-    min-height: 44px;
-    min-width: 44px;
-  }
+.scrollable {
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
 }
 
-/* ---------- 480px: large phones ---------- */
-@media (min-width: 480px) {
-  .container-responsive {
-    padding-left: 1.25rem;
-    padding-right: 1.25rem;
-  }
+/* Hide scrollbar when needed */
 
-  h1 { font-size: 2.75rem; }
-  h2 { font-size: 2.25rem; }
-  h3 { font-size: 1.875rem; }
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
-/* ---------- 640px: small tablets / phablets ---------- */
-@media (min-width: 640px) {
-  .responsive-grid-sm {
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  }
-
-  h1 { font-size: 3rem; }
-  h2 { font-size: 2.5rem; }
-  h3 { font-size: 2rem; }
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
 }
 
-/* ---------- 768px: tablets ---------- */
-@media (min-width: 768px) and (max-width: 1023px) {
-  .container-responsive {
-    max-width: 100%;
-  }
+/* Thin scrollbar utility */
 
-  h1 { font-size: 3.5rem; }
-  h2 { font-size: 2.75rem; }
-  h3 { font-size: 2.25rem; }
+.scrollbar-thin {
+  scrollbar-width: thin;
 }
 
-/* ---------- 1024px: small laptops ---------- */
-@media (min-width: 1024px) {
-  .card {
-    padding: var(--space-md);
-  }
-
-  h1 { font-size: 4rem; }
-  h2 { font-size: 3rem; }
-  h3 { font-size: 2.5rem; }
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
 }
 
-/* ---------- 1280px: desktop ---------- */
-@media (min-width: 1280px) {
-  h1 { font-size: 4.5rem; }
-  h2 { font-size: 3.5rem; }
-  h3 { font-size: 2.75rem; }
-
-  .section {
-    padding-block: var(--space-2xl);
-  }
-}
-
-/* ---------- 1536px: large monitors ---------- */
-@media (min-width: 1536px) {
-  .container-responsive {
-    max-width: var(--container-max-xl);
-  }
-}
-
-/* =========================================================
-   MOBILE (max-width: 768px) — fine-tuning & touch targets
-========================================================= */
+/* ==========================================================
+   Mobile Fixes
+========================================================== */
 
 @media (max-width: 768px) {
 
+  html,
   body {
-    font-size: 14px;
+    overflow-x: hidden;
   }
 
-  .card {
-    border-radius: var(--radius-md);
-    padding: var(--space-xs);
+  * {
+    max-width: 100%;
   }
 
-  .btn-primary,
-  .btn-secondary,
-  .btn-accent {
-    width: 100%;
-    min-height: 44px;
-  }
+}
 
-  .section {
-    padding-block: var(--space-lg);
-  }
+/* ==========================================================
+   MOBILE TOUCH TARGETS
+========================================================== */
 
-  /* Better touch targets for mobile */
+@media (max-width: 768px) {
+
   button,
-  a {
+  a,
+  input,
+  select,
+  textarea,
+  [role="button"] {
     min-height: 44px;
+  }
+
+  button,
+  [role="button"] {
     min-width: 44px;
   }
 
-  /* Improve spacing on mobile */
-  .container-responsive {
-    padding-left: 1rem;
-    padding-right: 1rem;
-  }
-
-  /* Fix rounded elements on mobile */
   .rounded-full {
-    border-radius: 50% !important;
+    border-radius: 9999px !important;
   }
 
-  /* Better image handling */
-  img {
-    max-width: 100%;
-    height: auto;
+  .hide-mobile {
+    display: none !important;
   }
 
-  /* Prevent long words / URLs from forcing horizontal scroll */
-  p, span, a, li, td, th {
-    overflow-wrap: break-word;
-    word-break: break-word;
+  .show-mobile {
+    display: block !important;
   }
+
 }
 
-/* =========================================================
-   SMALL ANDROID PHONES (320px–480px) — extra tightening
-========================================================= */
-
-@media (max-width: 480px) {
-
-  h1 {
-    line-height: 1.15;
-  }
-
-  .btn-primary,
-  .btn-secondary,
-  .btn-accent {
-    font-size: 0.9rem;
-  }
-
-  .card {
-    padding: var(--space-2xs);
-  }
-}
-
-/* =========================
+/* ==========================================================
    SAFE AREA SUPPORT
-========================= */
+========================================================== */
 
 @supports (padding: max(0px)) {
 
   body {
-    padding-left: max(var(--safe-left), env(safe-area-inset-left));
-    padding-right: max(var(--safe-right), env(safe-area-inset-right));
-    padding-bottom: max(var(--safe-bottom), env(safe-area-inset-bottom));
-    padding-top: env(safe-area-inset-top);
+    padding-top: max(env(safe-area-inset-top), var(--safe-top));
+    padding-right: max(env(safe-area-inset-right), var(--safe-right));
+    padding-bottom: max(env(safe-area-inset-bottom), var(--safe-bottom));
+    padding-left: max(env(safe-area-inset-left), var(--safe-left));
   }
+
+  .safe-top {
+    padding-top: max(env(safe-area-inset-top), var(--safe-top));
+  }
+
+  .safe-bottom {
+    padding-bottom: max(env(safe-area-inset-bottom), var(--safe-bottom));
+  }
+
 }
 
-/* =========================================================
-   REDUCED MOTION / ACCESSIBILITY
-========================================================= */
+/* ==========================================================
+   ACCESSIBILITY
+========================================================== */
 
 @media (prefers-reduced-motion: reduce) {
+
+  html {
+    scroll-behavior: auto;
+  }
 
   *,
   *::before,
   *::after {
-    animation-duration: 0.001ms !important;
+
+    animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
-    transition-duration: 0.001ms !important;
+
+    transition-duration: 0.01ms !important;
+
     scroll-behavior: auto !important;
+
   }
 
   .animate-marquee {
     animation: none !important;
   }
+
 }
 
-/* =========================
-   MARQUEE ANIMATION
-========================= */
+/* ==========================================================
+   MARQUEE
+========================================================== */
 
 @keyframes marquee {
+
   0% {
     transform: translateX(100%);
   }
+
   100% {
     transform: translateX(-100%);
   }
+
 }
 
 .animate-marquee {
-  animation: marquee 20s linear infinite;
+
+  display: inline-block;
+
+  white-space: nowrap;
+
   will-change: transform;
+
+  animation: marquee 20s linear infinite;
+
 }
 
 .animate-marquee:hover {
   animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .animate-marquee {
+    animation: none;
+    transform: none;
+  }
+
 }

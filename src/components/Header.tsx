@@ -127,9 +127,9 @@ export function Header() {
   return (
     <>
       {/* Announcement bar */}
-      <div className="bg-neutral-900 dark:bg-black text-white text-[10px] sm:text-xs py-1.5 sm:py-2 overflow-hidden">
-        <div className="animate-marquee whitespace-nowrap">
-          <p className="font-medium inline-block">
+      <div className="bg-neutral-900 dark:bg-black text-white text-[10px] sm:text-xs py-2 overflow-hidden relative min-h-[32px] flex items-center">
+        <div className="animate-marquee whitespace-nowrap w-full">
+          <p className="font-medium text-center">
             {deliveryAvailable === true && freeDelivery ? `FREE DELIVERY in ${userLocation}` :
              deliveryAvailable === true && !freeDelivery ? `DELIVERY AVAILABLE in ${userLocation}` :
              deliveryAvailable === false ? `DELIVERY NOT AVAILABLE in ${userLocation}` :
