@@ -11,6 +11,7 @@ import { useToast } from '../lib/toast';
 import { api } from '../lib/api';
 import { formatPrice, formatDate } from '../lib/utils';
 import type { Product, Category, Order, Coupon, ComboPack, GiftCard } from '../lib/types';
+import { AdminAnalytics } from '../components/AdminAnalytics';
 
 type AdminTab = 'dashboard' | 'products' | 'categories' | 'orders' | 'coupons' | 'combos' | 'giftcards' | 'delivery' | 'delivery-partners' | 'users' | 'notifications' | 'analytics' | 'feedback' | 'profile';
 
@@ -681,14 +682,7 @@ export function AdminPage() {
         {tab === 'delivery-partners' && <DeliveryPartnersManagement />}
         {tab === 'users' && <UsersManagement />}
         {tab === 'feedback' && <FeedbackManagement />}
-        {tab === 'analytics' && (
-          <div className="space-y-5">
-            <h1 className="font-serif text-3xl font-bold bg-gradient-to-r from-neutral-900 to-neutral-700 dark:from-white dark:to-neutral-300 bg-clip-text text-transparent">Analytics</h1>
-            <div className="bg-white dark:bg-neutral-800 rounded-2xl p-6 shadow-sm border border-neutral-100 dark:border-neutral-700">
-              <p className="text-neutral-500">Analytics dashboard coming soon...</p>
-            </div>
-          </div>
-        )}
+        {tab === 'analytics' && <AdminAnalytics />}
         {tab === 'profile' && <AdminProfile />}
         {tab === 'notifications' && (
           <div className="space-y-4">
