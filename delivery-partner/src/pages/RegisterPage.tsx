@@ -75,7 +75,7 @@ export function RegisterPage() {
       showToast(error, 'error');
     } else {
       showToast('Registration submitted successfully! Please wait for admin approval.', 'success');
-      navigate('/dashboard');
+      navigate('/login');
     }
     setLoading(false);
   };

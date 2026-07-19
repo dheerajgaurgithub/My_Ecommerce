@@ -71,13 +71,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signUp = async (data: any) => {
     try {
-      const response = await api.post<{ success: boolean; token?: string; deliveryPartner?: DeliveryPartner }>('/delivery-partners/register', data);
-      if (response.success && response.token && response.deliveryPartner) {
-        api.setToken(response.token);
-        setUser(response.deliveryPartner);
+      const response = await api.post<{ success: boolean; message?: string; data?: any }>('/delivery-partners/register', data);
+      if (response.success) {
         return {};
       }
-      return { error: 'Registration failed' };
+      return { error: response.message || 'Registration failed' };
     } catch (error: any) {
       return { error: error.message || 'Registration failed' };
     }
