@@ -110,7 +110,7 @@ export function SearchAutocomplete() {
   return (
     <div ref={searchRef} className="relative w-full max-w-2xl">
       <div className="relative">
-        <Search size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400" />
+        <Search size={20} className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 text-neutral-400" />
         <input
           type="text"
           value={query}
@@ -125,7 +125,7 @@ export function SearchAutocomplete() {
             }
           }}
           placeholder="Search for products, brands, categories..."
-          className="input w-full pl-12 pr-12 py-3 text-lg"
+          className="input w-full pl-10 sm:pl-12 pr-10 sm:pr-12 py-2.5 sm:py-3 text-base sm:text-lg"
         />
         {query && (
           <button
@@ -133,7 +133,7 @@ export function SearchAutocomplete() {
               setQuery('');
               setResults([]);
             }}
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600"
+            className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600"
           >
             <X size={18} />
           </button>
@@ -141,7 +141,7 @@ export function SearchAutocomplete() {
       </div>
 
       {showResults && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-neutral-800 rounded-2xl shadow-xl border border-neutral-200 dark:border-neutral-700 z-50 max-h-96 overflow-y-auto">
+        <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-neutral-800 rounded-2xl shadow-xl border border-neutral-200 dark:border-neutral-700 z-50 max-h-80 sm:max-h-96 overflow-y-auto">
           {loading ? (
             <div className="p-6 text-center text-neutral-500">
               Searching...
@@ -154,14 +154,14 @@ export function SearchAutocomplete() {
                     <Package size={16} />
                     <span>Products</span>
                   </div>
-                  {results.slice(0, 6).map((result) => (
+                  {results.slice(0, 5).map((result) => (
                     <button
                       key={result.id}
                       onClick={() => handleResultClick(result)}
-                      className="w-full flex items-center gap-4 p-3 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors text-left"
+                      className="w-full flex items-center gap-3 sm:gap-4 p-2.5 sm:p-3 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors text-left"
                     >
                       {result.image && (
-                        <img src={result.image} alt="" className="w-12 h-12 object-cover rounded-lg" />
+                        <img src={result.image} alt="" className="w-10 h-10 sm:w-12 sm:h-12 object-cover rounded-lg" />
                       )}
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-neutral-900 dark:text-white truncate">{result.name}</p>

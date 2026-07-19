@@ -323,9 +323,9 @@ export function DeliveryPartnerPage() {
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950">
       {/* Header */}
       <header className="bg-white/90 dark:bg-neutral-900/90 backdrop-blur-md shadow-sm sticky top-0 z-50 border-b border-neutral-100 dark:border-neutral-800">
-        <div className="container-responsive py-3.5">
+        <div className="container-responsive py-2.5 sm:py-3.5">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-4">
               {/* Selfie Display */}
               {partnerData?.kycDetails?.selfie ? (
                 <img 
@@ -338,18 +338,18 @@ export function DeliveryPartnerPage() {
                   {(partnerData?.personalDetails?.fullName || 'P').charAt(0).toUpperCase()}
                 </div>
               )}
-              <div>
-                <h1 className="text-lg font-bold tracking-tight leading-tight">Delivery Partner</h1>
-                <p className="text-sm text-neutral-500 dark:text-neutral-400">
+              <div className="hidden sm:block">
+                <h1 className="text-base sm:text-lg font-bold tracking-tight leading-tight">Delivery Partner</h1>
+                <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400">
                   {partnerData?.personalDetails?.fullName || 'Partner'}
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2">
               {/* Online/Offline Toggle */}
               <button
                 onClick={toggleOnlineStatus}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all active:scale-[0.97] ${
+                className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-semibold transition-all active:scale-[0.97] ${
                   isOnline
                     ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/30'
                     : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400'
@@ -360,7 +360,7 @@ export function DeliveryPartnerPage() {
                   <span className={`relative inline-flex rounded-full h-2 w-2 ${isOnline ? 'bg-white' : 'bg-neutral-400'}`}></span>
                 </span>
                 <Power className="w-4 h-4" />
-                <span>{isOnline ? 'Online' : 'Offline'}</span>
+                <span className="hidden sm:inline">{isOnline ? 'Online' : 'Offline'}</span>
               </button>
 
               {/* Theme Toggle */}
@@ -387,7 +387,7 @@ export function DeliveryPartnerPage() {
 
                 {/* Notifications Dropdown */}
                 {showNotifications && (
-                  <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-neutral-800 rounded-2xl shadow-xl shadow-neutral-300/30 dark:shadow-black/40 border border-neutral-100 dark:border-neutral-700 max-h-96 overflow-y-auto">
+                  <div className="absolute right-0 mt-2 w-72 sm:w-80 bg-white dark:bg-neutral-800 rounded-2xl shadow-xl shadow-neutral-300/30 dark:shadow-black/40 border border-neutral-100 dark:border-neutral-700 max-h-96 overflow-y-auto">
                     <div className="p-4 border-b border-neutral-100 dark:border-neutral-700">
                       <h3 className="font-semibold">Notifications</h3>
                     </div>
@@ -425,11 +425,11 @@ export function DeliveryPartnerPage() {
         </div>
       </header>
 
-      <div className="container-responsive py-6">
-        <div className="grid lg:grid-cols-4 gap-6">
+      <div className="container-responsive py-4 sm:py-6">
+        <div className="grid lg:grid-cols-4 gap-4 sm:gap-6">
           {/* Sidebar */}
           <div className="lg:col-span-1">
-            <div className="bg-white dark:bg-neutral-800 rounded-2xl p-3 shadow-sm ring-1 ring-neutral-100 dark:ring-neutral-700/60 sticky top-24">
+            <div className="bg-white dark:bg-neutral-800 rounded-2xl p-2.5 sm:p-3 shadow-sm ring-1 ring-neutral-100 dark:ring-neutral-700/60 sticky top-20 sm:top-24">
               <nav className="space-y-1">
                 {[
                   { key: 'dashboard', label: 'Dashboard', icon: TrendingUp },
@@ -442,13 +442,13 @@ export function DeliveryPartnerPage() {
                   <button
                     key={key}
                     onClick={() => setActiveTab(key)}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                    className={`w-full flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-3 rounded-xl text-xs sm:text-sm font-medium transition-all ${
                       activeTab === key
                         ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 shadow-md'
                         : 'text-neutral-500 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-700/60 hover:text-neutral-900 dark:hover:text-white'
                     }`}
                   >
-                    <Icon className="w-[18px] h-[18px]" />
+                    <Icon className="w-[16px] h-[16px] sm:w-[18px] sm:h-[18px]" />
                     {label}
                   </button>
                 ))}
@@ -540,7 +540,7 @@ function ProfileContent({ partnerData }: { partnerData: any }) {
       {/* Profile Header */}
       <div className="bg-gradient-to-br from-neutral-900 to-neutral-700 dark:from-neutral-800 dark:to-neutral-900 rounded-2xl p-6 shadow-sm relative overflow-hidden">
         <div className="absolute -right-8 -top-8 w-40 h-40 bg-brand-500/20 rounded-full blur-2xl"></div>
-        <div className="flex items-center gap-6 relative">
+        <div className="flex items-center gap-4 sm:gap-6 relative">
           {partnerData?.kycDetails?.selfie ? (
             <img 
               src={partnerData.kycDetails.selfie} 
@@ -548,12 +548,12 @@ function ProfileContent({ partnerData }: { partnerData: any }) {
               className="w-24 h-24 rounded-2xl object-cover ring-4 ring-white/20"
             />
           ) : (
-            <div className="w-24 h-24 rounded-2xl bg-white/10 flex items-center justify-center text-white text-3xl font-bold ring-4 ring-white/20">
+            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-white/10 flex items-center justify-center text-white text-2xl sm:text-3xl font-bold ring-4 ring-white/20">
               {(partnerData?.personalDetails?.fullName || 'P').charAt(0).toUpperCase()}
             </div>
           )}
           <div>
-            <h2 className="text-2xl font-bold text-white tracking-tight">{partnerData?.personalDetails?.fullName || 'N/A'}</h2>
+            <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">{partnerData?.personalDetails?.fullName || 'N/A'}</h2>
             <p className="text-neutral-300 text-sm mt-1">{partnerData?.personalDetails?.email || 'N/A'}</p>
             <p className="text-neutral-300 text-sm flex items-center gap-1.5 mt-0.5">
               <Phone className="w-3.5 h-3.5" />
@@ -565,7 +565,7 @@ function ProfileContent({ partnerData }: { partnerData: any }) {
 
       {/* Personal Details */}
       <SectionCard title="Personal Details" icon={User}>
-        <div className="grid grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
           <InfoField label="Full Name" value={partnerData?.personalDetails?.fullName} />
           <InfoField label="Email" value={partnerData?.personalDetails?.email} />
           <InfoField label="Contact Number" value={partnerData?.personalDetails?.contactNumber} />
@@ -576,7 +576,7 @@ function ProfileContent({ partnerData }: { partnerData: any }) {
 
       {/* KYC Details */}
       <SectionCard title="KYC Details" icon={ShieldCheck}>
-        <div className="grid grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
           <InfoField label="Aadhar Number" value={partnerData?.kycDetails?.aadharNumber} />
           <InfoField label="PAN Number" value={partnerData?.kycDetails?.panNumber} />
           <div>
@@ -598,7 +598,7 @@ function ProfileContent({ partnerData }: { partnerData: any }) {
 
       {/* Vehicle Details */}
       <SectionCard title="Vehicle Details" icon={Truck}>
-        <div className="grid grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
           <InfoField label="Vehicle Type" value={partnerData?.vehicleDetails?.vehicleType ? partnerData.vehicleDetails.vehicleType.charAt(0).toUpperCase() + partnerData.vehicleDetails.vehicleType.slice(1) : 'N/A'} />
           <InfoField label="Vehicle Number" value={partnerData?.vehicleDetails?.vehicleNumber} />
           <InfoField label="Vehicle Model" value={partnerData?.vehicleDetails?.vehicleModel} />
@@ -610,7 +610,7 @@ function ProfileContent({ partnerData }: { partnerData: any }) {
       <SectionCard title="Address" icon={MapPin}>
         <div className="space-y-4">
           <InfoField label="Street" value={partnerData?.address?.street} />
-          <div className="grid grid-cols-2 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
             <InfoField label="City" value={partnerData?.address?.city} />
             <InfoField label="State" value={partnerData?.address?.state} />
             <InfoField label="Pincode" value={partnerData?.address?.pincode} />
@@ -621,7 +621,7 @@ function ProfileContent({ partnerData }: { partnerData: any }) {
 
       {/* Bank Details */}
       <SectionCard title="Bank Details" icon={CreditCard}>
-        <div className="grid grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
           <InfoField label="Account Number" value={partnerData?.bankDetails?.accountNumber} />
           <InfoField label="Account Holder Name" value={partnerData?.bankDetails?.accountHolderName} />
           <InfoField label="IFSC Code" value={partnerData?.bankDetails?.ifscCode} />
@@ -695,7 +695,7 @@ function ProfileContent({ partnerData }: { partnerData: any }) {
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
             <InfoField label="Name" value={partnerData?.emergencyContact?.name} />
             <InfoField label="Relationship" value={partnerData?.emergencyContact?.relationship} />
             <InfoField label="Contact Number" value={partnerData?.emergencyContact?.contactNumber} />
@@ -705,7 +705,7 @@ function ProfileContent({ partnerData }: { partnerData: any }) {
 
       {/* Account Status */}
       <SectionCard title="Account Status">
-        <div className="grid grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
           <InfoField label="Status" value={partnerData?.status ? partnerData.status.charAt(0).toUpperCase() + partnerData.status.slice(1) : 'N/A'} />
           <InfoField label="Registration Date" value={partnerData?.createdAt ? new Date(partnerData.createdAt).toLocaleString() : 'N/A'} />
           <InfoField label="Total Deliveries" value={partnerData?.workDetails?.totalDeliveries || 0} />

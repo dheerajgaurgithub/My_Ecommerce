@@ -89,11 +89,46 @@ router.get('/:slug', async (req, res) => {
 // Create product (Admin only)
 router.post('/', adminAuth, async (req, res) => {
   try {
+    const { name, slug, price, stock, category_id } = req.body;
+    
+    // Validate required fields
+    if (!name || !name.trim()) {
+      return res.status(400).json({ success: false, message: 'Product name is required' });
+    }
+    if (!price || isNaN(Number(price))) {
+      return res.status(400).json({ success: false, message: 'Valid price is required' });
+    }
+    if (stock === undefined || stock === null || isNaN(Number(stock))) {
+      return res.status(400).json({ success: false, message: 'Valid stock quantity is required' });
+    }
+    
+    // Check if slug already exists
+    if (slug) {
+      const existingProduct = await Product.findOne({ slug });
+      if (existingProduct) {
+        return res.status(400).json({ success: false, message: 'A product with this slug already exists' });
+      }
+    }
+    
     const product = new Product(req.body);
     await product.save();
     res.status(201).json({ success: true, product });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error('Error creating product:', error);
+    
+    // Handle validation errors
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map((e) => e.message);
+      return res.status(400).json({ success: false, message: messages.join(', ') });
+    }
+    
+    // Handle duplicate key errors
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyPattern)[0];
+      return res.status(400).json({ success: false, message: `A product with this ${field} already exists` });
+    }
+    
+    res.status(500).json({ success: false, message: error.message || 'Failed to create product' });
   }
 });
 

@@ -137,7 +137,7 @@ export function AuthPage({ mode }: { mode: 'login' | 'signup' }) {
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-12 bg-neutral-50 dark:bg-neutral-900">
+    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 sm:px-6 py-8 sm:py-12 bg-neutral-50 dark:bg-neutral-900">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Link to="/" className="font-serif text-3xl font-bold text-neutral-900 dark:text-white">
@@ -146,8 +146,8 @@ export function AuthPage({ mode }: { mode: 'login' | 'signup' }) {
           <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-2">Everything You Need, Delivered Today</p>
         </div>
 
-        <div className="card p-8">
-          <h1 className="font-serif text-2xl font-bold text-neutral-900 dark:text-white mb-1">
+        <div className="card p-6 sm:p-8">
+          <h1 className="font-serif text-xl sm:text-2xl font-bold text-neutral-900 dark:text-white mb-1">
             {mode === 'login' ? 'Welcome Back' : 'Create Account'}
           </h1>
           <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-6">
@@ -198,7 +198,7 @@ export function AuthPage({ mode }: { mode: 'login' | 'signup' }) {
             {mode === 'signup' && (
               <div>
                 <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5 block">Verification Code</label>
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-col sm:flex-row">
                   <input
                     type="text"
                     required
@@ -303,10 +303,6 @@ export function AuthPage({ mode }: { mode: 'login' | 'signup' }) {
             </Link>
           </p>
         </div>
-
-        <p className="text-center text-xs text-neutral-400 mt-4">
-          <Link to="/admin/login" className="hover:text-brand-600">Admin Login</Link>
-        </p>
       </div>
     </div>
   );

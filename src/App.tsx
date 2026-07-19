@@ -1,6 +1,6 @@
-import { BrowserRouter, Routes, Route, useLocation, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { lazy, Suspense, useEffect } from 'react';
-import { AuthProvider, useAuth } from './lib/auth';
+import { AuthProvider } from './lib/auth';
 import { CartProvider } from './lib/cart';
 import { ThemeProvider } from './lib/theme';
 import { ToastProvider } from './lib/toast';
@@ -17,8 +17,6 @@ const CheckoutPage = lazy(() => import('./pages/CheckoutPage').then(m => ({ defa
 const AuthPage = lazy(() => import('./pages/AuthPage').then(m => ({ default: m.AuthPage })));
 const AccountPage = lazy(() => import('./pages/AccountPage').then(m => ({ default: m.AccountPage })));
 const WishlistPage = lazy(() => import('./pages/WishlistPage').then(m => ({ default: m.WishlistPage })));
-const AdminLoginPage = lazy(() => import('./pages/AdminLoginPage').then(m => ({ default: m.AdminLoginPage })));
-const AdminPage = lazy(() => import('./pages/AdminPage').then(m => ({ default: m.AdminPage })));
 const HelpPage = lazy(() => import('./pages/HelpPage').then(m => ({ default: m.HelpPage })));
 const TrackOrderPage = lazy(() => import('./pages/TrackOrderPage').then(m => ({ default: m.TrackOrderPage })));
 const ReturnsPage = lazy(() => import('./pages/ReturnsPage').then(m => ({ default: m.ReturnsPage })));
@@ -32,6 +30,8 @@ const DeliveryPartnerLoginPage = lazy(() => import('./pages/DeliveryPartnerLogin
 const GoogleCallbackPage = lazy(() => import('./pages/GoogleCallbackPage').then(m => ({ default: m.GoogleCallbackPage })));
 const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage').then(m => ({ default: m.ForgotPasswordPage })));
 const FeedbackPage = lazy(() => import('./pages/FeedbackPage').then(m => ({ default: m.FeedbackPage })));
+const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage').then(m => ({ default: m.PrivacyPolicyPage })));
+const TermsOfServicePage = lazy(() => import('./pages/TermsOfServicePage').then(m => ({ default: m.TermsOfServicePage })));
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -41,30 +41,12 @@ function ScrollToTop() {
   return null;
 }
 
-function AdminRouteGuard({ children }: { children: React.ReactNode }) {
-  const { isAdmin } = useAuth();
-  const location = useLocation();
-
-  if (isAdmin) {
-    return <Navigate to="/admin" state={{ from: location }} replace />;
-  }
-  return <>{children}</>;
-}
-
 function StoreLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-1">{children}</main>
       <Footer />
-    </div>
-  );
-}
-
-function AdminLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900">
-      {children}
     </div>
   );
 }
@@ -87,16 +69,6 @@ export default function App() {
               <BrowserRouter>
                 <ScrollToTop />
                 <Routes>
-                <Route path="/admin/login" element={<AdminLoginPage />} />
-                <Route path="/admin/*" element={
-                  <AdminLayout>
-                    <Suspense fallback={<div className="p-8 text-center">Loading...</div>}>
-                      <Routes>
-                        <Route path="/" element={<AdminPage />} />
-                      </Routes>
-                    </Suspense>
-                  </AdminLayout>
-                } />
                 <Route path="/delivery-partner/login" element={<DeliveryPartnerLoginPage />} />
                 <Route path="/delivery-partner/*" element={
                   <DeliveryPartnerLayout>
@@ -109,10 +81,9 @@ export default function App() {
                   </DeliveryPartnerLayout>
                 } />
                 <Route path="/*" element={
-                  <AdminRouteGuard>
-                    <StoreLayout>
-                      <Suspense fallback={<div className="p-8 text-center">Loading...</div>}>
-                        <Routes>
+                  <StoreLayout>
+                    <Suspense fallback={<div className="p-8 text-center">Loading...</div>}>
+                      <Routes>
                           <Route path="/" element={<HomePage />} />
                           <Route path="/shop" element={<ShopPage />} />
                           <Route path="/product/:slug" element={<ProductPage />} />
@@ -134,11 +105,12 @@ export default function App() {
                           <Route path="/faq" element={<FAQPage />} />
                           <Route path="/founder" element={<FounderPage />} />
                           <Route path="/feedback" element={<FeedbackPage />} />
+                          <Route path="/privacy" element={<PrivacyPolicyPage />} />
+                          <Route path="/terms" element={<TermsOfServicePage />} />
                         </Routes>
                       </Suspense>
                     </StoreLayout>
-                  </AdminRouteGuard>
-                } />
+                  } />
               </Routes>
             </BrowserRouter>
           </ToastProvider>

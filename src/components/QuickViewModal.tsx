@@ -62,7 +62,7 @@ export function QuickViewModal({ product, onClose }: QuickViewModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 sm:p-6" onClick={onClose}>
       <div className="bg-white dark:bg-neutral-800 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-neutral-200 dark:border-neutral-700">
@@ -72,10 +72,10 @@ export function QuickViewModal({ product, onClose }: QuickViewModalProps) {
           </button>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-6 p-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 p-4 md:p-6">
           {/* Images */}
           <div className="space-y-4">
-            <div className="relative aspect-square bg-neutral-100 dark:bg-neutral-700 rounded-xl overflow-hidden">
+            <div className="relative aspect-square sm:aspect-[4/3] md:aspect-square bg-neutral-100 dark:bg-neutral-700 rounded-xl overflow-hidden">
               <img
                 src={product.images[selectedImage]}
                 alt={product.name}
@@ -99,12 +99,12 @@ export function QuickViewModal({ product, onClose }: QuickViewModalProps) {
               )}
             </div>
             {product.images.length > 1 && (
-              <div className="flex gap-2 overflow-x-auto">
+              <div className="flex gap-2 overflow-x-auto scrollbar-hide">
                 {product.images.map((img, i) => (
                   <button
                     key={i}
                     onClick={() => setSelectedImage(i)}
-                    className={`w-20 h-20 rounded-lg overflow-hidden flex-shrink-0 border-2 ${selectedImage === i ? 'border-brand-600' : 'border-transparent'}`}
+                    className={`w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden flex-shrink-0 border-2 ${selectedImage === i ? 'border-brand-600' : 'border-transparent'}`}
                   >
                     <img src={img} alt="" className="w-full h-full object-cover" />
                   </button>
@@ -123,8 +123,8 @@ export function QuickViewModal({ product, onClose }: QuickViewModalProps) {
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
-              <span className="text-2xl font-bold text-neutral-900 dark:text-white">{formatPrice(product.price)}</span>
+            <div className="flex items-center gap-2 sm:gap-3">
+              <span className="text-xl sm:text-2xl font-bold text-neutral-900 dark:text-white">{formatPrice(product.price)}</span>
               {product.compare_at_price && (
                 <span className="text-lg text-neutral-400 line-through">{formatPrice(product.compare_at_price)}</span>
               )}
@@ -204,11 +204,11 @@ export function QuickViewModal({ product, onClose }: QuickViewModalProps) {
             </div>
 
             {/* Actions */}
-            <div className="flex gap-3 pt-4">
+            <div className="flex flex-col sm:flex-row gap-3 pt-4">
               <button
                 onClick={handleAddToCart}
                 disabled={product.stock === 0}
-                className="flex-1 btn-primary flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 btn-primary flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-100 w-full sm:w-auto"
               >
                 <ShoppingCart size={18} />
                 {product.stock === 0 ? 'Out of Stock' : 'Add to Cart'}

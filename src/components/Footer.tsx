@@ -1,68 +1,10 @@
 import { Link } from 'react-router-dom';
-import { Instagram, Facebook, Twitter, Youtube, Mail, Phone, MapPin, Send } from 'lucide-react';
-import { useState } from 'react';
-import { useToast } from '../lib/toast';
+import { Instagram, Facebook, Twitter, Youtube, Mail, Phone, MapPin } from 'lucide-react';
 
 export function Footer() {
-  const { showToast } = useToast();
-  const [email, setEmail] = useState('');
-  const [subscribing, setSubscribing] = useState(false);
-
-  const subscribe = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (email) {
-      setSubscribing(true);
-      try {
-        const response = await fetch('http://localhost:5000/api/newsletter/subscribe', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email })
-        });
-        const data = await response.json();
-        if (data.success) {
-          showToast('Subscribed! Check your inbox for exclusive offers.', 'success');
-          setEmail('');
-        } else {
-          showToast(data.message || 'Subscription failed', 'error');
-        }
-      } catch (error) {
-        showToast('Error subscribing to newsletter', 'error');
-      } finally {
-        setSubscribing(false);
-      }
-    }
-  };
-
   return (
     <footer className="bg-neutral-900 dark:bg-black text-neutral-300 mt-16">
-      {/* Newsletter */}
-      <div className="border-b border-neutral-800">
-        <div className="max-w-7xl mx-auto px-6 py-10 flex flex-col md:flex-row items-center justify-between gap-6">
-          <div>
-            <h3 className="font-serif text-2xl font-semibold text-white">Join Our Newsletter</h3>
-            <p className="text-sm text-neutral-400 mt-1">Get exclusive deals, early access, and style tips delivered to your inbox.</p>
-          </div>
-          <form onSubmit={subscribe} className="flex gap-2 w-full md:w-auto">
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your email"
-              className="px-4 py-3 rounded-lg bg-neutral-800 text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-brand-500 w-full md:w-72"
-            />
-            <button 
-              type="submit" 
-              disabled={subscribing}
-              className="bg-brand-600 hover:bg-brand-700 text-white px-5 py-3 rounded-lg font-medium flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {subscribing ? <span className="animate-spin">⏳</span> : <Send size={18} />} Subscribe
-            </button>
-          </form>
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-6 py-12 grid grid-cols-2 md:grid-cols-5 gap-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-12 grid grid-cols-2 md:grid-cols-5 gap-4 sm:gap-8">
         <div>
           <h4 className="font-serif text-lg font-semibold text-white mb-4">MAHIR & FRIENDS</h4>
           <p className="text-sm text-neutral-400 mb-4">Everything You Need, Delivered Today. Premium fashion for the modern individual.</p>
@@ -113,12 +55,11 @@ export function Footer() {
       </div>
 
       <div className="border-t border-neutral-800">
-        <div className="max-w-7xl mx-auto px-6 py-6 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-sm text-neutral-400">&copy; 2026 MAHIR & FRIENDS. All rights reserved.</p>
           <div className="flex gap-4 text-sm text-neutral-400">
-            <a href="#" className="hover:text-white">Privacy Policy</a>
-            <a href="#" className="hover:text-white">Terms of Service</a>
-            <Link to="/admin/login" className="hover:text-white">Admin</Link>
+            <Link to="/privacy" className="hover:text-white">Privacy Policy</Link>
+            <Link to="/terms" className="hover:text-white">Terms of Service</Link>
           </div>
         </div>
       </div>

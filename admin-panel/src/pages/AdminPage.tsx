@@ -11,14 +11,12 @@ import { useToast } from '../lib/toast';
 import { api } from '../lib/api';
 import { formatPrice, formatDate } from '../lib/utils';
 import type { Product, Category, Order, Coupon, ComboPack, GiftCard } from '../lib/types';
-import { StatsCardSkeleton } from '../components/LoadingSkeleton';
-import { AdminAnalytics } from '../components/AdminAnalytics';
 
 type AdminTab = 'dashboard' | 'products' | 'categories' | 'orders' | 'coupons' | 'combos' | 'giftcards' | 'delivery' | 'delivery-partners' | 'users' | 'notifications' | 'analytics' | 'feedback' | 'profile';
 
 export function AdminPage() {
   const navigate = useNavigate();
-  const { isAdmin, adminSignOut } = useAuth();
+  const { isAuthenticated, adminSignOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { showToast } = useToast();
   const [tab, setTab] = useState<AdminTab>('dashboard');
@@ -46,7 +44,7 @@ export function AdminPage() {
   const [lowStockProducts, setLowStockProducts] = useState<Product[]>([]);
 
   useEffect(() => {
-    if (!isAdmin) { navigate('/admin/login'); return; }
+    if (!isAuthenticated) { navigate('/login'); return; }
     fetchAll();
 
     // Poll for order updates every 30 seconds
@@ -55,7 +53,7 @@ export function AdminPage() {
     }, 30000);
 
     return () => clearInterval(interval);
-  }, [isAdmin, navigate]);
+  }, [isAuthenticated, navigate]);
 
   const markNotificationAsRead = async (notificationId: string) => {
     try {
@@ -137,7 +135,7 @@ export function AdminPage() {
   };
 
   const deleteProduct = async (id: string) => {
-    if (!confirm('Delete this product?')) return;
+    if (!window.confirm('Delete this product?')) return;
     try {
       await api.delete(`/products/${id}`);
       setProducts((prev) => prev.filter((p) => p._id !== id));
@@ -169,7 +167,7 @@ export function AdminPage() {
     }
     try {
       await api.patch(`/orders/${orderId}/status`, { status });
-      setOrders((prev) => prev.map((o) => o._id === orderId ? { ...o, status, timeline: update.timeline } : o));
+      setOrders((prev) => prev.map((o) => o._id === orderId ? { ...o, status: status as Order['status'], timeline: update.timeline } : o));
       showToast(`Order status updated to ${status}${status === 'delivered' && order?.payment_method === 'cod' ? ' & COD payment marked as paid' : ''}`, 'success');
     } catch (error) {
       console.error('Failed to update order status:', error);
@@ -189,11 +187,11 @@ export function AdminPage() {
           distance: o.delivery?.distance ?? 0,
           distanceFee: o.delivery?.distanceFee ?? 0,
           estimatedTime: o.delivery?.estimatedTime ?? 0,
-          pickupOTP: o.delivery?.pickupOTP ?? null,
-          deliveryOTP: o.delivery?.deliveryOTP ?? null,
-          storeAddress: o.delivery?.storeAddress ?? null,
+          pickupOTP: o.delivery?.pickupOTP ?? undefined,
+          deliveryOTP: o.delivery?.deliveryOTP ?? undefined,
+          storeAddress: o.delivery?.storeAddress ?? undefined,
           storeCoordinates: o.delivery?.storeCoordinates,
-          storeContact: o.delivery?.storeContact ?? null,
+          storeContact: o.delivery?.storeContact ?? undefined,
         }
       } : o));
       setSelectedPartnerForOrder((prev) => ({ ...prev, [orderId]: partnerId }));
@@ -205,7 +203,7 @@ export function AdminPage() {
   };
 
   const deleteCoupon = async (id: string) => {
-    if (!confirm('Delete this coupon?')) return;
+    if (!window.confirm('Delete this coupon?')) return;
     try {
       await api.delete(`/coupons/${id}`);
       setCoupons((prev) => prev.filter((c) => c._id !== id));
@@ -216,7 +214,7 @@ export function AdminPage() {
   };
 
   const deleteCombo = async (id: string) => {
-    if (!confirm('Delete this combo pack?')) return;
+    if (!window.confirm('Delete this combo pack?')) return;
     try {
       await api.delete(`/combos/${id}`);
       setComboPacks((prev) => prev.filter((c) => c._id !== id));
@@ -237,7 +235,7 @@ export function AdminPage() {
   };
 
   const deleteGiftCard = async (id: string) => {
-    if (!confirm('Delete this gift card?')) return;
+    if (!window.confirm('Delete this gift card?')) return;
     try {
       await api.delete(`/gift-cards/${id}`);
       setGiftCards((prev) => prev.filter((g) => g._id !== id));
@@ -279,7 +277,7 @@ export function AdminPage() {
     { id: 'profile' as AdminTab, label: 'Profile', icon: User },
   ];
 
-  if (!isAdmin) return null;
+  if (!isAuthenticated) return null;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-neutral-50 to-neutral-100 dark:from-neutral-900 dark:to-neutral-950 flex">
@@ -364,7 +362,13 @@ export function AdminPage() {
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-5">
               {loading ? (
-                Array.from({ length: 8 }).map((_, i) => <StatsCardSkeleton key={i} />)
+                Array.from({ length: 8 }).map((_, i) => (
+                  <div key={i} className="bg-white dark:bg-neutral-800 rounded-2xl p-5 shadow-sm border border-neutral-100 dark:border-neutral-700 animate-pulse">
+                    <div className="w-12 h-12 bg-neutral-200 dark:bg-neutral-700 rounded-xl mb-4" />
+                    <div className="h-8 bg-neutral-200 dark:bg-neutral-700 rounded mb-2" />
+                    <div className="h-4 bg-neutral-200 dark:bg-neutral-700 rounded w-2/3" />
+                  </div>
+                ))
               ) : [
                 { label: 'Total Sales', value: formatPrice(stats.totalSales), icon: DollarSign, color: 'from-emerald-500 to-green-600', bg: 'bg-emerald-50 dark:bg-emerald-900/20', text: 'text-emerald-600 dark:text-emerald-400' },
                 { label: "Today's Sales", value: formatPrice(stats.todaySales), icon: TrendingUp, color: 'from-blue-500 to-indigo-600', bg: 'bg-blue-50 dark:bg-blue-900/20', text: 'text-blue-600 dark:text-blue-400' },
@@ -449,7 +453,7 @@ export function AdminPage() {
                 {[
                   { label: 'Pending', count: stats.pendingOrders, color: 'from-yellow-500 to-amber-500' },
                   { label: 'Confirmed', count: orders.filter(o => o.status === 'confirmed').length, color: 'from-blue-500 to-indigo-500' },
-                  { label: 'Processing', count: orders.filter(o => o.status === 'processing').length, color: 'from-purple-500 to-violet-500' },
+                  { label: 'Picked', count: orders.filter(o => o.status === 'picked').length, color: 'from-purple-500 to-violet-500' },
                   { label: 'Out for Delivery', count: orders.filter(o => o.status === 'out_for_delivery').length, color: 'from-orange-500 to-red-500' },
                   { label: 'Delivered', count: stats.deliveredOrders, color: 'from-green-500 to-emerald-500' },
                   { label: 'Cancelled', count: stats.cancelledOrders, color: 'from-red-500 to-rose-500' },
@@ -677,7 +681,14 @@ export function AdminPage() {
         {tab === 'delivery-partners' && <DeliveryPartnersManagement />}
         {tab === 'users' && <UsersManagement />}
         {tab === 'feedback' && <FeedbackManagement />}
-        {tab === 'analytics' && <AdminAnalytics />}
+        {tab === 'analytics' && (
+          <div className="space-y-5">
+            <h1 className="font-serif text-3xl font-bold bg-gradient-to-r from-neutral-900 to-neutral-700 dark:from-white dark:to-neutral-300 bg-clip-text text-transparent">Analytics</h1>
+            <div className="bg-white dark:bg-neutral-800 rounded-2xl p-6 shadow-sm border border-neutral-100 dark:border-neutral-700">
+              <p className="text-neutral-500">Analytics dashboard coming soon...</p>
+            </div>
+          </div>
+        )}
         {tab === 'profile' && <AdminProfile />}
         {tab === 'notifications' && (
           <div className="space-y-4">
@@ -1168,7 +1179,7 @@ function DeliveryManagement() {
   };
 
   const deleteLocation = async (id: string) => {
-    if (!confirm('Delete this delivery location?')) return;
+    if (!window.confirm('Delete this delivery location?')) return;
     try {
       await api.delete(`/delivery/locations/${id}`);
       setLocations((prev) => prev.filter((l) => l._id !== id));
@@ -1318,7 +1329,7 @@ function CategoriesManagement() {
   };
 
   const deleteCategory = async (id: string) => {
-    if (!confirm('Delete this category?')) return;
+    if (!window.confirm('Delete this category?')) return;
     try {
       await api.delete(`/categories/${id}`);
       setCategories((prev) => prev.filter((c) => c._id !== id));

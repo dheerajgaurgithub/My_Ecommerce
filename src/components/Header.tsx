@@ -12,7 +12,7 @@ import type { Category } from '../lib/types';
 
 export function Header() {
   const navigate = useNavigate();
-  const { user, signOut, isAdmin } = useAuth();
+  const { user, signOut } = useAuth();
   const { cartCount } = useCart();
   const { theme, toggleTheme } = useTheme();
   const [categories, setCategories] = useState<Category[]>([]);
@@ -127,7 +127,7 @@ export function Header() {
   return (
     <>
       {/* Announcement bar */}
-      <div className="bg-neutral-900 dark:bg-black text-white text-[10px] sm:text-xs py-2 overflow-hidden relative min-h-[32px] flex items-center">
+      <div className="bg-neutral-900 dark:bg-black text-white text-[10px] sm:text-xs py-2 overflow-hidden relative min-h-[32px] flex items-center px-2 sm:px-0">
         <div className="animate-marquee whitespace-nowrap w-full">
           <p className="font-medium text-center">
             {deliveryAvailable === true && freeDelivery ? `FREE DELIVERY in ${userLocation}` :
@@ -304,11 +304,6 @@ export function Header() {
                         <Link to="/account/addresses" onClick={() => setShowUserMenu(false)} className="flex items-center gap-2 px-4 py-2 text-sm text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700">
                           <MapPin size={16} /> Addresses
                         </Link>
-                        {isAdmin && (
-                          <Link to="/admin" onClick={() => setShowUserMenu(false)} className="flex items-center gap-2 px-4 py-2 text-sm text-brand-600 hover:bg-neutral-50 dark:hover:bg-neutral-700 font-medium">
-                            <LayoutDashboard size={16} /> Admin Panel
-                          </Link>
-                        )}
                         <button
                           onClick={() => { signOut(); setShowUserMenu(false); navigate('/'); }}
                           className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-neutral-50 dark:hover:bg-neutral-700"
@@ -422,11 +417,6 @@ export function Header() {
                     <Link key="mobile-account" to="/account" onClick={() => setShowMobileMenu(false)} className="flex items-center gap-2 py-2.5 px-3 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800">
                       <User size={18} /> My Account
                     </Link>
-                    {isAdmin && (
-                      <Link key="mobile-admin" to="/admin" onClick={() => setShowMobileMenu(false)} className="flex items-center gap-2 py-2.5 px-3 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 text-brand-600 font-medium">
-                        <LayoutDashboard size={18} /> Admin Panel
-                      </Link>
-                    )}
                     <button key="mobile-signout" onClick={() => { signOut(); setShowMobileMenu(false); }} className="flex items-center gap-2 py-2.5 px-3 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 text-red-500 w-full">
                       <LogOut size={18} /> Sign Out
                     </button>

@@ -117,20 +117,20 @@ export function PaymentQR({ feeType, amount, onSuccess, onCancel }: PaymentQRPro
 
   if (loading) {
     return (
-      <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
-        <div className="bg-white dark:bg-neutral-800 rounded-2xl p-8 max-w-md w-full text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
-          <p className="text-neutral-600 dark:text-neutral-400">Generating payment QR code...</p>
+      <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-3 sm:p-4">
+        <div className="bg-white dark:bg-neutral-800 rounded-2xl p-6 sm:p-8 max-w-md w-full text-center">
+          <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-b-2 border-purple-600 mx-auto mb-3 sm:mb-4"></div>
+          <p className="text-sm sm:text-base text-neutral-600 dark:text-neutral-400">Generating payment QR code...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-neutral-800 rounded-2xl p-8 max-w-md w-full">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="font-serif text-xl font-bold text-neutral-900 dark:text-white">
+    <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-3 sm:p-4">
+      <div className="bg-white dark:bg-neutral-800 rounded-2xl p-6 sm:p-8 max-w-md w-full max-h-[90vh] overflow-y-auto">
+        <div className="flex justify-between items-center mb-4 sm:mb-6">
+          <h2 className="font-serif text-lg sm:text-xl font-bold text-neutral-900 dark:text-white">
             {feeType === 'joining' ? 'Pay Joining Fee' : 'Pay Renewal Fee'}
           </h2>
           <button
@@ -149,10 +149,10 @@ export function PaymentQR({ feeType, amount, onSuccess, onCancel }: PaymentQRPro
           </div>
         )}
 
-        <div className="bg-neutral-50 dark:bg-neutral-700 rounded-xl p-6 mb-6">
+        <div className="bg-neutral-50 dark:bg-neutral-700 rounded-xl p-4 sm:p-6 mb-4 sm:mb-6">
           <div className="text-center mb-4">
             <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-2">Amount to Pay</p>
-            <p className="text-3xl font-bold text-neutral-900 dark:text-white">₹{amount}</p>
+            <p className="text-2xl sm:text-3xl font-bold text-neutral-900 dark:text-white">₹{amount}</p>
           </div>
 
           {qrCode && (
@@ -160,7 +160,7 @@ export function PaymentQR({ feeType, amount, onSuccess, onCancel }: PaymentQRPro
               <img
                 src={qrCode}
                 alt="Payment QR Code"
-                className="w-48 h-48 rounded-lg border-2 border-neutral-200 dark:border-neutral-600"
+                className="w-40 h-40 sm:w-48 sm:h-48 rounded-lg border-2 border-neutral-200 dark:border-neutral-600"
               />
             </div>
           )}

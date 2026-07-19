@@ -15,13 +15,10 @@ interface User {
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  isAdmin: boolean;
   setUser: (user: User | null) => void;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signUp: (email: string, password: string, name: string, otp?: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
-  adminSignIn: (email: string, password: string) => Promise<{ error: string | null }>;
-  adminSignOut: () => void;
   refreshUser: () => Promise<void>;
 }
 
@@ -30,7 +27,6 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     const token = api.getToken();
@@ -41,21 +37,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  useEffect(() => {
-    const adminFlag = localStorage.getItem('mahir_admin');
-    setIsAdmin(adminFlag === 'true');
-  }, []);
-
   const fetchUser = async () => {
     try {
       const response = await api.get<{ success: boolean; user: User }>('/users/me');
       if (response.success) {
         setUser(response.user);
-        setIsAdmin(response.user.role === 'admin');
       }
     } catch (error) {
       console.error('Failed to fetch user:', error);
-      // Don't clear token on error - this was causing logout on profile update
     } finally {
       setLoading(false);
     }
@@ -67,7 +56,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (response.success) {
         api.setToken(response.token);
         setUser(response.user);
-        setIsAdmin(response.user.role === 'admin');
         return { error: null };
       }
       return { error: 'Login failed' };
@@ -93,31 +81,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     api.clearToken();
     setUser(null);
-    setIsAdmin(false);
-  };
-
-  const adminSignIn = async (email: string, password: string) => {
-    try {
-      const response = await api.post<{ success: boolean; token: string; user: User }>('/auth/admin/login', { email, password });
-      if (response.success) {
-        api.setToken(response.token);
-        setUser(response.user);
-        localStorage.setItem('mahir_admin', 'true');
-        localStorage.setItem('mahir_admin_name', response.user.name);
-        setIsAdmin(true);
-        return { error: null };
-      }
-      return { error: 'Invalid admin credentials' };
-    } catch (error: any) {
-      return { error: error.message || 'Invalid admin credentials' };
-    }
-  };
-
-  const adminSignOut = () => {
-    localStorage.removeItem('mahir_admin');
-    localStorage.removeItem('mahir_admin_name');
-    setIsAdmin(false);
-    signOut();
   };
 
   const refreshUser = async () => {
@@ -125,7 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, isAdmin, setUser, signIn, signUp, signOut, adminSignIn, adminSignOut, refreshUser }}>
+    <AuthContext.Provider value={{ user, loading, setUser, signIn, signUp, signOut, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

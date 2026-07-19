@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Trash2, Minus, Plus, ShoppingBag, Tag, Gift, X, ArrowRight } from 'lucide-react';
+import { Trash2, Minus, Plus, ShoppingBag, Tag, X, ArrowRight } from 'lucide-react';
 import { useCart } from '../lib/cart';
 import { useAuth } from '../lib/auth';
 import { useToast } from '../lib/toast';
@@ -10,7 +10,7 @@ import type { Coupon } from '../lib/types';
 
 export function CartPage() {
   const navigate = useNavigate();
-  const { items, loading, updateQuantity, removeItem, toggleGiftWrap, saveForLater, cartSubtotal } = useCart();
+  const { items, loading, updateQuantity, removeItem, cartSubtotal } = useCart();
   const { user } = useAuth();
   const { showToast } = useToast();
   const [couponCode, setCouponCode] = useState('');
@@ -107,33 +107,33 @@ export function CartPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
         {/* Cart items */}
-        <div className="lg:col-span-2 space-y-4 lg:space-y-6">
+        <div className="lg:col-span-2 space-y-3 lg:space-y-4">
           {items.map((item) => {
             const product = typeof item.product_id === 'object' ? item.product_id : item.product;
             return (
-              <div key={item._id} className="card p-4 lg:p-6">
-                <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
-                  <Link to={`/product/${product?.slug}`} className="flex-shrink-0 mx-auto lg:mx-0">
-                    <img src={product?.images?.[0]} alt={product?.name} className="w-full h-64 lg:h-80 object-cover rounded-xl" />
+              <div key={item._id} className="bg-white dark:bg-neutral-800 rounded-2xl p-4 lg:p-6 shadow-sm border border-neutral-100 dark:border-neutral-700">
+                <div className="flex gap-4 lg:gap-6">
+                  <Link to={`/product/${product?.slug}`} className="flex-shrink-0">
+                    <img src={product?.images?.[0]} alt={product?.name} className="w-20 h-24 sm:w-24 sm:h-28 lg:w-32 lg:h-40 object-cover rounded-xl" />
                   </Link>
-                  <div className="flex-1 flex flex-col items-center lg:items-start text-center lg:text-left">
+                  <div className="flex-1 flex flex-col">
                     <Link to={`/product/${product?.slug}`}>
-                      <h3 className="font-medium text-lg lg:text-xl text-neutral-900 dark:text-white hover:text-brand-600">{product?.name}</h3>
+                      <h3 className="font-medium text-sm sm:text-base lg:text-lg text-neutral-900 dark:text-white hover:text-brand-600 line-clamp-2">{product?.name}</h3>
                     </Link>
-                    <p className="text-base lg:text-lg font-semibold text-neutral-900 dark:text-white mt-2 lg:mt-3">{formatPrice(product?.price ?? 0)}</p>
+                    <p className="text-sm sm:text-base lg:text-lg font-semibold text-neutral-900 dark:text-white mt-1 lg:mt-2">{formatPrice(product?.price ?? 0)}</p>
                     
-                    <div className="flex items-center gap-3 lg:gap-4 mt-4 lg:mt-6">
+                    <div className="flex flex-wrap items-center gap-3 lg:gap-4 mt-3 lg:mt-4">
                       <div className="flex items-center border border-neutral-300 dark:border-neutral-600 rounded-lg">
-                        <button onClick={() => updateQuantity(item._id, item.quantity - 1)} className="p-2 lg:p-2.5 hover:bg-neutral-50 dark:hover:bg-neutral-700 rounded-l-lg transition-colors">
-                          <Minus size={18} />
+                        <button onClick={() => updateQuantity(item._id, item.quantity - 1)} className="p-1.5 lg:p-2 hover:bg-neutral-50 dark:hover:bg-neutral-700 rounded-l-lg transition-colors">
+                          <Minus size={16} />
                         </button>
-                        <span className="px-4 text-base lg:text-lg font-medium">{item.quantity}</span>
-                        <button onClick={() => updateQuantity(item._id, item.quantity + 1)} className="p-2 lg:p-2.5 hover:bg-neutral-50 dark:hover:bg-neutral-700 rounded-r-lg transition-colors">
-                          <Plus size={18} />
+                        <span className="px-3 lg:px-4 text-sm lg:text-base font-medium">{item.quantity}</span>
+                        <button onClick={() => updateQuantity(item._id, item.quantity + 1)} className="p-1.5 lg:p-2 hover:bg-neutral-50 dark:hover:bg-neutral-700 rounded-r-lg transition-colors">
+                          <Plus size={16} />
                         </button>
                       </div>
-                      <button onClick={() => removeItem(item._id)} className="text-red-500 hover:text-red-600 flex items-center gap-1 transition-colors text-sm lg:text-base">
-                        <Trash2 size={18} /> Remove
+                      <button onClick={() => removeItem(item._id)} className="text-red-500 hover:text-red-600 flex items-center gap-1 transition-colors text-xs sm:text-sm lg:text-base">
+                        <Trash2 size={16} /> <span className="hidden sm:inline">Remove</span>
                       </button>
                     </div>
                   </div>
@@ -145,7 +145,7 @@ export function CartPage() {
 
         {/* Summary */}
         <div className="lg:col-span-1">
-          <div className="card p-5 lg:p-6 sticky top-24 lg:top-28">
+          <div className="bg-white dark:bg-neutral-800 rounded-2xl p-5 lg:p-6 shadow-sm border border-neutral-100 dark:border-neutral-700 sticky top-20 lg:top-28">
             <h2 className="font-semibold text-lg lg:text-xl text-neutral-900 dark:text-white mb-4 lg:mb-6">Order Summary</h2>
 
             {/* Coupon */}

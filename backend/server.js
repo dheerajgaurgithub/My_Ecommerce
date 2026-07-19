@@ -36,12 +36,14 @@ global.wss = wss;
 app.use(cors({
   origin: [
     'http://localhost:5173',
+    'http://localhost:3000',
+    'http://localhost:3001',
     'http://localhost:5000',
     'https://mahirandfriends.vercel.app',
     'https://mahirandfriends.onrender.com'
   ],
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json({ limit: '50mb' }));

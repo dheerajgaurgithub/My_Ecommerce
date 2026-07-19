@@ -53,7 +53,7 @@ export function ChatSupport() {
     try {
       const response = await api.post('/chat/send', {
         message: userMessage.message
-      });
+      }) as any;
 
       if (response.success) {
         // Add agent response
@@ -119,7 +119,7 @@ export function ChatSupport() {
           setIsOpen(true);
           setUnreadCount(0);
         }}
-        className="fixed bottom-6 right-6 bg-brand-600 text-white p-4 rounded-full shadow-lg hover:bg-brand-700 transition-all hover:scale-105 z-50"
+        className="fixed bottom-4 sm:bottom-6 right-4 sm:right-6 bg-brand-600 text-white p-3 sm:p-4 rounded-full shadow-lg hover:bg-brand-700 transition-all hover:scale-105 z-50"
         title="Chat with us"
       >
         <div className="relative">
@@ -135,18 +135,18 @@ export function ChatSupport() {
   }
 
   return (
-    <div className={`fixed bottom-6 right-6 bg-white dark:bg-neutral-800 rounded-2xl shadow-2xl z-50 transition-all ${
-      isMinimized ? 'w-80' : 'w-96 h-[500px]'
+    <div className={`fixed bottom-4 sm:bottom-6 right-4 sm:right-6 bg-white dark:bg-neutral-800 rounded-2xl shadow-2xl z-50 transition-all ${
+      isMinimized ? 'w-72 sm:w-80' : 'w-[90vw] sm:w-96 h-[60vh] sm:h-[500px]'
     }`}>
       {/* Header */}
-      <div className="bg-brand-600 text-white p-4 rounded-t-2xl flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+      <div className="bg-brand-600 text-white p-3 sm:p-4 rounded-t-2xl flex items-center justify-between">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white/20 rounded-full flex items-center justify-center">
             <MessageSquare size={20} />
           </div>
           <div>
-            <h3 className="font-semibold">Customer Support</h3>
-            <p className="text-xs text-white/80">Typically replies in minutes</p>
+            <h3 className="font-semibold text-sm sm:text-base">Customer Support</h3>
+            <p className="text-[10px] sm:text-xs text-white/80">Typically replies in minutes</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -168,14 +168,14 @@ export function ChatSupport() {
       {!isMinimized && (
         <>
           {/* Messages */}
-          <div className="h-[380px] overflow-y-auto p-4 space-y-4">
+          <div className="h-[calc(60vh-140px)] sm:h-[380px] overflow-y-auto p-3 sm:p-4 space-y-3 sm:space-y-4">
             {messages.length === 0 && (
-              <div className="text-center py-8">
-                <div className="w-16 h-16 bg-brand-100 dark:bg-brand-900 rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="text-center py-6 sm:py-8">
+                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-brand-100 dark:bg-brand-900 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
                   <Bot size={32} className="text-brand-600" />
                 </div>
-                <h4 className="font-semibold text-neutral-900 dark:text-white mb-2">Welcome to Support</h4>
-                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                <h4 className="font-semibold text-sm sm:text-base text-neutral-900 dark:text-white mb-1 sm:mb-2">Welcome to Support</h4>
+                <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400">
                   How can we help you today? Ask about orders, returns, payments, or anything else.
                 </p>
               </div>
@@ -230,7 +230,7 @@ export function ChatSupport() {
           </div>
 
           {/* Input */}
-          <div className="p-4 border-t border-neutral-200 dark:border-neutral-700">
+          <div className="p-3 sm:p-4 border-t border-neutral-200 dark:border-neutral-700">
             <div className="flex gap-2">
               <input
                 ref={inputRef}

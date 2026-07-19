@@ -47,7 +47,7 @@ export function WishlistPage() {
     return (
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="h-8 w-48 skeleton rounded mb-6" />
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
           {Array.from({ length: 4 }).map((_, i) => <div key={i} className="aspect-[3/4] skeleton rounded-xl" />)}
         </div>
       </div>
@@ -56,7 +56,7 @@ export function WishlistPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
-      <h1 className="font-serif text-2xl sm:text-3xl font-bold text-neutral-900 dark:text-white mb-6">My Wishlist</h1>
+      <h1 className="font-serif text-xl sm:text-2xl md:text-3xl font-bold text-neutral-900 dark:text-white mb-4 sm:mb-6">My Wishlist</h1>
       {items.length === 0 ? (
         <div className="text-center py-20">
           <Heart size={64} className="mx-auto text-neutral-300 dark:text-neutral-600 mb-4" />
@@ -65,7 +65,7 @@ export function WishlistPage() {
           <Link to="/shop" className="btn-primary inline-block">Browse Products</Link>
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
           {items.map((p) => (
             <div key={p._id} className="relative">
               <ProductCard product={p} />

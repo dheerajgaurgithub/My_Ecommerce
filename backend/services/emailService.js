@@ -1802,7 +1802,7 @@ Thank You for Your Order
 </h1>
 
 <p style="margin:10px 0 0;color:#6b7280;font-size:15px;">
-Order #${orderNumber}
+Order #${order.order_number}
 </p>
 
 </td>

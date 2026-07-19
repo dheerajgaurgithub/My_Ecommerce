@@ -136,15 +136,14 @@ router.post('/', auth, async (req, res) => {
       timeline.push({ status: 'Payment Completed', timestamp: new Date() });
     }
 
-    // Calculate final total with first order discount
+    // Calculate final discount
     const finalDiscount = discount + firstOrderDiscount;
-    const finalTotal = total - firstOrderDiscount;
 
     const order = new Order({
       user_id: req.user._id,
       order_number: orderNumber,
       status: 'pending',
-      total: finalTotal,
+      total,
       subtotal,
       tax,
       shipping,
@@ -154,7 +153,7 @@ router.post('/', auth, async (req, res) => {
       payment_status: isOnline ? 'paid' : 'pending',
       paid_at: isOnline ? new Date() : null,
       payment_details: payment_details || null,
-      address_snapshot: { address_id }, // Store address ID reference
+      address_snapshot: { address_id },
       timeline,
       items: orderItems
     });

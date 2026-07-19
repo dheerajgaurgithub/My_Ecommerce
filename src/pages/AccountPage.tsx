@@ -15,7 +15,7 @@ type Tab = 'overview' | 'orders' | 'wishlist' | 'addresses' | 'profile';
 
 export function AccountPage() {
   const navigate = useNavigate();
-  const { user, signOut, isAdmin, refreshUser, setUser } = useAuth();
+  const { user, signOut, isAdmin, setUser } = useAuth();
   const { showToast } = useToast();
   const [tab, setTab] = useState<Tab>('overview');
   const [orders, setOrders] = useState<Order[]>([]);
@@ -138,13 +138,13 @@ export function AccountPage() {
   ];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
-      <h1 className="font-serif text-2xl sm:text-3xl font-bold text-neutral-900 dark:text-white mb-6">My Account</h1>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
+      <h1 className="font-serif text-xl sm:text-2xl md:text-3xl font-bold text-neutral-900 dark:text-white mb-4 sm:mb-6">My Account</h1>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6">
         {/* Sidebar */}
         <aside className="lg:col-span-1">
-          <div className="card p-4 sticky top-24">
+          <div className="card p-3 sm:p-4 sticky top-20 sm:top-24">
             <div className="flex items-center gap-3 mb-4 pb-4 border-b border-neutral-100 dark:border-neutral-700">
               <div className="w-10 h-10 rounded-full bg-brand-100 dark:bg-brand-900 flex items-center justify-center font-medium text-brand-700 dark:text-brand-300">
                 {user?.email?.[0]?.toUpperCase()}
@@ -180,7 +180,7 @@ export function AccountPage() {
         <div className="lg:col-span-3">
           {tab === 'overview' && (
             <div className="space-y-6">
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
                 {[
                   { label: 'Total Orders', value: orders.length, icon: Package, color: 'text-blue-600' },
                   { label: 'Wishlist Items', value: wishlist.length, icon: Heart, color: 'text-brand-600' },
@@ -330,12 +330,12 @@ export function AccountPage() {
               </div>
               {showAddressForm && (
                 <div className="card p-5 mb-4 space-y-3">
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     <input className="input" placeholder="Full Name" value={newAddress.full_name} onChange={(e) => setNewAddress({ ...newAddress, full_name: e.target.value })} />
                     <input className="input" placeholder="Phone" value={newAddress.phone} onChange={(e) => setNewAddress({ ...newAddress, phone: e.target.value })} />
                   </div>
                   <input className="input" placeholder="Address Line" value={newAddress.address_line} onChange={(e) => setNewAddress({ ...newAddress, address_line: e.target.value })} />
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     <input className="input" placeholder="City" value={newAddress.city} onChange={(e) => setNewAddress({ ...newAddress, city: e.target.value })} />
                     <input className="input" placeholder="State" value={newAddress.state} onChange={(e) => setNewAddress({ ...newAddress, state: e.target.value })} />
                     <input className="input" placeholder="Pincode" value={newAddress.pincode} onChange={(e) => setNewAddress({ ...newAddress, pincode: e.target.value })} />
@@ -375,7 +375,7 @@ export function AccountPage() {
             <div className="card p-6 max-w-2xl">
               <h2 className="font-semibold text-lg text-neutral-900 dark:text-white mb-6">Profile Information</h2>
               
-              <div className="flex flex-col md:flex-row gap-8">
+              <div className="flex flex-col md:flex-row gap-6 sm:gap-8">
                 {/* Profile Picture */}
                 <div className="flex-shrink-0">
                   <div className="relative w-32 h-32 mx-auto">
@@ -429,7 +429,7 @@ export function AccountPage() {
 
                 {/* Profile Form */}
                 <div className="flex-1 space-y-4">
-                  <div className="grid md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1 block">Full Name</label>
                       <input
@@ -462,7 +462,7 @@ export function AccountPage() {
                     />
                   </div>
 
-                  <div className="grid md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1 block">Phone</label>
                       <input
@@ -509,7 +509,7 @@ export function AccountPage() {
 
               <div className="mt-8 pt-6 border-t border-neutral-200 dark:border-neutral-700">
                 <h3 className="font-medium text-neutral-900 dark:text-white mb-4">Account Details</h3>
-                <div className="grid md:grid-cols-2 gap-4 text-sm">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                   <div>
                     <p className="text-neutral-500">User ID</p>
                     <p className="font-mono text-neutral-900 dark:text-white">{user?.id}</p>
@@ -527,8 +527,8 @@ export function AccountPage() {
 
       {/* Review Modal */}
       {showReviewModal && reviewProduct && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="card max-w-md w-full p-6">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-3 sm:p-4">
+          <div className="card max-w-md w-full p-4 sm:p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-serif text-lg font-bold text-neutral-900 dark:text-white">Rate Product</h3>
               <button onClick={() => setShowReviewModal(false)} className="text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300">
