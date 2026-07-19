@@ -151,8 +151,16 @@ export function DashboardPage() {
         {/* Profile Section */}
         <div className="p-4 border-b border-neutral-200 dark:border-neutral-700">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-brand-100 dark:bg-brand-900 rounded-full flex items-center justify-center">
-              <User className="w-6 h-6 text-brand-600 dark:text-brand-400" />
+            <div className="w-12 h-12 bg-brand-100 dark:bg-brand-900 rounded-full flex items-center justify-center overflow-hidden">
+              {partnerData?.kycDetails?.selfie ? (
+                <img 
+                  src={partnerData.kycDetails.selfie} 
+                  alt="Profile" 
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <User className="w-6 h-6 text-brand-600 dark:text-brand-400" />
+              )}
             </div>
             <div className="flex-1">
               <p className="font-medium text-neutral-900 dark:text-white truncate">
@@ -238,7 +246,7 @@ export function DashboardPage() {
 
         {/* Content */}
         <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-        {activeTab === 'dashboard' && (
+          {activeTab === 'dashboard' && (
           <div className="space-y-6">
             {/* Payment Cards */}
             <div className="grid sm:grid-cols-2 gap-4">
@@ -498,36 +506,231 @@ export function DashboardPage() {
         {activeTab === 'profile' && (
           <div className="card p-6">
             <h2 className="text-xl font-semibold mb-4">Profile</h2>
-            <div className="space-y-4">
+            <div className="space-y-6">
+              {/* Personal Details */}
               <div>
-                <label className="block text-sm font-medium mb-2">Full Name</label>
-                <p className="text-neutral-900 dark:text-white">
-                  {partnerData?.personalDetails?.fullName || 'N/A'}
-                </p>
+                <h3 className="text-lg font-medium mb-3 text-neutral-900 dark:text-white">Personal Details</h3>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Full Name</label>
+                    <p className="text-neutral-900 dark:text-white">
+                      {partnerData?.personalDetails?.fullName || 'N/A'}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Email</label>
+                    <p className="text-neutral-900 dark:text-white">
+                      {partnerData?.personalDetails?.email || 'N/A'}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Phone</label>
+                    <p className="text-neutral-900 dark:text-white">
+                      {partnerData?.personalDetails?.contactNumber || 'N/A'}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Date of Birth</label>
+                    <p className="text-neutral-900 dark:text-white">
+                      {partnerData?.personalDetails?.dateOfBirth || 'N/A'}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Gender</label>
+                    <p className="text-neutral-900 dark:text-white">
+                      {partnerData?.personalDetails?.gender || 'N/A'}
+                    </p>
+                  </div>
+                </div>
               </div>
+
+              {/* Vehicle Details */}
               <div>
-                <label className="block text-sm font-medium mb-2">Email</label>
-                <p className="text-neutral-900 dark:text-white">
-                  {partnerData?.personalDetails?.email || 'N/A'}
-                </p>
+                <h3 className="text-lg font-medium mb-3 text-neutral-900 dark:text-white">Vehicle Details</h3>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Vehicle Type</label>
+                    <p className="text-neutral-900 dark:text-white capitalize">
+                      {partnerData?.vehicleDetails?.vehicleType || 'N/A'}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Vehicle Number</label>
+                    <p className="text-neutral-900 dark:text-white">
+                      {partnerData?.vehicleDetails?.vehicleNumber || 'N/A'}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Vehicle Model</label>
+                    <p className="text-neutral-900 dark:text-white">
+                      {partnerData?.vehicleDetails?.vehicleModel || 'N/A'}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Vehicle Color</label>
+                    <p className="text-neutral-900 dark:text-white">
+                      {partnerData?.vehicleDetails?.vehicleColor || 'N/A'}
+                    </p>
+                  </div>
+                </div>
               </div>
+
+              {/* Address */}
               <div>
-                <label className="block text-sm font-medium mb-2">Phone</label>
-                <p className="text-neutral-900 dark:text-white">
-                  {partnerData?.personalDetails?.contactNumber || 'N/A'}
-                </p>
+                <h3 className="text-lg font-medium mb-3 text-neutral-900 dark:text-white">Address</h3>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium mb-2">Street</label>
+                    <p className="text-neutral-900 dark:text-white">
+                      {partnerData?.address?.street || 'N/A'}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">City</label>
+                    <p className="text-neutral-900 dark:text-white">
+                      {partnerData?.address?.city || 'N/A'}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">State</label>
+                    <p className="text-neutral-900 dark:text-white">
+                      {partnerData?.address?.state || 'N/A'}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Pincode</label>
+                    <p className="text-neutral-900 dark:text-white">
+                      {partnerData?.address?.pincode || 'N/A'}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Landmark</label>
+                    <p className="text-neutral-900 dark:text-white">
+                      {partnerData?.address?.landmark || 'N/A'}
+                    </p>
+                  </div>
+                </div>
               </div>
+
+              {/* Emergency Contact */}
               <div>
-                <label className="block text-sm font-medium mb-2">Vehicle Type</label>
-                <p className="text-neutral-900 dark:text-white">
-                  {partnerData?.vehicleDetails?.vehicleType || 'N/A'}
-                </p>
+                <h3 className="text-lg font-medium mb-3 text-neutral-900 dark:text-white">Emergency Contact</h3>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Contact Name</label>
+                    <p className="text-neutral-900 dark:text-white">
+                      {partnerData?.emergencyContact?.name || 'N/A'}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Relationship</label>
+                    <p className="text-neutral-900 dark:text-white">
+                      {partnerData?.emergencyContact?.relationship || 'N/A'}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Contact Number</label>
+                    <p className="text-neutral-900 dark:text-white">
+                      {partnerData?.emergencyContact?.contactNumber || 'N/A'}
+                    </p>
+                  </div>
+                </div>
               </div>
+
+              {/* KYC Details */}
               <div>
-                <label className="block text-sm font-medium mb-2">Vehicle Number</label>
-                <p className="text-neutral-900 dark:text-white">
-                  {partnerData?.vehicleDetails?.vehicleNumber || 'N/A'}
-                </p>
+                <h3 className="text-lg font-medium mb-3 text-neutral-900 dark:text-white">KYC Details</h3>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Aadhar Number</label>
+                    <p className="text-neutral-900 dark:text-white">
+                      {partnerData?.kycDetails?.aadharNumber || 'N/A'}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">PAN Number</label>
+                    <p className="text-neutral-900 dark:text-white">
+                      {partnerData?.kycDetails?.panNumber || 'N/A'}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">KYC Status</label>
+                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                      partnerData?.kycDetails?.kycStatus === 'approved' ? 'bg-green-100 text-green-700' :
+                      partnerData?.kycDetails?.kycStatus === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                      'bg-red-100 text-red-700'
+                    }`}>
+                      {partnerData?.kycDetails?.kycStatus || 'Not Submitted'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bank Details */}
+              <div>
+                <h3 className="text-lg font-medium mb-3 text-neutral-900 dark:text-white">Bank Details</h3>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Account Number</label>
+                    <p className="text-neutral-900 dark:text-white">
+                      {partnerData?.bankDetails?.accountNumber || 'N/A'}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Account Holder Name</label>
+                    <p className="text-neutral-900 dark:text-white">
+                      {partnerData?.bankDetails?.accountHolderName || 'N/A'}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">IFSC Code</label>
+                    <p className="text-neutral-900 dark:text-white">
+                      {partnerData?.bankDetails?.ifscCode || 'N/A'}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Bank Name</label>
+                    <p className="text-neutral-900 dark:text-white">
+                      {partnerData?.bankDetails?.bankName || 'N/A'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Work Details */}
+              <div>
+                <h3 className="text-lg font-medium mb-3 text-neutral-900 dark:text-white">Work Details</h3>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Total Deliveries</label>
+                    <p className="text-neutral-900 dark:text-white">
+                      {partnerData?.workDetails?.totalDeliveries || 0}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Total Earnings</label>
+                    <p className="text-neutral-900 dark:text-white">
+                      ₹{partnerData?.workDetails?.totalEarnings || 0}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Rating</label>
+                    <p className="text-neutral-900 dark:text-white">
+                      {partnerData?.workDetails?.rating || 0} ⭐
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Status</label>
+                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                      partnerData?.status === 'approved' ? 'bg-green-100 text-green-700' :
+                      partnerData?.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                      partnerData?.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                      'bg-neutral-100 text-neutral-700'
+                    }`}>
+                      {partnerData?.status || 'Unknown'}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
