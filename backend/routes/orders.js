@@ -25,9 +25,8 @@ router.get('/active-delivery-partners', auth, async (req, res) => {
     }
 
     const partners = await DeliveryPartner.find({
-      status: 'active',
-      'workDetails.isOnline': true
-    }).select('personalDetails.fullName personalDetails.contactNumber vehicleDetails.vehicleType vehicleDetails.vehicleNumber workDetails.totalDeliveries');
+      status: 'active'
+    }).select('personalDetails.fullName personalDetails.contactNumber vehicleDetails.vehicleType vehicleDetails.vehicleNumber workDetails.totalDeliveries workDetails.isOnline');
 
     res.json({ success: true, partners });
   } catch (error) {

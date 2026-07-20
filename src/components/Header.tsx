@@ -141,7 +141,7 @@ export function Header() {
 
       <header className={`sticky top-0 z-50 transition-all duration-300 ${scrolled ? 'glass shadow-md' : 'bg-white dark:bg-neutral-900'}`}>
         <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
-          <div className="flex items-center justify-between h-14 sm:h-16 gap-2 sm:gap-4">
+          <div className="flex items-center justify-between h-14 sm:h-16 gap-1 sm:gap-4">
             {/* Mobile menu button */}
             <button
               className="lg:hidden text-neutral-700 dark:text-neutral-200 p-2"
@@ -151,7 +151,7 @@ export function Header() {
             </button>
 
             {/* Logo */}
-            <Link to="/" className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+            <Link to="/" className="flex items-center gap-1 sm:gap-3 flex-shrink-0">
               <img src="/logo.png" alt="Mahir & Friends" className="h-7 w-7 sm:h-8 sm:w-8 lg:h-10 lg:w-10 object-contain" />
               <div className="flex flex-col">
                 <span className="font-serif text-sm sm:text-base lg:text-xl xl:text-2xl font-bold tracking-tight text-neutral-900 dark:text-white leading-tight">

@@ -3,15 +3,16 @@ const API_BASE_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost
 class ApiClient {
   private token: string | null = null;
 
+  constructor() {
+    this.token = localStorage.getItem('auth_token');
+  }
+
   setToken(token: string) {
     this.token = token;
     localStorage.setItem('auth_token', token);
   }
 
   getToken(): string | null {
-    if (!this.token) {
-      this.token = localStorage.getItem('auth_token');
-    }
     return this.token;
   }
 

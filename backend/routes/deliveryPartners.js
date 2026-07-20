@@ -1,4 +1,5 @@
 import express from 'express';
+import jwt from 'jsonwebtoken';
 import DeliveryPartner from '../models/DeliveryPartner.js';
 import DeliveryOrder from '../models/DeliveryOrder.js';
 import Payout from '../models/Payout.js';
@@ -7,7 +8,7 @@ import User from '../models/User.js';
 import Notification from '../models/Notification.js';
 import Store from '../models/Store.js';
 import { body, validationResult } from 'express-validator';
-import { auth } from '../middleware/auth.js';
+import { auth, deliveryAuth, checkRenewalStatus } from '../middleware/auth.js';
 import bcrypt from 'bcryptjs';
 import PDFDocument from 'pdfkit';
 import { generateDeliveryPartnerPDF } from '../utils/generatePartnerPDF.js';
@@ -17,6 +18,56 @@ import { verifyRazorpaySignature } from '../utils/razorpay.js';
 import { calculateDeliveryPayment, calculateRoundTripDistance } from '../utils/calculateDeliveryPayment.js';
 
 const router = express.Router();
+
+// Generate JWT token
+const generateToken = (userId) => {
+  return jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '7d' });
+};
+
+// Delivery partner login
+router.post('/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ success: false, message: 'Email and password are required' });
+    }
+
+    // Find user by email
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(401).json({ success: false, message: 'Invalid credentials' });
+    }
+
+    // Check if user is a delivery partner
+    if (user.role !== 'delivery_partner') {
+      return res.status(401).json({ success: false, message: 'Not a delivery partner' });
+    }
+
+    // Verify password
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ success: false, message: 'Invalid credentials' });
+    }
+
+    // Find delivery partner profile
+    const partner = await DeliveryPartner.findOne({ userId: user._id });
+    if (!partner) {
+      return res.status(401).json({ success: false, message: 'Delivery partner profile not found' });
+    }
+
+    // Generate token with delivery partner ID
+    const token = generateToken(partner._id);
+
+    res.json({
+      success: true,
+      token,
+      user: partner
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
 
 // Middleware to check if user is a delivery partner
 const isDeliveryPartner = async (req, res, next) => {
@@ -213,7 +264,7 @@ router.put('/emergency-contact', auth, isDeliveryPartner, async (req, res) => {
 });
 
 // Get delivery partner profile
-router.get('/profile', auth, isDeliveryPartner, async (req, res) => {
+router.get('/profile', deliveryAuth, checkRenewalStatus, async (req, res) => {
   try {
     res.json({ success: true, data: req.deliveryPartner });
   } catch (error) {
@@ -269,7 +320,7 @@ router.put('/location', auth, isDeliveryPartner, async (req, res) => {
 });
 
 // Get available orders (nearby stores)
-router.get('/available-orders', auth, isDeliveryPartner, async (req, res) => {
+router.get('/available-orders', auth, isDeliveryPartner, checkRenewalStatus, async (req, res) => {
   try {
     const { latitude, longitude, radius = 10 } = req.query;
 
@@ -296,7 +347,7 @@ router.get('/available-orders', auth, isDeliveryPartner, async (req, res) => {
 });
 
 // Accept an order
-router.post('/accept-order/:orderId', auth, isDeliveryPartner, async (req, res) => {
+router.post('/accept-order/:orderId', auth, isDeliveryPartner, checkRenewalStatus, async (req, res) => {
   try {
     const order = await Order.findById(req.params.orderId);
     if (!order) {
@@ -368,7 +419,7 @@ router.post('/accept-order/:orderId', auth, isDeliveryPartner, async (req, res) 
 });
 
 // Get delivery partner's active orders
-router.get('/active-orders', auth, isDeliveryPartner, async (req, res) => {
+router.get('/active-orders', deliveryAuth, checkRenewalStatus, async (req, res) => {
   try {
     const activeOrders = await DeliveryOrder.find({
       deliveryPartnerId: req.deliveryPartner._id,
@@ -382,7 +433,7 @@ router.get('/active-orders', auth, isDeliveryPartner, async (req, res) => {
 });
 
 // Update delivery order status
-router.put('/order-status/:orderId', auth, isDeliveryPartner, async (req, res) => {
+router.put('/order-status/:orderId', auth, isDeliveryPartner, checkRenewalStatus, async (req, res) => {
   try {
     const { status, latitude, longitude, notes, otp, otpType } = req.body;
 
@@ -1000,11 +1051,15 @@ router.post('/verify-payment', auth, isDeliveryPartner, [
         return res.status(400).json({ success: false, message: 'Joining fee already paid' });
       }
 
+      const paidAt = new Date();
+      const nextDueDate = new Date(paidAt);
+      nextDueDate.setMonth(nextDueDate.getMonth() + 1);
+
       // Update partner payment status
       partner.joiningFee = {
         amount: partner.joiningFee?.amount || 500,
         paid: true,
-        paidAt: new Date(),
+        paidAt: paidAt,
         paymentId: razorpay_payment_id,
         razorpayOrderId: razorpay_order_id,
         signature: razorpay_signature
@@ -1012,24 +1067,33 @@ router.post('/verify-payment', auth, isDeliveryPartner, [
 
       partner.status = 'active';
 
-      // Set renewal fee due date (30 days from now)
+      // Set renewal fee due date (1 month from joining)
       partner.renewalFee = {
         amount: partner.renewalFee?.amount || 200,
-        lastPaidAt: new Date(),
-        nextDueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        lastPaidAt: paidAt,
+        nextDueDate: nextDueDate,
         isPaid: true
       };
     } else if (type === 'renewal') {
       // Update renewal fee payment status
+      const lastPaidAt = new Date();
+      const nextDueDate = new Date(lastPaidAt);
+      nextDueDate.setMonth(nextDueDate.getMonth() + 1);
+
       partner.renewalFee = {
         amount: partner.renewalFee?.amount || 200,
-        lastPaidAt: new Date(),
-        nextDueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        lastPaidAt: lastPaidAt,
+        nextDueDate: nextDueDate,
         isPaid: true,
         paymentId: razorpay_payment_id,
         razorpayOrderId: razorpay_order_id,
         signature: razorpay_signature
       };
+
+      // Unblock partner if they were blocked due to overdue renewal
+      if (partner.status === 'suspended') {
+        partner.status = 'active';
+      }
     }
 
     await partner.save();

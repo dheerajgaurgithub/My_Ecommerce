@@ -15,7 +15,7 @@ type Tab = 'overview' | 'orders' | 'wishlist' | 'addresses' | 'profile';
 
 export function AccountPage() {
   const navigate = useNavigate();
-  const { user, signOut, isAdmin, setUser } = useAuth();
+  const { user, signOut, setUser } = useAuth();
   const { showToast } = useToast();
   const [tab, setTab] = useState<Tab>('overview');
   const [orders, setOrders] = useState<Order[]>([]);
@@ -138,13 +138,13 @@ export function AccountPage() {
   ];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
-      <h1 className="font-serif text-xl sm:text-2xl md:text-3xl font-bold text-neutral-900 dark:text-white mb-4 sm:mb-6">My Account</h1>
+    <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6">
+      <h1 className="font-serif text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-neutral-900 dark:text-white mb-3 sm:mb-4 lg:mb-6">My Account</h1>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
         {/* Sidebar */}
-        <aside className="lg:col-span-1">
-          <div className="card p-3 sm:p-4 sticky top-20 sm:top-24">
+        <aside className="lg:col-span-1 order-2 lg:order-1">
+          <div className="card p-3 sm:p-4 sticky top-16 sm:top-20 lg:top-24">
             <div className="flex items-center gap-3 mb-4 pb-4 border-b border-neutral-100 dark:border-neutral-700">
               <div className="w-10 h-10 rounded-full bg-brand-100 dark:bg-brand-900 flex items-center justify-center font-medium text-brand-700 dark:text-brand-300">
                 {user?.email?.[0]?.toUpperCase()}
@@ -172,7 +172,7 @@ export function AccountPage() {
         </aside>
 
         {/* Content */}
-        <div className="lg:col-span-3">
+        <div className="lg:col-span-3 order-1 lg:order-2">
           {tab === 'overview' && (
             <div className="space-y-6">
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">

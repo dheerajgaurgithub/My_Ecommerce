@@ -19,34 +19,47 @@ export function StoreSelectionPage() {
   const fetchNearbyStores = async () => {
     try {
       setLoading(true);
-      // Get delivery partner data to find their location
-      const partnerResponse = await api.get<{ success: boolean; partner: any }>('/delivery-partners/me');
-      const partner = partnerResponse.partner;
+      let stores: any[] = [];
 
-      let queryParams = '';
-      
-      // Use partner's location if available
-      if (partner?.address?.coordinates?.latitude && partner?.address?.coordinates?.longitude) {
-        queryParams = `?lat=${partner.address.coordinates.latitude}&lng=${partner.address.coordinates.longitude}`;
-      } 
-      // Otherwise use city/district
-      else if (partner?.address?.city) {
-        queryParams = `?city=${encodeURIComponent(partner.address.city)}&district=${encodeURIComponent(partner.address.district || '')}&pincode=${encodeURIComponent(partner.address.pincode || '')}`;
-      }
+      try {
+        // Get delivery partner data to find their location
+        const partnerResponse = await api.get<{ success: boolean; data: any }>('/delivery-partners/profile');
+        const partner = partnerResponse.data;
 
-      const response = await api.get<{ success: boolean; stores: any[]; count: number }>(`/stores/nearby${queryParams}`);
-      
-      if (response.success) {
-        setStores(response.stores || []);
-        
-        // If only one store available, auto-select it
-        if (response.stores && response.stores.length === 1) {
-          await selectStore(response.stores[0]._id);
+        let queryParams = '';
+
+        // Use partner's location if available
+        if (partner?.address?.coordinates?.latitude && partner?.address?.coordinates?.longitude) {
+          queryParams = `?lat=${partner.address.coordinates.latitude}&lng=${partner.address.coordinates.longitude}`;
+        }
+        // Otherwise use city/district
+        else if (partner?.address?.city) {
+          queryParams = `?city=${encodeURIComponent(partner.address.city)}&district=${encodeURIComponent(partner.address.state || '')}&pincode=${encodeURIComponent(partner.address.pincode || '')}`;
+        }
+
+        const response = await api.get<{ success: boolean; stores: any[]; count: number }>(`/stores/nearby${queryParams}`);
+
+        if (response.success) {
+          stores = response.stores || [];
+        }
+      } catch (error) {
+        console.error('Error fetching nearby stores with location, falling back to all active stores:', error);
+        // Fallback to getting all active stores
+        const activeResponse = await api.get<{ success: boolean; stores: any[] }>('/stores/active');
+        if (activeResponse.success) {
+          stores = activeResponse.stores || [];
         }
       }
+
+      setStores(stores);
+
+      // If only one store available, auto-select it
+      if (stores.length === 1) {
+        await selectStore(stores[0]._id);
+      }
     } catch (error) {
-      console.error('Error fetching nearby stores:', error);
-      showToast('Failed to load nearby stores', 'error');
+      console.error('Error fetching stores:', error);
+      showToast('Failed to load stores', 'error');
     } finally {
       setLoading(false);
     }

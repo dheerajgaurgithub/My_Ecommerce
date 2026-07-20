@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Package, MapPin, Phone, DollarSign, Clock, LogOut, Power,
-  TrendingUp, Truck, User, Sun, Moon, CreditCard, LayoutDashboard, Menu, X
+  TrendingUp, Truck, User, Sun, Moon, CreditCard, LayoutDashboard, Menu, X, ExternalLink
 } from 'lucide-react';
 import { useAuth } from '../lib/auth';
 import { useTheme } from '../lib/theme';
@@ -26,6 +26,39 @@ export function DashboardPage() {
   const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [nearestStore, setNearestStore] = useState<any>(null);
   const [distanceToStore, setDistanceToStore] = useState<number | null>(null);
+  const [isAccountSuspended, setIsAccountSuspended] = useState(false);
+
+  // Calculate if renewal fee is due and within 24-hour payment window
+  const isRenewalDue = () => {
+    if (!partnerData?.joiningFee?.paidAt || !partnerData?.renewalFee?.lastPaidAt) {
+      return false;
+    }
+
+    const joiningDate = new Date(partnerData.joiningFee.paidAt);
+    const lastRenewalDate = partnerData.renewalFee.lastPaidAt ? new Date(partnerData.renewalFee.lastPaidAt) : joiningDate;
+    const now = new Date();
+
+    // Calculate next due date (1 month from last payment)
+    const nextDueDate = new Date(lastRenewalDate);
+    nextDueDate.setMonth(nextDueDate.getMonth() + 1);
+
+    // Calculate 24-hour window end time
+    const paymentWindowEnd = new Date(nextDueDate);
+    paymentWindowEnd.setHours(paymentWindowEnd.getHours() + 24);
+
+    // Check if we're within the payment window (due date to due date + 24 hours)
+    const isWithinPaymentWindow = now >= nextDueDate && now <= paymentWindowEnd;
+
+    // Check if payment is overdue (past 24-hour window)
+    const isOverdue = now > paymentWindowEnd;
+
+    return {
+      isDue: isWithinPaymentWindow,
+      isOverdue,
+      nextDueDate,
+      paymentWindowEnd
+    };
+  };
 
   useEffect(() => {
     fetchPartnerData();
@@ -81,8 +114,26 @@ export function DashboardPage() {
         setPartnerData(response.data);
         setIsOnline(response.data.workDetails?.isOnline || false);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching partner data:', error);
+      if (error?.code === 'RENEWAL_OVERDUE' || error?.message?.includes('suspended')) {
+        setIsAccountSuspended(true);
+        // Try to fetch partner data without renewal check to show payment UI
+        try {
+          const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'}/delivery-partners/profile`, {
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('delivery_token')}`,
+              'Content-Type': 'application/json'
+            }
+          });
+          const data = await response.json();
+          if (data.success && data.data) {
+            setPartnerData(data.data);
+          }
+        } catch (e) {
+          console.error('Error fetching partner data without renewal check:', e);
+        }
+      }
     } finally {
       setLoading(false);
     }
@@ -242,6 +293,37 @@ export function DashboardPage() {
     );
   }
 
+  if (isAccountSuspended) {
+    return (
+      <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 flex items-center justify-center px-4">
+        <div className="max-w-md w-full text-center">
+          <div className="w-16 h-16 bg-red-100 dark:bg-red-900 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Power className="w-8 h-8 text-red-600 dark:text-red-400" />
+          </div>
+          <h1 className="text-2xl font-bold text-neutral-900 dark:text-white mb-2">Account Suspended</h1>
+          <p className="text-neutral-600 dark:text-neutral-400 mb-6">
+            Your account has been suspended due to overdue renewal fee. Please pay the renewal fee to continue as an active delivery partner.
+          </p>
+          {partnerData?.renewalFee?.nextDueDate && (
+            <p className="text-sm text-red-600 dark:text-red-400 mb-4">
+              Due since: {new Date(partnerData.renewalFee.nextDueDate).toLocaleDateString('en-IN', {
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric'
+              })}
+            </p>
+          )}
+          <button
+            onClick={() => handlePayment('renewal')}
+            className="btn-primary"
+          >
+            Pay Renewal Fee (₹200)
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 flex">
       {/* Mobile menu overlay */}
@@ -253,9 +335,9 @@ export function DashboardPage() {
       )}
 
       {/* Sidebar */}
-      <aside className={`fixed inset-y-0 left-0 z-50 bg-white dark:bg-neutral-800 border-r border-neutral-200 dark:border-neutral-700 flex flex-col transition-transform duration-300 ease-in-out lg:relative lg:z-40 lg:translate-x-0 ${
+      <aside className={`fixed inset-y-0 left-0 z-50 bg-white dark:bg-neutral-800 border-r border-neutral-200 dark:border-neutral-700 flex flex-col transition-transform duration-300 ease-in-out lg:relative lg:z-40 lg:translate-x-0 w-64 ${
         mobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
-      } w-64`}>
+      } ${mobileMenuOpen ? 'flex' : 'hidden lg:flex'}`}>
         {/* Logo */}
         <div className="p-6 border-b border-neutral-200 dark:border-neutral-700">
           <div className="flex items-center gap-3">
@@ -401,6 +483,20 @@ export function DashboardPage() {
                     <span className="font-medium">{distanceToStore.toFixed(2)} km away</span>
                   </div>
                 )}
+                {nearestStore.coordinates && (
+                  <button
+                    onClick={() => {
+                      const lat = nearestStore.coordinates.lat;
+                      const lng = nearestStore.coordinates.lng;
+                      const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+                      window.open(url, '_blank');
+                    }}
+                    className="flex items-center justify-center gap-2 w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors mb-4"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    Open in Google Maps
+                  </button>
+                )}
                 {currentLocation && (
                   <div className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400">
                     <MapPin className="w-4 h-4" />
@@ -411,60 +507,87 @@ export function DashboardPage() {
             )}
 
             {/* Payment Cards */}
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div className="card p-6 border-2 border-brand-200 dark:border-brand-800">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-12 h-12 bg-brand-100 dark:bg-brand-900 rounded-xl flex items-center justify-center">
-                    <CreditCard className="w-6 h-6 text-brand-600 dark:text-brand-400" />
+            <div className={`${partnerData?.joiningFee?.paid ? 'grid-cols-1' : 'grid sm:grid-cols-2'} gap-4`}>
+              {!partnerData?.joiningFee?.paid && (
+                <div className="card p-6 border-2 border-brand-200 dark:border-brand-800">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="w-12 h-12 bg-brand-100 dark:bg-brand-900 rounded-xl flex items-center justify-center">
+                      <CreditCard className="w-6 h-6 text-brand-600 dark:text-brand-400" />
+                    </div>
+                    <span className="px-3 py-1 bg-brand-100 dark:bg-brand-900 text-brand-700 dark:text-brand-300 rounded-full text-sm font-medium">
+                      One-time
+                    </span>
                   </div>
-                  <span className="px-3 py-1 bg-brand-100 dark:bg-brand-900 text-brand-700 dark:text-brand-300 rounded-full text-sm font-medium">
-                    One-time
-                  </span>
-                </div>
-                <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-2">Joining Fee</h3>
-                <p className="text-3xl font-bold text-brand-600 mb-4">₹500</p>
-                <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-4">
-                  Pay one-time joining fee to start accepting deliveries
-                </p>
-                <button
-                  onClick={() => handlePayment('joining')}
-                  className="w-full btn-primary"
-                >
-                  Pay Joining Fee
-                </button>
-              </div>
-
-              <div className="card p-6 border-2 border-green-200 dark:border-green-800">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-xl flex items-center justify-center">
-                    <CreditCard className="w-6 h-6 text-green-600 dark:text-green-400" />
-                  </div>
-                  <span className="px-3 py-1 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded-full text-sm font-medium">
-                    Monthly
-                  </span>
-                </div>
-                <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-2">Renewal Fee</h3>
-                <p className="text-3xl font-bold text-green-600 mb-4">₹200/month</p>
-                <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-2">
-                  Monthly renewal fee to continue as active delivery partner
-                </p>
-                {partnerData?.renewalFee?.nextDueDate && (
-                  <p className="text-sm text-green-600 dark:text-green-400 mb-4">
-                    Next due: {new Date(partnerData.renewalFee.nextDueDate).toLocaleDateString('en-IN', { 
-                      day: 'numeric', 
-                      month: 'short', 
-                      year: 'numeric' 
-                    })}
+                  <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-2">Joining Fee</h3>
+                  <p className="text-3xl font-bold text-brand-600 mb-4">₹500</p>
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-4">
+                    Pay one-time joining fee to start accepting deliveries
                   </p>
-                )}
-                <button
-                  onClick={() => handlePayment('renewal')}
-                  className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
-                  disabled={!partnerData?.joiningFee?.paid}
-                >
-                  {partnerData?.joiningFee?.paid ? 'Pay Renewal Fee' : 'Pay Joining Fee First'}
-                </button>
-              </div>
+                  <button
+                    onClick={() => handlePayment('joining')}
+                    className="w-full btn-primary"
+                  >
+                    Pay Joining Fee
+                  </button>
+                </div>
+              )}
+
+              {partnerData?.joiningFee?.paid && (() => {
+                const renewalStatus = isRenewalDue();
+                if (!renewalStatus || !renewalStatus.isDue && !renewalStatus.isOverdue) return null;
+
+                return (
+                  <div className={`card p-6 border-2 ${renewalStatus.isOverdue ? 'border-red-200 dark:border-red-800' : 'border-green-200 dark:border-green-800'}`}>
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="w-12 h-12 ${renewalStatus.isOverdue ? 'bg-red-100 dark:bg-red-900' : 'bg-green-100 dark:bg-green-900'} rounded-xl flex items-center justify-center">
+                        <CreditCard className={`w-6 h-6 ${renewalStatus.isOverdue ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`} />
+                      </div>
+                      <span className={`px-3 py-1 ${renewalStatus.isOverdue ? 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300' : 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'} rounded-full text-sm font-medium`}>
+                        {renewalStatus.isOverdue ? 'Overdue' : 'Monthly'}
+                      </span>
+                    </div>
+                    <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-2">Renewal Fee</h3>
+                    <p className={`text-3xl font-bold ${renewalStatus.isOverdue ? 'text-red-600' : 'text-green-600'} mb-4`}>₹200/month</p>
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-2">
+                      {renewalStatus.isOverdue
+                        ? 'Your renewal fee is overdue. Please pay immediately to continue as active delivery partner.'
+                        : 'Monthly renewal fee to continue as active delivery partner'}
+                    </p>
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-4">
+                      Due: {renewalStatus.nextDueDate.toLocaleDateString('en-IN', {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric'
+                      })}
+                      {renewalStatus.isDue && !renewalStatus.isOverdue && (
+                        <span className="text-orange-600 dark:text-orange-400 ml-2">
+                          (Payment window closes in {Math.round((renewalStatus.paymentWindowEnd.getTime() - new Date().getTime()) / (1000 * 60 * 60))} hours)
+                        </span>
+                      )}
+                    </p>
+                    {!renewalStatus.isOverdue ? (
+                      <button
+                        onClick={() => handlePayment('renewal')}
+                        className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+                      >
+                        Pay Renewal Fee
+                      </button>
+                    ) : (
+                      <div className="text-center">
+                        <p className="text-sm text-red-600 dark:text-red-400 font-medium mb-2">
+                          Account will be blocked soon
+                        </p>
+                        <button
+                          onClick={() => handlePayment('renewal')}
+                          className="w-full bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+                        >
+                          Pay Now to Unblock
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
 
             {/* Stats Cards */}

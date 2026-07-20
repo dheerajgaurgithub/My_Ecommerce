@@ -44,9 +44,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const token = api.getToken();
     if (token) {
       try {
-        const response = await api.get<{ success: boolean; user?: any }>('/auth/me');
-        if (response.success && response.user) {
-          setUser(response.user);
+        const response = await api.get<{ success: boolean; data?: any }>('/delivery-partners/profile');
+        if (response.success && response.data) {
+          setUser(response.data);
         }
       } catch (error) {
         api.clearToken();
@@ -57,7 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signIn = async (email: string, password: string) => {
     try {
-      const response = await api.post<{ success: boolean; token?: string; user?: any }>('/auth/login', { email, password });
+      const response = await api.post<{ success: boolean; token?: string; user?: any }>('/delivery-partners/login', { email, password });
       if (response.success && response.token) {
         api.setToken(response.token);
         setUser(response.user);

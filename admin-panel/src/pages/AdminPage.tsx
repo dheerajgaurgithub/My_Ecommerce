@@ -115,6 +115,15 @@ export function AdminPage() {
       setNotifications(notifRes.notifications ?? []);
       setStores(storesRes.stores ?? []);
 
+      // Initialize selected partner for orders that already have partners assigned
+      const initialSelectedPartners: { [key: string]: string } = {};
+      ords.forEach((order) => {
+        if (order.delivery?.assigned && order.delivery?.partnerId) {
+          initialSelectedPartners[order._id] = order.delivery.partnerId;
+        }
+      });
+      setSelectedPartnerForOrder(initialSelectedPartners);
+
       // Check for low stock products
       const lowStock = prods.filter(p => p.stock <= 5);
       setLowStockProducts(lowStock);
@@ -625,7 +634,7 @@ export function AdminPage() {
                             ))}
                           </select>
                         </div>
-                        {order.delivery?.assigned && (
+                        {order.delivery?.assigned && order.delivery?.partnerId && (
                           <p className="text-xs text-green-600 dark:text-green-400 mt-1">
                             ✓ Assigned to delivery partner
                           </p>
