@@ -40,8 +40,8 @@ export function Footer() {
         <div>
           <h4 className="font-medium text-white mb-4">Partner With Us</h4>
           <ul className="space-y-2 text-sm">
-            <li><a href="https://deliverypartnermahirandfriends.vercel.app/register" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Become a Delivery Partner</a></li>
-            <li><a href="https://deliverypartnermahirandfriends.vercel.app/login" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Delivery Partner Login</a></li>
+            <li><a href="https://deliverpartner.mahirandfriends.tech/register" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Become a Delivery Partner</a></li>
+            <li><a href="https://deliverpartner.mahirandfriends.tech/login" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Delivery Partner Login</a></li>
           </ul>
         </div>
         <div>
