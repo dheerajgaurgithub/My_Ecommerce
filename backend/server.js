@@ -42,7 +42,11 @@ app.use(cors({
     'https://mahirandfriends.vercel.app',
     'https://mahirandfriends.onrender.com',
     'https://adminofmahirandfriends.netlify.app',
-    'https://deliverypartnermahirandfriends.vercel.app'
+    'https://deliverypartnermahirandfriends.vercel.app',
+    'https://mahirandfriends.tech',
+    'https://www.mahirandfriends.tech',
+    'https://adminpanel.mahirandfriends.tech',
+    'https://deliverpartner.mahirandfriends.tech'
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
