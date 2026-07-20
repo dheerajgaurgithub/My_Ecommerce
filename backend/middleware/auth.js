@@ -34,6 +34,7 @@ export const deliveryAuth = async (req, res, next) => {
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    // The token contains the delivery partner ID directly (not userId)
     const partner = await DeliveryPartner.findById(decoded.userId);
 
     if (!partner) {

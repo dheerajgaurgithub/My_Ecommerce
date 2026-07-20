@@ -266,7 +266,9 @@ router.put('/emergency-contact', auth, isDeliveryPartner, async (req, res) => {
 // Get delivery partner profile
 router.get('/profile', deliveryAuth, checkRenewalStatus, async (req, res) => {
   try {
-    res.json({ success: true, data: req.deliveryPartner });
+    // Populate userId to get user data if needed
+    const partner = await DeliveryPartner.findById(req.deliveryPartner._id).populate('userId');
+    res.json({ success: true, data: partner });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
