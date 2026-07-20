@@ -6,6 +6,7 @@ import { LandingPage } from './pages/LandingPage';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { DashboardPage } from './pages/DashboardPage';
+import { StoreSelectionPage } from './pages/StoreSelectionPage';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const token = localStorage.getItem('delivery_token');
@@ -38,6 +39,11 @@ export default function App() {
               <Route path="/dashboard" element={
                 <PrivateRoute>
                   <DashboardPage />
+                </PrivateRoute>
+              } />
+              <Route path="/select-store" element={
+                <PrivateRoute>
+                  <StoreSelectionPage />
                 </PrivateRoute>
               } />
             </Routes>

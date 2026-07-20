@@ -127,9 +127,9 @@ export function Header() {
   return (
     <>
       {/* Announcement bar */}
-      <div className="bg-neutral-900 dark:bg-black text-white text-[10px] sm:text-xs py-2 overflow-hidden relative min-h-[32px] flex items-center px-2 sm:px-0">
-        <div className="animate-marquee whitespace-nowrap w-full">
-          <p className="font-medium text-center">
+      <div className="bg-neutral-900 dark:bg-black text-white text-sm sm:text-base py-3 overflow-hidden relative min-h-[44px] flex items-center justify-center px-2 sm:px-0">
+        <div className="animate-marquee whitespace-nowrap absolute">
+          <p className="font-medium">
             {deliveryAvailable === true && freeDelivery ? `FREE DELIVERY in ${userLocation}` :
              deliveryAvailable === true && !freeDelivery ? `DELIVERY AVAILABLE in ${userLocation}` :
              deliveryAvailable === false ? `DELIVERY NOT AVAILABLE in ${userLocation}` :
@@ -193,14 +193,22 @@ export function Header() {
               >
                 <Search size={20} />
               </button>
-              <button onClick={toggleTheme} className="p-2 text-neutral-700 dark:text-neutral-200 hover:text-brand-600">
+              <Link to="/cart" className="relative p-2 text-neutral-700 dark:text-neutral-200 hover:text-brand-600 flex-shrink-0">
+                <ShoppingBag size={20} />
+                {cartCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 bg-brand-600 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
+                    {cartCount}
+                  </span>
+                )}
+              </Link>
+              <button onClick={toggleTheme} className="p-2 text-neutral-700 dark:text-neutral-200 hover:text-brand-600 hidden sm:block">
                 {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
               </button>
               <Link to="/wishlist" className="p-2 text-neutral-700 dark:text-neutral-200 hover:text-brand-600 hidden sm:block">
                 <Heart size={20} />
               </Link>
               {user && (
-                <div className="relative">
+                <div className="relative hidden sm:block">
                   <button
                     onClick={() => setShowNotifications(!showNotifications)}
                     className="p-2 text-neutral-700 dark:text-neutral-200 hover:text-brand-600"
@@ -319,14 +327,6 @@ export function Header() {
                   <User size={20} />
                 </Link>
               )}
-              <Link to="/cart" className="relative p-2 text-neutral-700 dark:text-neutral-200 hover:text-brand-600">
-                <ShoppingBag size={20} />
-                {cartCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 bg-brand-600 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
-                    {cartCount}
-                  </span>
-                )}
-              </Link>
             </div>
           </div>
 

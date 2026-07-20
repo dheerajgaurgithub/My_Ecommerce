@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Phone, Mail, MapPin, Car, Camera, ArrowLeft, ArrowRight } from 'lucide-react';
+import { User, Phone, Mail, MapPin, Car, Camera, ArrowLeft, ArrowRight, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import { useAuth } from '../lib/auth';
 import { useToast } from '../lib/toast';
+import { api } from '../lib/api';
 
 export function RegisterPage() {
   const navigate = useNavigate();
@@ -10,6 +11,66 @@ export function RegisterPage() {
   const { showToast } = useToast();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [locationPermission, setLocationPermission] = useState<'pending' | 'granted' | 'denied'>('pending');
+  const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [serviceAvailable, setServiceAvailable] = useState<boolean | null>(null);
+  const [nearestStore, setNearestStore] = useState<any>(null);
+  const [availableServiceAreas, setAvailableServiceAreas] = useState<any[]>([]);
+  const [checkingLocation, setCheckingLocation] = useState(false);
+
+  useEffect(() => {
+    requestLocationPermission();
+  }, []);
+
+  const requestLocationPermission = () => {
+    if (navigator.geolocation) {
+      setCheckingLocation(true);
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          setCurrentLocation({ lat: latitude, lng: longitude });
+          setLocationPermission('granted');
+          checkServiceAvailability(latitude, longitude);
+        },
+        (error) => {
+          console.error('Geolocation error:', error);
+          setLocationPermission('denied');
+          setCheckingLocation(false);
+          showToast('Location access denied. Please enable location to check service availability.', 'error');
+        }
+      );
+    } else {
+      setLocationPermission('denied');
+      setCheckingLocation(false);
+      showToast('Geolocation is not supported by your browser', 'error');
+    }
+  };
+
+  const checkServiceAvailability = async (lat: number, lng: number) => {
+    try {
+      const response = await api.get<{ 
+        success: boolean; 
+        store?: any; 
+        distance?: number;
+        serviceRadius?: number;
+        availableServiceAreas?: any[];
+        availableStores?: any[];
+      }>(`/stores/nearest?lat=${lat}&lng=${lng}`);
+      if (response.success && response.store) {
+        setNearestStore(response.store);
+        setServiceAvailable(true);
+        setAvailableServiceAreas(response.availableStores || []);
+      } else {
+        setServiceAvailable(false);
+        setAvailableServiceAreas(response.availableServiceAreas || []);
+      }
+    } catch (error) {
+      console.error('Error checking service availability:', error);
+      setServiceAvailable(false);
+    } finally {
+      setCheckingLocation(false);
+    }
+  };
 
   const [formData, setFormData] = useState({
     password: '',
@@ -69,8 +130,19 @@ export function RegisterPage() {
   };
 
   const handleSubmit = async () => {
+    if (!serviceAvailable) {
+      showToast('Service is not available in your area. Registration not allowed.', 'error');
+      return;
+    }
+    
     setLoading(true);
-    const { error } = await signUp(formData);
+    const { error } = await signUp({
+      ...formData,
+      address: {
+        ...formData.address,
+        coordinates: currentLocation
+      }
+    });
     if (error) {
       showToast(error, 'error');
     } else {
@@ -91,6 +163,78 @@ export function RegisterPage() {
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 py-8">
       <div className="max-w-3xl mx-auto px-4">
+        {/* Service Availability Banner */}
+        {checkingLocation && (
+          <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl flex items-center gap-3">
+            <Loader2 className="w-5 h-5 text-blue-600 dark:text-blue-400 animate-spin" />
+            <div>
+              <p className="font-medium text-blue-900 dark:text-blue-100">Checking service availability in your area...</p>
+              <p className="text-sm text-blue-700 dark:text-blue-300">Please allow location access</p>
+            </div>
+          </div>
+        )}
+
+        {locationPermission === 'denied' && (
+          <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl flex items-center gap-3">
+            <XCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
+            <div>
+              <p className="font-medium text-red-900 dark:text-red-100">Location access required</p>
+              <p className="text-sm text-red-700 dark:text-red-300">Please enable location to check service availability</p>
+              <button
+                onClick={requestLocationPermission}
+                className="mt-2 text-sm font-medium text-red-600 dark:text-red-400 hover:underline"
+              >
+                Enable Location
+              </button>
+            </div>
+          </div>
+        )}
+
+        {serviceAvailable === true && nearestStore && (
+          <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl flex items-center gap-3">
+            <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
+            <div>
+              <p className="font-medium text-green-900 dark:text-green-100">Service available in your area!</p>
+              <p className="text-sm text-green-700 dark:text-green-300">
+                Nearest pickup store: {nearestStore.name} ({nearestStore.address?.city}, {nearestStore.address?.state})
+              </p>
+            </div>
+          </div>
+        )}
+
+        {serviceAvailable === false && (
+          <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
+            <div className="flex items-center gap-3 mb-3">
+              <XCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
+              <div>
+                <p className="font-medium text-red-900 dark:text-red-100">Service not available in your area</p>
+                <p className="text-sm text-red-700 dark:text-red-300">
+                  We're not currently serving your location. We'll let you know when we expand!
+                </p>
+              </div>
+            </div>
+            {availableServiceAreas.length > 0 && (
+              <div className="mt-4 pt-4 border-t border-red-200 dark:border-red-800">
+                <p className="text-sm font-medium text-red-900 dark:text-red-100 mb-2">
+                  Available service areas:
+                </p>
+                <div className="space-y-2">
+                  {availableServiceAreas.map((area, index) => (
+                    <div key={index} className="flex items-center gap-2 text-sm text-red-700 dark:text-red-300">
+                      <MapPin className="w-4 h-4" />
+                      <span>
+                        {area.city}, {area.state}
+                        {area.district && ` (${area.district} district)`}
+                        {area.serviceRadius && ` - within ${area.serviceRadius}km radius`}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="mb-8">
           <button
             onClick={() => navigate('/')}
@@ -146,10 +290,10 @@ export function RegisterPage() {
             {step === 4 ? (
               <button
                 onClick={handleSubmit}
-                disabled={loading}
-                className="flex items-center gap-2 px-6 py-3 rounded-xl bg-brand-600 text-white hover:bg-brand-700 disabled:opacity-50"
+                disabled={loading || !serviceAvailable}
+                className="flex items-center gap-2 px-6 py-3 rounded-xl bg-brand-600 text-white hover:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {loading ? 'Submitting...' : 'Submit Application'}
+                {loading ? 'Submitting...' : serviceAvailable === false ? 'Service Not Available' : 'Submit Application'}
               </button>
             ) : (
               <button

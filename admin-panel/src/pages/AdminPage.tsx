@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import {
   LayoutDashboard, Package, ShoppingBag, Tag, MapPin, Users, LogOut,
   TrendingUp, DollarSign, Clock, XCircle, CheckCircle, Plus, Edit, Trash2,
-  Eye, Search, X, Save, Gift, Download, Bell, AlertTriangle, Moon, Sun, User, MessageSquare, Star
+  Eye, Search, X, Save, Gift, Download, Bell, AlertTriangle, Moon, Sun, User, MessageSquare, Star, Menu
 } from 'lucide-react';
 import { useAuth } from '../lib/auth';
 import { useTheme } from '../lib/theme';
@@ -13,7 +13,7 @@ import { formatPrice, formatDate } from '../lib/utils';
 import type { Product, Category, Order, Coupon, ComboPack, GiftCard } from '../lib/types';
 import { AdminAnalytics } from '../components/AdminAnalytics';
 
-type AdminTab = 'dashboard' | 'products' | 'categories' | 'orders' | 'coupons' | 'combos' | 'giftcards' | 'delivery' | 'delivery-partners' | 'users' | 'notifications' | 'analytics' | 'feedback' | 'profile';
+type AdminTab = 'dashboard' | 'products' | 'categories' | 'orders' | 'coupons' | 'combos' | 'giftcards' | 'delivery' | 'delivery-partners' | 'stores' | 'users' | 'notifications' | 'analytics' | 'feedback' | 'profile';
 
 export function AdminPage() {
   const navigate = useNavigate();
@@ -21,6 +21,7 @@ export function AdminPage() {
   const { theme, toggleTheme } = useTheme();
   const { showToast } = useToast();
   const [tab, setTab] = useState<AdminTab>('dashboard');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [stats, setStats] = useState({ totalSales: 0, todaySales: 0, totalOrders: 0, totalProducts: 0, totalCustomers: 0, pendingOrders: 0, deliveredOrders: 0, cancelledOrders: 0 });
   const [recentOrders, setRecentOrders] = useState<Order[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
@@ -41,6 +42,7 @@ export function AdminPage() {
   const [deliveryPartners, setDeliveryPartners] = useState<any[]>([]);
   const [selectedPartnerForOrder, setSelectedPartnerForOrder] = useState<{ [key: string]: string }>({});
   const [notifications, setNotifications] = useState<any[]>([]);
+  const [stores, setStores] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [lowStockProducts, setLowStockProducts] = useState<Product[]>([]);
 
@@ -90,7 +92,7 @@ export function AdminPage() {
   const fetchAll = async () => {
     try {
       setLoading(true);
-      const [productsRes, ordersRes, catsRes, couponsRes, combosRes, gcRes, partnersRes, notifRes] = await Promise.all([
+      const [productsRes, ordersRes, catsRes, couponsRes, combosRes, gcRes, partnersRes, notifRes, storesRes] = await Promise.all([
         api.get<{ success: boolean; products: Product[] }>('/products'),
         api.get<{ success: boolean; orders: Order[] }>('/orders'),
         api.get<{ success: boolean; categories: Category[] }>('/categories'),
@@ -99,6 +101,7 @@ export function AdminPage() {
         api.get<{ success: boolean; giftCards: GiftCard[] }>('/gift-cards'),
         api.get<{ success: boolean; partners: any[] }>('/orders/active-delivery-partners'),
         api.get<{ success: boolean; notifications: any[] }>('/notifications'),
+        api.get<{ success: boolean; stores: any[] }>('/stores'),
       ]);
       const prods = productsRes.products ?? [];
       const ords = ordersRes.orders ?? [];
@@ -110,6 +113,7 @@ export function AdminPage() {
       setGiftCards(gcRes.giftCards ?? []);
       setDeliveryPartners(partnersRes.partners ?? []);
       setNotifications(notifRes.notifications ?? []);
+      setStores(storesRes.stores ?? []);
 
       // Check for low stock products
       const lowStock = prods.filter(p => p.stock <= 5);
@@ -271,6 +275,7 @@ export function AdminPage() {
     { id: 'giftcards' as AdminTab, label: 'Gift Cards', icon: Gift },
     { id: 'delivery' as AdminTab, label: 'Delivery', icon: MapPin },
     { id: 'delivery-partners' as AdminTab, label: 'Delivery Partners', icon: Users },
+    { id: 'stores' as AdminTab, label: 'Stores', icon: MapPin },
     { id: 'users' as AdminTab, label: 'Users', icon: Users },
     { id: 'feedback' as AdminTab, label: 'Feedback', icon: MessageSquare },
     { id: 'analytics' as AdminTab, label: 'Analytics', icon: TrendingUp },
@@ -281,15 +286,26 @@ export function AdminPage() {
   if (!isAuthenticated) return null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-neutral-50 to-neutral-100 dark:from-neutral-900 dark:to-neutral-950 flex">
-      <aside className="w-64 bg-gradient-to-b from-neutral-900 to-neutral-800 dark:from-black dark:to-neutral-900 text-white flex-shrink-0 hidden lg:flex flex-col fixed inset-y-0 left-0 z-40 shadow-2xl">
-        <div className="p-6 border-b border-neutral-700/50">
-          <Link to="/" className="font-serif text-2xl font-bold bg-gradient-to-r from-brand-400 to-brand-600 bg-clip-text text-transparent">MAHIR <span className="text-white">& FRIENDS</span></Link>
+    <div className="min-h-screen bg-gradient-to-br from-neutral-50 to-neutral-100 dark:from-neutral-900 dark:to-neutral-950 flex flex-col lg:flex-row">
+      {/* Mobile menu overlay */}
+      {mobileMenuOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
+
+      {/* Mobile Sidebar */}
+      <aside className={`fixed inset-y-0 left-0 z-50 bg-gradient-to-b from-neutral-900 to-neutral-800 dark:from-black dark:to-neutral-900 text-white flex flex-col transition-transform duration-300 ease-in-out w-64 shadow-2xl lg:hidden ${
+        mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+      } ${mobileMenuOpen ? 'flex' : 'hidden'}`}>
+        <div className="p-4 border-b border-neutral-700/50 flex-shrink-0">
+          <Link to="/" className="font-serif text-xl font-bold bg-gradient-to-r from-brand-400 to-brand-600 bg-clip-text text-transparent">MAHIR <span className="text-white">& FRIENDS</span></Link>
           <p className="text-xs text-neutral-400 mt-1 tracking-wide uppercase">Admin Dashboard</p>
         </div>
-        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+        <nav className="p-4 space-y-0.5">
           {navItems.map((item) => (
-            <button key={item.id} onClick={() => startTransition(() => setTab(item.id))} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+            <button key={item.id} onClick={() => { startTransition(() => setTab(item.id)); setMobileMenuOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
               tab === item.id 
                 ? 'bg-gradient-to-r from-brand-600 to-brand-500 text-white shadow-lg shadow-brand-500/25' 
                 : 'text-neutral-300 hover:bg-neutral-700/50 hover:text-white'
@@ -306,34 +322,67 @@ export function AdminPage() {
             </button>
           ))}
         </nav>
-        <div className="p-4 border-t border-neutral-700/50 space-y-2">
-          <button onClick={toggleTheme} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-neutral-300 hover:bg-neutral-700/50 hover:text-white transition-all">
+        <div className="p-3 border-t border-neutral-700/50 space-y-1">
+          <button onClick={toggleTheme} className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-neutral-300 hover:bg-neutral-700/50 hover:text-white transition-all">
             {theme === 'dark' ? <Sun size={18} className="text-amber-400" /> : <Moon size={18} className="text-blue-400" />}
             {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
           </button>
-          <button onClick={() => { adminSignOut(); navigate('/'); }} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-all">
+          <button onClick={() => { adminSignOut(); navigate('/'); }} className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-all">
             <LogOut size={18} /> Sign Out
           </button>
         </div>
       </aside>
 
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-gradient-to-t from-neutral-900 to-neutral-800 dark:from-black dark:to-neutral-900 z-40 flex justify-around py-3 overflow-x-auto scrollbar-hide safe-area-bottom shadow-2xl border-t border-neutral-700/50">
-        {navItems.map((item) => (
-          <button key={item.id} onClick={() => startTransition(() => setTab(item.id))} className={`p-2.5 flex-shrink-0 relative transition-all ${tab === item.id ? 'text-brand-400 scale-110' : 'text-neutral-400 hover:text-neutral-300'}`}>
-            <item.icon size={22} />
-            {item.badge !== undefined && (
-              <span className={`absolute -top-1 right-0 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold ${item.badge > 0 ? 'bg-red-500 animate-pulse' : 'bg-neutral-600'}`}>
-                {item.badge > 9 ? '9+' : item.badge}
-              </span>
-            )}
+      {/* Desktop Sidebar */}
+      <aside className="hidden lg:flex w-64 bg-gradient-to-b from-neutral-900 to-neutral-800 dark:from-black dark:to-neutral-900 text-white flex-col shadow-2xl">
+        <div className="p-4 border-b border-neutral-700/50">
+          <Link to="/" className="font-serif text-xl font-bold bg-gradient-to-r from-brand-400 to-brand-600 bg-clip-text text-transparent">MAHIR <span className="text-white">& FRIENDS</span></Link>
+          <p className="text-xs text-neutral-400 mt-1 tracking-wide uppercase">Admin Dashboard</p>
+        </div>
+        <nav className="p-4 space-y-0.5">
+          {navItems.map((item) => (
+            <button key={item.id} onClick={() => startTransition(() => setTab(item.id))} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
+              tab === item.id 
+                ? 'bg-gradient-to-r from-brand-600 to-brand-500 text-white shadow-lg shadow-brand-500/25' 
+                : 'text-neutral-300 hover:bg-neutral-700/50 hover:text-white'
+            }`}>
+              <div className="relative">
+                <item.icon size={18} />
+                {item.badge !== undefined && (
+                  <span className={`absolute -top-1 -right-1 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold ${item.badge > 0 ? 'bg-red-500 animate-pulse' : 'bg-neutral-600'}`}>
+                    {item.badge > 9 ? '9+' : item.badge}
+                  </span>
+                )}
+              </div>
+              {item.label}
+            </button>
+          ))}
+        </nav>
+        <div className="p-3 border-t border-neutral-700/50 space-y-1">
+          <button onClick={toggleTheme} className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-neutral-300 hover:bg-neutral-700/50 hover:text-white transition-all">
+            {theme === 'dark' ? <Sun size={18} className="text-amber-400" /> : <Moon size={18} className="text-blue-400" />}
+            {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
           </button>
-        ))}
-      </div>
+          <button onClick={() => { adminSignOut(); navigate('/'); }} className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-all">
+            <LogOut size={18} /> Sign Out
+          </button>
+        </div>
+      </aside>
 
-      <main className="flex-1 lg:ml-64 p-4 sm:p-6 md:p-8 pb-28 lg:pb-8">
-        <div className="lg:hidden mb-6 p-4 bg-white dark:bg-neutral-800 rounded-2xl shadow-sm">
-          <Link to="/" className="font-serif text-xl font-bold bg-gradient-to-r from-brand-600 to-brand-400 bg-clip-text text-transparent">MAHIR <span className="text-neutral-900 dark:text-white">& FRIENDS</span></Link>
-          <p className="text-xs text-neutral-500 mt-1 tracking-wide uppercase">Admin Dashboard</p>
+      <main className="flex-1 p-4 sm:p-6 md:p-8">
+        <div className="lg:hidden mb-6 p-4 bg-white dark:bg-neutral-800 rounded-2xl shadow-sm flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700"
+            >
+              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
+            <div>
+              <Link to="/" className="font-serif text-xl font-bold bg-gradient-to-r from-brand-600 to-brand-400 bg-clip-text text-transparent">MAHIR <span className="text-neutral-900 dark:text-white">& FRIENDS</span></Link>
+              <p className="text-xs text-neutral-500 mt-1 tracking-wide uppercase">Admin Dashboard</p>
+            </div>
+          </div>
         </div>
 
         {tab === 'dashboard' && (
@@ -680,6 +729,7 @@ export function AdminPage() {
         {tab === 'categories' && <CategoriesManagement />}
         {tab === 'delivery' && <DeliveryManagement />}
         {tab === 'delivery-partners' && <DeliveryPartnersManagement />}
+        {tab === 'stores' && <StoresManagement />}
         {tab === 'users' && <UsersManagement />}
         {tab === 'feedback' && <FeedbackManagement />}
         {tab === 'analytics' && <AdminAnalytics />}
@@ -2485,8 +2535,8 @@ function UsersManagement() {
         setLoading(true);
         const response = await api.get<{ success: boolean; users: any[] }>('/users/all');
         if (response.success) {
-          // Filter out admin users from the list
-          setUsers((response.users ?? []).filter(u => u.role !== 'admin'));
+          // Filter out admin users and delivery partners from the list
+          setUsers((response.users ?? []).filter(u => u.role !== 'admin' && u.role !== 'delivery_partner'));
         }
       } catch (error) {
         console.error('Failed to fetch users:', error);
@@ -2685,6 +2735,355 @@ function AdminProfile() {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function StoresManagement() {
+  const { showToast } = useToast();
+  const [stores, setStores] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showStoreForm, setShowStoreForm] = useState(false);
+  const [editingStore, setEditingStore] = useState<any>(null);
+  const [form, setForm] = useState({
+    name: '',
+    address: {
+      street: '',
+      area: '',
+      city: '',
+      district: '',
+      state: '',
+      pincode: '',
+      country: 'India'
+    },
+    coordinates: {
+      lat: '',
+      lng: ''
+    },
+    phone: '',
+    googleMapsLink: '',
+    operating_hours: '9:00 AM - 9:00 PM',
+    landmark: '',
+    serviceRadius: 50
+  });
+
+  useEffect(() => {
+    fetchStores();
+  }, []);
+
+  const fetchStores = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get<{ success: boolean; stores: any[] }>('/stores');
+      if (response.success) {
+        setStores(response.stores || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch stores:', error);
+      showToast('Failed to load stores', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    try {
+      if (editingStore) {
+        await api.put(`/stores/${editingStore._id}`, form);
+        showToast('Store updated successfully', 'success');
+      } else {
+        await api.post('/stores', form);
+        showToast('Store created successfully', 'success');
+      }
+      setShowStoreForm(false);
+      setEditingStore(null);
+      resetForm();
+      fetchStores();
+    } catch (error) {
+      console.error('Failed to save store:', error);
+      showToast('Failed to save store', 'error');
+    }
+  };
+
+  const handleEdit = (store: any) => {
+    setEditingStore(store);
+    setForm({
+      name: store.name,
+      address: store.address,
+      coordinates: store.coordinates,
+      phone: store.phone || '',
+      googleMapsLink: store.googleMapsLink || '',
+      operating_hours: store.operating_hours || '9:00 AM - 9:00 PM',
+      landmark: store.landmark || '',
+      serviceRadius: store.serviceRadius || 50
+    });
+    setShowStoreForm(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm('Are you sure you want to delete this store?')) return;
+    try {
+      await api.delete(`/stores/${id}`);
+      showToast('Store deleted successfully', 'success');
+      fetchStores();
+    } catch (error) {
+      console.error('Failed to delete store:', error);
+      showToast('Failed to delete store', 'error');
+    }
+  };
+
+  const handleToggleActive = async (store: any) => {
+    try {
+      await api.patch(`/stores/${store._id}/toggle`);
+      showToast(`Store ${store.is_active ? 'deactivated' : 'activated'} successfully`, 'success');
+      fetchStores();
+    } catch (error) {
+      console.error('Failed to toggle store status:', error);
+      showToast('Failed to toggle store status', 'error');
+    }
+  };
+
+  const resetForm = () => {
+    setForm({
+      name: '',
+      address: {
+        street: '',
+        area: '',
+        city: '',
+        district: '',
+        state: '',
+        pincode: '',
+        country: 'India'
+      },
+      coordinates: {
+        lat: '',
+        lng: ''
+      },
+      phone: '',
+      googleMapsLink: '',
+      operating_hours: '9:00 AM - 9:00 PM',
+      landmark: '',
+      serviceRadius: 50
+    });
+  };
+
+  const getCurrentLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setForm({
+            ...form,
+            coordinates: {
+              lat: position.coords.latitude.toString(),
+              lng: position.coords.longitude.toString()
+            }
+          });
+          showToast('Location captured successfully', 'success');
+        },
+        (error) => {
+          console.error('Geolocation error:', error);
+          showToast('Failed to get location', 'error');
+        }
+      );
+    } else {
+      showToast('Geolocation not supported', 'error');
+    }
+  };
+
+  if (showStoreForm) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h1 className="font-serif text-2xl font-bold text-neutral-900 dark:text-white">
+            {editingStore ? 'Edit Store' : 'Add New Store'}
+          </h1>
+          <button onClick={() => { setShowStoreForm(false); setEditingStore(null); resetForm(); }} className="text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white">
+            <X size={24} />
+          </button>
+        </div>
+        <div className="card p-6 space-y-4">
+          <div>
+            <label className="text-sm font-medium mb-1 block">Store Name</label>
+            <input className="input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g., Mahir & Friends - Aligarh Main Store" />
+          </div>
+
+          <div className="border-t border-neutral-200 dark:border-neutral-700 pt-4">
+            <h3 className="font-medium mb-3 text-neutral-900 dark:text-white">Address Details</h3>
+            <div className="space-y-3">
+              <div>
+                <label className="text-sm font-medium mb-1 block">Street Address</label>
+                <input className="input" value={form.address.street} onChange={(e) => setForm({ ...form, address: { ...form.address, street: e.target.value } })} placeholder="e.g., Shop 123, Main Market" />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">Area (Optional)</label>
+                <input className="input" value={form.address.area} onChange={(e) => setForm({ ...form, address: { ...form.address, area: e.target.value } })} placeholder="e.g., Civil Lines" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-sm font-medium mb-1 block">City</label>
+                  <input className="input" value={form.address.city} onChange={(e) => setForm({ ...form, address: { ...form.address, city: e.target.value } })} placeholder="e.g., Aligarh" />
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-1 block">District (Optional)</label>
+                  <input className="input" value={form.address.district} onChange={(e) => setForm({ ...form, address: { ...form.address, district: e.target.value } })} placeholder="e.g., Aligarh" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-sm font-medium mb-1 block">State</label>
+                  <input className="input" value={form.address.state} onChange={(e) => setForm({ ...form, address: { ...form.address, state: e.target.value } })} placeholder="e.g., Uttar Pradesh" />
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-1 block">Pincode</label>
+                  <input className="input" value={form.address.pincode} onChange={(e) => setForm({ ...form, address: { ...form.address, pincode: e.target.value } })} placeholder="e.g., 202001" />
+                </div>
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">Landmark (Optional)</label>
+                <input className="input" value={form.landmark} onChange={(e) => setForm({ ...form, landmark: e.target.value })} placeholder="e.g., Near Civil Lines Court" />
+              </div>
+            </div>
+          </div>
+
+          <div className="border-t border-neutral-200 dark:border-neutral-700 pt-4">
+            <h3 className="font-medium mb-3 text-neutral-900 dark:text-white">Location Coordinates</h3>
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-sm font-medium mb-1 block">Latitude</label>
+                  <input type="number" step="any" className="input" value={form.coordinates.lat} onChange={(e) => setForm({ ...form, coordinates: { ...form.coordinates, lat: e.target.value } })} placeholder="e.g., 27.8974" />
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-1 block">Longitude</label>
+                  <input type="number" step="any" className="input" value={form.coordinates.lng} onChange={(e) => setForm({ ...form, coordinates: { ...form.coordinates, lng: e.target.value } })} placeholder="e.g., 78.0880" />
+                </div>
+              </div>
+              <button onClick={getCurrentLocation} className="btn-secondary text-sm flex items-center gap-2">
+                <MapPin size={16} />
+                Get Current Location
+              </button>
+              <div>
+                <label className="text-sm font-medium mb-1 block">Google Maps Link (Optional)</label>
+                <input className="input" value={form.googleMapsLink} onChange={(e) => setForm({ ...form, googleMapsLink: e.target.value })} placeholder="https://www.google.com/maps/..." />
+              </div>
+            </div>
+          </div>
+
+          <div className="border-t border-neutral-200 dark:border-neutral-700 pt-4">
+            <h3 className="font-medium mb-3 text-neutral-900 dark:text-white">Service Settings</h3>
+            <div className="space-y-3">
+              <div>
+                <label className="text-sm font-medium mb-1 block">Service Radius (km)</label>
+                <input type="number" className="input" value={form.serviceRadius} onChange={(e) => setForm({ ...form, serviceRadius: Number(e.target.value) })} placeholder="e.g., 50" />
+                <p className="text-xs text-neutral-500 mt-1">Maximum distance from store for delivery service</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">Operating Hours</label>
+                <input className="input" value={form.operating_hours} onChange={(e) => setForm({ ...form, operating_hours: e.target.value })} placeholder="e.g., 9:00 AM - 9:00 PM" />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">Phone Number (Optional)</label>
+                <input className="input" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="e.g., +91-9876543210" />
+              </div>
+            </div>
+          </div>
+
+          <div className="pt-4 flex gap-3">
+            <button onClick={handleSave} className="btn-primary flex-1">
+              {editingStore ? 'Update Store' : 'Create Store'}
+            </button>
+            <button onClick={() => { setShowStoreForm(false); setEditingStore(null); resetForm(); }} className="btn-secondary">
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h1 className="font-serif text-2xl font-bold text-neutral-900 dark:text-white">Stores Management</h1>
+        <button onClick={() => { setEditingStore(null); resetForm(); setShowStoreForm(true); }} className="btn-primary flex items-center gap-2">
+          <Plus size={16} />
+          Add New Store
+        </button>
+      </div>
+
+      {loading ? (
+        <div className="card p-8 text-center">
+          <p className="text-neutral-500">Loading stores...</p>
+        </div>
+      ) : stores.length === 0 ? (
+        <div className="card p-8 text-center">
+          <MapPin size={40} className="mx-auto text-neutral-300 dark:text-neutral-600 mb-2" />
+          <p className="text-neutral-500">No stores added yet</p>
+          <p className="text-sm text-neutral-400 mt-1">Add your first store to start delivery operations</p>
+        </div>
+      ) : (
+        <div className="card overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-neutral-50 dark:bg-neutral-800">
+                <tr className="text-left text-neutral-500">
+                  <th className="p-3 font-medium">Store Name</th>
+                  <th className="p-3 font-medium">Location</th>
+                  <th className="p-3 font-medium">Service Radius</th>
+                  <th className="p-3 font-medium">Status</th>
+                  <th className="p-3 font-medium">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {stores.map((store) => (
+                  <tr key={store._id} className="border-t border-neutral-100 dark:border-neutral-700">
+                    <td className="p-3">
+                      <div className="font-medium text-neutral-900 dark:text-white">{store.name}</div>
+                      <div className="text-xs text-neutral-500">{store.phone || 'No phone'}</div>
+                    </td>
+                    <td className="p-3">
+                      <div className="text-neutral-600 dark:text-neutral-400">
+                        {store.address.street}, {store.address.city}
+                      </div>
+                      <div className="text-xs text-neutral-500">
+                        {store.address.state} - {store.address.pincode}
+                      </div>
+                      {store.googleMapsLink && (
+                        <a href={store.googleMapsLink} target="_blank" rel="noopener noreferrer" className="text-xs text-brand-600 hover:underline">
+                          View on Maps
+                        </a>
+                      )}
+                    </td>
+                    <td className="p-3">
+                      <span className="text-neutral-600 dark:text-neutral-400">{store.serviceRadius || 50} km</span>
+                    </td>
+                    <td className="p-3">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        store.is_active ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' : 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300'
+                      }`}>
+                        {store.is_active ? 'Active' : 'Inactive'}
+                      </span>
+                    </td>
+                    <td className="p-3">
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => handleEdit(store)} className="p-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded" title="Edit">
+                          <Edit size={16} />
+                        </button>
+                        <button onClick={() => handleToggleActive(store)} className="p-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded" title="Toggle Status">
+                          {store.is_active ? <XCircle size={16} /> : <CheckCircle size={16} />}
+                        </button>
+                        <button onClick={() => handleDelete(store._id)} className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900 rounded text-red-500" title="Delete">
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

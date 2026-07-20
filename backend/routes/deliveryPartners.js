@@ -5,6 +5,7 @@ import Payout from '../models/Payout.js';
 import Order from '../models/Order.js';
 import User from '../models/User.js';
 import Notification from '../models/Notification.js';
+import Store from '../models/Store.js';
 import { body, validationResult } from 'express-validator';
 import { auth } from '../middleware/auth.js';
 import bcrypt from 'bcryptjs';
@@ -13,6 +14,7 @@ import { generateDeliveryPartnerPDF } from '../utils/generatePartnerPDF.js';
 import { sendEmail, sendFeedbackRequestEmail } from '../services/emailService.js';
 import { createFeePaymentOrder, createUPIPaymentQR } from '../utils/qrCode.js';
 import { verifyRazorpaySignature } from '../utils/razorpay.js';
+import { calculateDeliveryPayment, calculateRoundTripDistance } from '../utils/calculateDeliveryPayment.js';
 
 const router = express.Router();
 
@@ -306,6 +308,17 @@ router.post('/accept-order/:orderId', auth, isDeliveryPartner, async (req, res) 
     }
 
     // Create delivery order
+    // Calculate round-trip distance for payment calculation
+    const roundTripDistance = calculateRoundTripDistance(
+      order.storeCoordinates?.lat || 0,
+      order.storeCoordinates?.lng || 0,
+      order.shippingAddress.coordinates?.lat || 0,
+      order.shippingAddress.coordinates?.lng || 0
+    );
+
+    // Calculate payment based on distance
+    const paymentCalculation = calculateDeliveryPayment(roundTripDistance);
+
     const deliveryOrder = new DeliveryOrder({
       orderId: order._id,
       deliveryPartnerId: req.deliveryPartner._id,
@@ -324,13 +337,14 @@ router.post('/accept-order/:orderId', auth, isDeliveryPartner, async (req, res) 
       },
       deliveryDetails: {
         deliveryOTP: Math.random().toString(36).substring(2, 8).toUpperCase(),
-        estimatedDistance: order.delivery.distance,
+        estimatedDistance: roundTripDistance,
         estimatedDuration: order.delivery.estimatedTime
       },
       payment: {
-        deliveryFee: order.delivery.fee,
-        distanceFee: order.delivery.distanceFee,
-        totalEarning: order.delivery.fee + order.delivery.distanceFee
+        deliveryFee: paymentCalculation.baseFee,
+        distanceFee: paymentCalculation.distanceFee,
+        bonus: paymentCalculation.bonus,
+        totalEarning: paymentCalculation.totalEarning
       },
       timeline: [{
         status: 'assigned',
@@ -499,6 +513,49 @@ router.get('/earnings', auth, isDeliveryPartner, async (req, res) => {
         totalDistance,
         averagePerOrder: totalOrders > 0 ? totalEarnings / totalOrders : 0
       }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Select preferred store for delivery partner
+router.post('/select-store', auth, isDeliveryPartner, async (req, res) => {
+  try {
+    const { storeId } = req.body;
+
+    if (!storeId) {
+      return res.status(400).json({ success: false, message: 'Store ID is required' });
+    }
+
+    // Verify store exists and is active
+    const store = await Store.findById(storeId);
+    if (!store) {
+      return res.status(404).json({ success: false, message: 'Store not found' });
+    }
+
+    if (!store.is_active) {
+      return res.status(400).json({ success: false, message: 'Store is not active' });
+    }
+
+    // Update delivery partner's preferred stores
+    const partner = await DeliveryPartner.findById(req.deliveryPartner._id);
+    
+    // Add store to preferred stores if not already there
+    if (!partner.workDetails.preferredStoreIds) {
+      partner.workDetails.preferredStoreIds = [];
+    }
+    
+    if (!partner.workDetails.preferredStoreIds.includes(storeId)) {
+      partner.workDetails.preferredStoreIds.push(storeId);
+    }
+
+    await partner.save();
+
+    res.json({ 
+      success: true, 
+      message: 'Store selected successfully',
+      store 
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -1272,6 +1329,61 @@ router.get('/admin/stats', async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 });
+
+// Get nearest store based on delivery partner location
+router.get('/nearest-store', auth, async (req, res) => {
+  try {
+    const { lat, lng } = req.query;
+
+    if (!lat || !lng) {
+      return res.status(400).json({ success: false, message: 'Latitude and longitude are required' });
+    }
+
+    const partnerLat = parseFloat(lat);
+    const partnerLng = parseFloat(lng);
+
+    // Get all active stores
+    const stores = await Store.find({ is_active: true });
+
+    if (stores.length === 0) {
+      return res.status(404).json({ success: false, message: 'No active stores found' });
+    }
+
+    // Calculate distance to each store using Haversine formula
+    const storesWithDistance = stores.map(store => {
+      const distance = calculateDistance(partnerLat, partnerLng, store.coordinates.lat, store.coordinates.lng);
+      return {
+        ...store.toObject(),
+        distance
+      };
+    });
+
+    // Sort by distance and get the nearest one
+    storesWithDistance.sort((a, b) => a.distance - b.distance);
+    const nearestStore = storesWithDistance[0];
+
+    res.json({
+      success: true,
+      store: nearestStore,
+      distance: nearestStore.distance
+    });
+  } catch (error) {
+    console.error('Error finding nearest store:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Helper function to calculate distance between two coordinates using Haversine formula
+function calculateDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371; // Earth's radius in km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c; // Distance in km
+}
 
 // Get orders assigned to delivery partner
 router.get('/orders', auth, async (req, res) => {

@@ -3,6 +3,16 @@ import { useNavigate } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, Truck, ArrowRight } from 'lucide-react';
 import { useAuth } from '../lib/auth';
 import { useToast } from '../lib/toast';
+import { api } from '../lib/api';
+
+interface PartnerResponse {
+  success: boolean;
+  data: {
+    workDetails?: {
+      preferredStoreIds?: string[];
+    };
+  };
+}
 
 export function LoginPage() {
   const navigate = useNavigate();
@@ -23,7 +33,21 @@ export function LoginPage() {
       setLoading(false);
     } else {
       showToast('Welcome back!', 'success');
-      navigate('/dashboard');
+      // Check if delivery partner has selected a store
+      try {
+        const partnerResponse = await api.get<PartnerResponse>('/delivery-partners/profile');
+        const partner = partnerResponse.data;
+        
+        // If no preferred stores selected, redirect to store selection
+        if (!partner?.workDetails?.preferredStoreIds || partner.workDetails.preferredStoreIds.length === 0) {
+          navigate('/select-store');
+        } else {
+          navigate('/dashboard');
+        }
+      } catch (error) {
+        // If error fetching partner data, go to dashboard anyway
+        navigate('/dashboard');
+      }
     }
   };
 

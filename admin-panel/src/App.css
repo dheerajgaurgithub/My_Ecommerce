@@ -4,6 +4,8 @@
 
 .App-logo {
   height: 40vmin;
+  max-height: 200px;
+  max-width: 80vw;
   pointer-events: none;
 }
 
@@ -16,16 +18,27 @@
 .App-header {
   background-color: #282c34;
   min-height: 100vh;
+  min-height: 100dvh; /* accounts for mobile browser address/toolbar */
+  width: 100%;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 16px;
+  padding: 24px 16px;
+  padding-top: calc(24px + env(safe-area-inset-top));
+  padding-bottom: calc(24px + env(safe-area-inset-bottom));
   font-size: calc(10px + 2vmin);
   color: white;
+  overflow-x: hidden;
 }
 
 .App-link {
   color: #61dafb;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
 }
 
 @keyframes App-logo-spin {
@@ -34,5 +47,21 @@
   }
   to {
     transform: rotate(360deg);
+  }
+}
+
+/* Extra breathing room and slightly smaller text on very small phones */
+@media (max-width: 375px) {
+  .App-header {
+    font-size: calc(9px + 2vmin);
+    padding: 16px 12px;
+  }
+}
+
+/* Prevent an oversized logo on short/landscape mobile screens */
+@media (max-height: 500px) {
+  .App-logo {
+    height: 28vmin;
+    max-height: 140px;
   }
 }

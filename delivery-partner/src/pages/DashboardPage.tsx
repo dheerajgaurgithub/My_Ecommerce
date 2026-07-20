@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Package, MapPin, Phone, DollarSign, Clock, LogOut, Power,
-  TrendingUp, Truck, User, Sun, Moon, CreditCard, LayoutDashboard
+  TrendingUp, Truck, User, Sun, Moon, CreditCard, LayoutDashboard, Menu, X
 } from 'lucide-react';
 import { useAuth } from '../lib/auth';
 import { useTheme } from '../lib/theme';
@@ -22,11 +22,57 @@ export function DashboardPage() {
   const [isOnline, setIsOnline] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentType, setPaymentType] = useState<'joining' | 'renewal' | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [nearestStore, setNearestStore] = useState<any>(null);
+  const [distanceToStore, setDistanceToStore] = useState<number | null>(null);
 
   useEffect(() => {
     fetchPartnerData();
     fetchOrders();
+    getCurrentLocation();
   }, []);
+
+  const getCurrentLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          setCurrentLocation({ lat: latitude, lng: longitude });
+          fetchNearestStore(latitude, longitude);
+        },
+        (error) => {
+          console.error('Geolocation error:', error);
+          showToast('Unable to get your location', 'error');
+        }
+      );
+    } else {
+      showToast('Geolocation is not supported by your browser', 'error');
+    }
+  };
+
+  const fetchNearestStore = async (lat: number, lng: number) => {
+    try {
+      const response = await api.get<{ success: boolean; store?: any; distance?: number }>(`/stores/nearest?lat=${lat}&lng=${lng}`);
+      if (response.success && response.store) {
+        setNearestStore(response.store);
+        setDistanceToStore(response.distance || null);
+      }
+    } catch (error) {
+      console.error('Error fetching nearest store:', error);
+    }
+  };
+
+  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    const R = 6371; // Earth's radius in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c; // Distance in km
+  };
 
   const fetchPartnerData = async () => {
     try {
@@ -198,8 +244,18 @@ export function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 flex">
+      {/* Mobile menu overlay */}
+      {mobileMenuOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className="w-64 bg-white dark:bg-neutral-800 border-r border-neutral-200 dark:border-neutral-700 fixed inset-y-0 left-0 z-40 flex flex-col">
+      <aside className={`fixed inset-y-0 left-0 z-50 bg-white dark:bg-neutral-800 border-r border-neutral-200 dark:border-neutral-700 flex flex-col transition-transform duration-300 ease-in-out lg:relative lg:z-40 lg:translate-x-0 ${
+        mobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+      } w-64`}>
         {/* Logo */}
         <div className="p-6 border-b border-neutral-200 dark:border-neutral-700">
           <div className="flex items-center gap-3">
@@ -248,7 +304,10 @@ export function DashboardPage() {
           ].map((item) => (
             <button
               key={item.id}
-              onClick={() => setActiveTab(item.id)}
+              onClick={() => {
+                setActiveTab(item.id);
+                setMobileMenuOpen(false);
+              }}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
                 activeTab === item.id
                   ? 'bg-brand-50 dark:bg-brand-900 text-brand-700 dark:text-brand-300'
@@ -281,18 +340,26 @@ export function DashboardPage() {
       </aside>
 
       {/* Main Content */}
-      <div className="flex-1 lg:ml-64">
+      <div className="flex-1">
         {/* Top Bar */}
         <header className="bg-white dark:bg-neutral-800 border-b border-neutral-200 dark:border-neutral-700 sticky top-0 z-30">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
             <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-semibold text-neutral-900 dark:text-white capitalize">
-                  {activeTab}
-                </h2>
-                <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                  Welcome back, {partnerData?.personalDetails?.fullName?.split(' ')[0] || 'Partner'}
-                </p>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                  className="lg:hidden p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700"
+                >
+                  {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                </button>
+                <div>
+                  <h2 className="text-xl font-semibold text-neutral-900 dark:text-white capitalize">
+                    {activeTab}
+                  </h2>
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                    Welcome back, {partnerData?.personalDetails?.fullName?.split(' ')[0] || 'Partner'}
+                  </p>
+                </div>
               </div>
               <button
                 onClick={toggleOnlineStatus}
@@ -303,7 +370,7 @@ export function DashboardPage() {
                 }`}
               >
                 <Power className="w-5 h-5" />
-                {isOnline ? 'Online' : 'Offline'}
+                <span className="hidden sm:inline">{isOnline ? 'Online' : 'Offline'}</span>
               </button>
             </div>
           </div>
@@ -313,6 +380,36 @@ export function DashboardPage() {
         <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
           {activeTab === 'dashboard' && (
           <div className="space-y-6">
+            {/* Nearest Store Card */}
+            {nearestStore && (
+              <div className="card p-6 border-2 border-blue-200 dark:border-blue-800">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-xl flex items-center justify-center">
+                    <MapPin className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-full text-sm font-medium">
+                    Nearest Pickup Store
+                  </span>
+                </div>
+                <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-2">{nearestStore.name}</h3>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-4">
+                  {nearestStore.fullAddress || `${nearestStore.address?.street}, ${nearestStore.address?.city}, ${nearestStore.address?.state} - ${nearestStore.address?.pincode}`}
+                </p>
+                {distanceToStore !== null && (
+                  <div className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 mb-4">
+                    <Truck className="w-4 h-4" />
+                    <span className="font-medium">{distanceToStore.toFixed(2)} km away</span>
+                  </div>
+                )}
+                {currentLocation && (
+                  <div className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400">
+                    <MapPin className="w-4 h-4" />
+                    <span>Your Location: {currentLocation.lat.toFixed(4)}, {currentLocation.lng.toFixed(4)}</span>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Payment Cards */}
             <div className="grid sm:grid-cols-2 gap-4">
               <div className="card p-6 border-2 border-brand-200 dark:border-brand-800">
@@ -371,7 +468,7 @@ export function DashboardPage() {
             </div>
 
             {/* Stats Cards */}
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="card p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-xl flex items-center justify-center">
@@ -449,10 +546,22 @@ export function DashboardPage() {
                           {order.status}
                         </span>
                       </div>
-                      <div className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400">
+                      <div className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400 mb-2">
                         <MapPin className="w-4 h-4" />
                         <span>{order.shippingAddress?.address || 'Address not available'}</span>
                       </div>
+                      {order.payment && (
+                        <div className="mt-3 pt-3 border-t border-neutral-200 dark:border-neutral-700">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-neutral-600 dark:text-neutral-400">Earning</span>
+                            <span className="font-semibold text-green-600 dark:text-green-400">₹{order.payment.totalEarning || 0}</span>
+                          </div>
+                          <div className="text-xs text-neutral-500 dark:text-neutral-500 mt-1">
+                            Base: ₹{order.payment.deliveryFee || 0} + Distance: ₹{order.payment.distanceFee || 0}
+                            {order.payment.bonus > 0 && ` + Bonus: ₹${order.payment.bonus}`}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -463,12 +572,12 @@ export function DashboardPage() {
 
         {activeTab === 'orders' && (
           <div>
-            <div className="flex gap-2 mb-6">
+            <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
               {['available', 'in_progress', 'completed'].map((subtab) => (
                 <button
                   key={subtab}
                   onClick={() => setOrdersSubTab(subtab)}
-                  className={`px-4 py-2 rounded-lg font-medium capitalize transition-colors ${
+                  className={`px-4 py-2 rounded-lg font-medium capitalize transition-colors whitespace-nowrap ${
                     ordersSubTab === subtab
                       ? 'bg-brand-600 text-white'
                       : 'bg-white dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400'

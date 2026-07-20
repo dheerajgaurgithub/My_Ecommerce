@@ -90,6 +90,7 @@ import newsletterRoutes from './routes/newsletter.js';
 import contactRoutes from './routes/contact.js';
 import feedbackRoutes from './routes/feedback.js';
 import paymentRoutes from './routes/payments.js';
+import storeRoutes from './routes/stores.js';
 import { apiLimiter, authLimiter, orderLimiter } from './middleware/rateLimit.js';
 import { auth } from './middleware/auth.js';
 
@@ -118,6 +119,7 @@ app.use('/api/contact', contactRoutes);
 app.use('/api/feedback', auth, feedbackRoutes);
 app.use('/api/payments', auth, paymentRoutes);
 app.use('/api/payments/webhook', paymentRoutes);
+app.use('/api/stores', storeRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

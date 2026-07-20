@@ -32,6 +32,8 @@
   --container-2xl: 1440px;
   --container-max: 1440px;
 
+  /* Header height — adjust the mobile value below to match your
+     actual header component's real rendered height. */
   --header-height: 72px;
 
   /* Safe Area */
@@ -62,6 +64,14 @@
 
 .dark {
   color-scheme: dark;
+}
+
+/* Header height shrinks on mobile — keep in sync with your
+   actual header component's mobile height. */
+@media (max-width: 768px) {
+  :root {
+    --header-height: 56px;
+  }
 }
 
 /* ==========================================================
@@ -195,7 +205,6 @@
   @media (max-width: 768px) {
     html { font-size: 15px; }
     body { overflow-x: hidden; }
-    button, a { min-height: 44px; }
   }
 }
 
@@ -499,7 +508,7 @@
   /* Sections */
   .section { width: 100%; padding-block: clamp(3rem, 6vw, 7rem); }
   .section-sm { padding-block: clamp(2rem, 4vw, 4rem); }
-  .section-lg { padding-block: clamp(5rem, 8vw, 9rem); }
+  .section-lg { padding-block: clamp(4rem, 8vw, 9rem); }
 
   /* Full Height */
   .full-height {
@@ -533,6 +542,17 @@
     -webkit-overflow-scrolling: touch;
   }
 
+  /* Nav-style / button-style links get an explicit tap target.
+     Plain inline text links intentionally rely on line-height + padding
+     instead, since min-height has no effect on inline elements and
+     forcing it would break inline text flow. */
+  .nav-link,
+  a[role="button"] {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+
   /* Mobile */
   @media (max-width: 768px) {
     .container-responsive { padding-inline: 1rem; }
@@ -558,7 +578,6 @@
     }
 
     .section { padding-block: 3rem; }
-    .section-lg { padding-block: 4rem; }
 
     .table-responsive table { min-width: 600px; }
 
@@ -579,8 +598,6 @@
 
   /* Large Desktop */
   @media (min-width: 1440px) {
-    .section { padding-block: 8rem; }
-
     .container-responsive {
       padding-inline: 2.5rem;
     }
@@ -672,12 +689,15 @@ html {
 
 /* ==========================================================
    MOBILE TOUCH TARGETS
+   (consolidated — see also .nav-link / a[role="button"] above
+   for inline-link tap targets, since min-height doesn't apply
+   to plain inline <a> elements)
 ========================================================== */
 @media (max-width: 768px) {
   html, body { overflow-x: hidden; }
   * { max-width: 100%; }
 
-  button, a, input, select, textarea, [role="button"] {
+  button, input, select, textarea, [role="button"] {
     min-height: 44px;
   }
 
@@ -695,6 +715,10 @@ html {
     padding-left: max(env(safe-area-inset-left), var(--safe-left));
   }
 
+  /* Use .safe-top / .safe-bottom only on elements OUTSIDE body's normal
+     flow (e.g. position: fixed/sticky headers or footers). body already
+     carries safe-area padding globally — applying these utilities to
+     regular in-flow content would double the inset. */
   .safe-top { padding-top: max(env(safe-area-inset-top), var(--safe-top)); }
   .safe-bottom { padding-bottom: max(env(safe-area-inset-bottom), var(--safe-bottom)); }
 }
@@ -723,6 +747,11 @@ html {
   100% { transform: translateX(-100%); }
 }
 
+@keyframes marquee-mobile {
+  0% { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
+}
+
 .animate-marquee {
   display: inline-block;
   white-space: nowrap;
@@ -731,6 +760,12 @@ html {
 }
 
 .animate-marquee:hover { animation-play-state: paused; }
+
+@media (max-width: 768px) {
+  .animate-marquee {
+    animation: marquee-mobile 15s linear infinite;
+  }
+}
 
 @media (prefers-reduced-motion: reduce) {
   .animate-marquee {
