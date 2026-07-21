@@ -12,7 +12,7 @@ import { auth, deliveryAuth, checkRenewalStatus } from '../middleware/auth.js';
 import bcrypt from 'bcryptjs';
 import PDFDocument from 'pdfkit';
 import { generateDeliveryPartnerPDF } from '../utils/generatePartnerPDF.js';
-import { sendEmail, sendFeedbackRequestEmail } from '../services/emailService.js';
+import { sendEmail, sendFeedbackRequestEmail, sendDeliveryOTPEmail } from '../services/emailService.js';
 import { createFeePaymentOrder, createUPIPaymentQR } from '../utils/qrCode.js';
 import { verifyRazorpaySignature } from '../utils/razorpay.js';
 import { calculateDeliveryPayment, calculateRoundTripDistance } from '../utils/calculateDeliveryPayment.js';
@@ -803,7 +803,7 @@ router.put('/order-status/:orderId', deliveryAuth, checkRenewalStatus, async (re
       try {
         const user = await User.findById(order.user_id);
         if (user) {
-          await emailService.sendDeliveryOTPEmail(user.email, user.name, order.order_number, deliveryOTP);
+          await sendDeliveryOTPEmail(user.email, user.name, order.order_number, deliveryOTP);
         }
       } catch (emailError) {
         console.error('Error sending delivery OTP email:', emailError);
