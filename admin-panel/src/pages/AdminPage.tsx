@@ -2886,20 +2886,40 @@ function StoresManagement() {
 
   const handleSave = async () => {
     try {
+      // Validate required fields
+      if (!form.name || !form.address.street || !form.address.city || !form.address.state || !form.address.pincode) {
+        showToast('Please fill in all required fields', 'error');
+        return;
+      }
+      if (!form.coordinates.lat || !form.coordinates.lng) {
+        showToast('Please provide store coordinates (latitude and longitude)', 'error');
+        return;
+      }
+
+      const storeData = {
+        ...form,
+        coordinates: {
+          lat: parseFloat(form.coordinates.lat),
+          lng: parseFloat(form.coordinates.lng)
+        },
+        serviceRadius: parseFloat(form.serviceRadius)
+      };
+
       if (editingStore) {
-        await api.put(`/stores/${editingStore._id}`, form);
+        await api.put(`/stores/${editingStore._id}`, storeData);
         showToast('Store updated successfully', 'success');
       } else {
-        await api.post('/stores', form);
+        await api.post('/stores', storeData);
         showToast('Store created successfully', 'success');
       }
       setShowStoreForm(false);
       setEditingStore(null);
       resetForm();
       fetchStores();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to save store:', error);
-      showToast('Failed to save store', 'error');
+      const errorMessage = error.response?.data?.errors?.[0]?.msg || error.response?.data?.message || 'Failed to save store';
+      showToast(errorMessage, 'error');
     }
   };
 

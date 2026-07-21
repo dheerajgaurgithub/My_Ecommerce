@@ -1,12 +1,12 @@
 import express from 'express';
 import Store from '../models/Store.js';
-import { auth } from '../middleware/auth.js';
+import { auth, adminAuth } from '../middleware/auth.js';
 import { body, validationResult } from 'express-validator';
 
 const router = express.Router();
 
 // Get all stores (admin only)
-router.get('/', auth, async (req, res) => {
+router.get('/', adminAuth, async (req, res) => {
   try {
     const stores = await Store.find().sort({ name: 1 });
     res.json({ success: true, stores });
@@ -185,7 +185,7 @@ router.get('/nearest', async (req, res) => {
 });
 
 // Get single store by ID
-router.get('/:id', auth, async (req, res) => {
+router.get('/:id', adminAuth, async (req, res) => {
   try {
     const store = await Store.findById(req.params.id);
     if (!store) {
@@ -207,7 +207,7 @@ router.post('/', [
   body('coordinates.lat').isFloat().withMessage('Valid latitude is required'),
   body('coordinates.lng').isFloat().withMessage('Valid longitude is required'),
   body('serviceRadius').optional().isFloat().withMessage('Valid service radius is required')
-], auth, async (req, res) => {
+], adminAuth, async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -232,7 +232,7 @@ router.put('/:id', [
   body('coordinates.lat').optional().isFloat().withMessage('Valid latitude is required'),
   body('coordinates.lng').optional().isFloat().withMessage('Valid longitude is required'),
   body('serviceRadius').optional().isFloat().withMessage('Valid service radius is required')
-], auth, async (req, res) => {
+], adminAuth, async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -256,7 +256,7 @@ router.put('/:id', [
 });
 
 // Delete store (admin only)
-router.delete('/:id', auth, async (req, res) => {
+router.delete('/:id', adminAuth, async (req, res) => {
   try {
     const store = await Store.findByIdAndDelete(req.params.id);
     if (!store) {
@@ -269,7 +269,7 @@ router.delete('/:id', auth, async (req, res) => {
 });
 
 // Toggle store active status
-router.patch('/:id/toggle', auth, async (req, res) => {
+router.patch('/:id/toggle', adminAuth, async (req, res) => {
   try {
     const store = await Store.findById(req.params.id);
     if (!store) {
