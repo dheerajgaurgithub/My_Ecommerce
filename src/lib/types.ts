@@ -90,10 +90,10 @@ export interface Address {
   district: string | null;
   state: string;
   country: string;
-  latitude: number;
-  longitude: number;
-  google_maps_link: string;
   is_default: boolean;
+  latitude?: number;
+  longitude?: number;
+  google_maps_link?: string;
 }
 
 export interface Order {
