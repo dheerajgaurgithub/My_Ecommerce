@@ -254,7 +254,7 @@ router.post('/', auth, async (req, res) => {
       await Notification.create({
         user_id: adminUser._id,
         title: 'New Order Received',
-        message: `Order ${orderNumber} placed by ${user.name} (${user.email}). Total: ${finalTotal}.`,
+        message: `Order ${orderNumber} placed by ${user.name} (${user.email}). Total: ${total}.`,
         type: 'order'
       });
 
@@ -263,7 +263,7 @@ router.post('/', auth, async (req, res) => {
         await Notification.create({
           user_id: adminUser._id,
           title: 'Payment Completed',
-          message: `Payment received for order ${orderNumber}. Amount: ${finalTotal}.`,
+          message: `Payment received for order ${orderNumber}. Amount: ${total}.`,
           type: 'order'
         });
       }
@@ -272,7 +272,7 @@ router.post('/', auth, async (req, res) => {
     // Send order confirmation email
     await emailService.sendOrderConfirmationEmail(user.email, user.name, {
       order_number: orderNumber,
-      total: finalTotal,
+      total: total,
       createdAt: new Date(),
       items: orderItems
     });
