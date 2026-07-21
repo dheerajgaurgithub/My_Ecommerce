@@ -16,6 +16,7 @@ import { sendEmail, sendFeedbackRequestEmail } from '../services/emailService.js
 import { createFeePaymentOrder, createUPIPaymentQR } from '../utils/qrCode.js';
 import { verifyRazorpaySignature } from '../utils/razorpay.js';
 import { calculateDeliveryPayment, calculateRoundTripDistance } from '../utils/calculateDeliveryPayment.js';
+import { calculateRouteDistance, calculatePartnerToStoreDistance, calculateStoreToCustomerDistance } from '../utils/calculateRouteDistance.js';
 
 const router = express.Router();
 
@@ -316,6 +317,120 @@ router.put('/location', auth, isDeliveryPartner, async (req, res) => {
     );
 
     res.json({ success: true, message: 'Location updated', data: partner });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Calculate route distance for a delivery order
+// Returns complete route: Partner -> Store -> Customer -> Store (return)
+router.get('/route-distance/:deliveryOrderId', deliveryAuth, checkRenewalStatus, async (req, res) => {
+  try {
+    const deliveryOrder = await DeliveryOrder.findOne({
+      _id: req.params.deliveryOrderId,
+      deliveryPartnerId: req.deliveryPartner._id
+    });
+
+    if (!deliveryOrder) {
+      return res.status(404).json({ success: false, message: 'Delivery order not found' });
+    }
+
+    // Get partner's current location
+    const partner = await DeliveryPartner.findById(req.deliveryPartner._id);
+    const partnerLocation = partner.workDetails?.currentLocation;
+
+    if (!partnerLocation?.latitude || !partnerLocation?.longitude) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Partner location not available. Please update your location first.' 
+      });
+    }
+
+    // Get store location
+    const store = await Store.findById(deliveryOrder.storeId);
+    if (!store) {
+      return res.status(404).json({ success: false, message: 'Store not found' });
+    }
+
+    const storeLocation = {
+      lat: store.coordinates.lat,
+      lng: store.coordinates.lng
+    };
+
+    // Get customer location from delivery order
+    const customerLocation = deliveryOrder.customerDetails?.coordinates;
+    if (!customerLocation?.latitude || !customerLocation?.longitude) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Customer location not available' 
+      });
+    }
+
+    // Calculate complete route distance
+    const routeInfo = calculateRouteDistance(
+      partnerLocation,
+      storeLocation,
+      customerLocation,
+      { bonus: deliveryOrder.payment?.bonus || 0 }
+    );
+
+    res.json({
+      success: true,
+      data: routeInfo
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Get current distance to nearest store
+router.get('/distance-to-store', deliveryAuth, async (req, res) => {
+  try {
+    const partner = await DeliveryPartner.findById(req.deliveryPartner._id);
+    const partnerLocation = partner.workDetails?.currentLocation;
+
+    if (!partnerLocation?.latitude || !partnerLocation?.longitude) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Partner location not available. Please update your location first.' 
+      });
+    }
+
+    // Get nearest store
+    const stores = await Store.find({ is_active: true });
+    if (stores.length === 0) {
+      return res.status(404).json({ success: false, message: 'No active stores found' });
+    }
+
+    let nearestStore = null;
+    let minDistance = Infinity;
+
+    stores.forEach(store => {
+      const distance = calculatePartnerToStoreDistance(
+        partnerLocation,
+        {
+          lat: store.coordinates.lat,
+          lng: store.coordinates.lng
+        }
+      );
+
+      if (distance < minDistance) {
+        minDistance = distance;
+        nearestStore = {
+          ...store.toObject(),
+          distance
+        };
+      }
+    });
+
+    res.json({
+      success: true,
+      data: {
+        nearestStore,
+        distance: Math.round(minDistance * 100) / 100,
+        partnerLocation
+      }
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

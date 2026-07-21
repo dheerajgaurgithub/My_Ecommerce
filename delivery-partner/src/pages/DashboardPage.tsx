@@ -27,6 +27,7 @@ export function DashboardPage() {
   const [nearestStore, setNearestStore] = useState<any>(null);
   const [distanceToStore, setDistanceToStore] = useState<number | null>(null);
   const [isAccountSuspended, setIsAccountSuspended] = useState(false);
+  const [routeDistances, setRouteDistances] = useState<Record<string, any>>({});
 
   // Calculate if renewal fee is due and within 24-hour payment window
   const isRenewalDue = () => {
@@ -86,13 +87,38 @@ export function DashboardPage() {
 
   const fetchNearestStore = async (lat: number, lng: number) => {
     try {
-      const response = await api.get<{ success: boolean; store?: any; distance?: number }>(`/stores/nearest?lat=${lat}&lng=${lng}`);
-      if (response.success && response.store) {
-        setNearestStore(response.store);
-        setDistanceToStore(response.distance || null);
+      // Use the new delivery-partners endpoint for consistency
+      const response = await api.get<{ success: boolean; data?: any }>('/delivery-partners/distance-to-store');
+      if (response.success && response.data) {
+        setNearestStore(response.data.nearestStore);
+        setDistanceToStore(response.data.distance || null);
       }
     } catch (error) {
       console.error('Error fetching nearest store:', error);
+      // Fallback to stores endpoint if delivery partner endpoint fails
+      try {
+        const fallbackResponse = await api.get<{ success: boolean; store?: any; distance?: number }>(`/stores/nearest?lat=${lat}&lng=${lng}`);
+        if (fallbackResponse.success && fallbackResponse.store) {
+          setNearestStore(fallbackResponse.store);
+          setDistanceToStore(fallbackResponse.distance || null);
+        }
+      } catch (fallbackError) {
+        console.error('Error fetching nearest store (fallback):', fallbackError);
+      }
+    }
+  };
+
+  const fetchRouteDistance = async (orderId: string) => {
+    try {
+      const response = await api.get<{ success: boolean; data?: any }>(`/delivery-partners/route-distance/${orderId}`);
+      if (response.success && response.data) {
+        setRouteDistances(prev => ({
+          ...prev,
+          [orderId]: response.data
+        }));
+      }
+    } catch (error) {
+      console.error('Error fetching route distance:', error);
     }
   };
 
@@ -133,6 +159,12 @@ export function DashboardPage() {
       const response = await api.get<{ success: boolean; orders?: any[] }>('/delivery-partners/active-orders');
       if (response.success && response.orders) {
         setOrders(response.orders);
+        // Fetch route distances for in-progress orders
+        response.orders.forEach((order: any) => {
+          if (['accepted', 'reached_store', 'picked_up', 'in_transit'].includes(order.status)) {
+            fetchRouteDistance(order._id);
+          }
+        });
       }
     } catch (error) {
       console.error('Error fetching orders:', error);
@@ -171,6 +203,7 @@ export function DashboardPage() {
       await api.post(`/delivery-partners/accept-order/${orderId}`, {});
       showToast('Order accepted successfully', 'success');
       fetchOrders();
+      fetchRouteDistance(orderId);
     } catch (error) {
       showToast('Error accepting order', 'error');
     }
@@ -749,6 +782,74 @@ export function DashboardPage() {
                         <span>{order.shippingAddress?.phone || 'Phone not available'}</span>
                       </div>
                     </div>
+
+                    {/* Route Distance Information */}
+                    {routeDistances[order._id] ? (
+                      <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 mb-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <h4 className="font-semibold text-neutral-900 dark:text-white flex items-center gap-2">
+                            <Truck className="w-4 h-4 text-blue-600" />
+                            Route Distance
+                          </h4>
+                          <button
+                            onClick={() => fetchRouteDistance(order._id)}
+                            className="text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                          >
+                            Refresh
+                          </button>
+                        </div>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-neutral-600 dark:text-neutral-400">Partner → Store</span>
+                            <span className="font-medium text-neutral-900 dark:text-white">
+                              {routeDistances[order._id].distances.partnerToStore.toFixed(2)} km
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-neutral-600 dark:text-neutral-400">Store → Customer</span>
+                            <span className="font-medium text-neutral-900 dark:text-white">
+                              {routeDistances[order._id].distances.storeToCustomer.toFixed(2)} km
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-neutral-600 dark:text-neutral-400">Customer → Store (Return)</span>
+                            <span className="font-medium text-neutral-900 dark:text-white">
+                              {routeDistances[order._id].distances.customerToStore.toFixed(2)} km
+                            </span>
+                          </div>
+                          <div className="border-t border-blue-200 dark:border-blue-700 pt-2 mt-2 flex justify-between">
+                            <span className="font-semibold text-neutral-900 dark:text-white">Total Distance</span>
+                            <span className="font-bold text-blue-600 dark:text-blue-400">
+                              {routeDistances[order._id].distances.total.toFixed(2)} km
+                            </span>
+                          </div>
+                        </div>
+                        {routeDistances[order._id].payment && (
+                          <div className="mt-3 pt-3 border-t border-blue-200 dark:border-blue-700">
+                            <div className="flex justify-between items-center">
+                              <span className="text-neutral-600 dark:text-neutral-400">Estimated Earning</span>
+                              <span className="font-bold text-green-600 dark:text-green-400 text-lg">
+                                ₹{routeDistances[order._id].payment.totalEarning.toFixed(2)}
+                              </span>
+                            </div>
+                            <div className="text-xs text-neutral-500 dark:text-neutral-500 mt-1">
+                              Base: ₹{routeDistances[order._id].payment.baseFee} + 
+                              Distance: ₹{routeDistances[order._id].payment.distanceFee.toFixed(2)}
+                              {routeDistances[order._id].payment.bonus > 0 && ` + Bonus: ₹${routeDistances[order._id].payment.bonus}`}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      ordersSubTab === 'in_progress' && (
+                        <button
+                          onClick={() => fetchRouteDistance(order._id)}
+                          className="w-full text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 mb-4"
+                        >
+                          Calculate Route Distance
+                        </button>
+                      )
+                    )}
 
                     {ordersSubTab === 'in_progress' && (
                       <div className="flex gap-2">
