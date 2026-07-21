@@ -34,8 +34,11 @@ export const deliveryAuth = async (req, res, next) => {
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    console.log('Delivery Auth - Decoded token:', decoded);
+
     // The token contains the delivery partner ID directly (not userId)
     const partner = await DeliveryPartner.findById(decoded.userId);
+    console.log('Delivery Auth - Found partner:', partner ? partner._id : 'Not found');
 
     if (!partner) {
       return res.status(401).json({ success: false, message: 'Delivery partner not found' });
@@ -44,6 +47,7 @@ export const deliveryAuth = async (req, res, next) => {
     req.deliveryPartner = partner;
     next();
   } catch (error) {
+    console.error('Delivery Auth Error:', error);
     res.status(401).json({ success: false, message: 'Invalid token' });
   }
 };
