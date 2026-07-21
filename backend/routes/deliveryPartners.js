@@ -732,7 +732,7 @@ router.get('/active-orders', deliveryAuth, checkRenewalStatus, async (req, res) 
 });
 
 // Update delivery order status
-router.put('/order-status/:orderId', auth, isDeliveryPartner, checkRenewalStatus, async (req, res) => {
+router.put('/order-status/:orderId', deliveryAuth, checkRenewalStatus, async (req, res) => {
   try {
     const { status, latitude, longitude, notes, otp, otpType } = req.body;
 
