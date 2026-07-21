@@ -611,7 +611,11 @@ export function AdminPage() {
                     </div>
                     <div className="mt-4 pt-4 border-t border-neutral-100 dark:border-neutral-700 flex justify-between text-xs text-neutral-500">
                       <span>Payment: {order.payment_method.toUpperCase()} <span className={`ml-2 px-2.5 py-0.5 rounded-full text-xs font-semibold ${order.payment_status === 'paid' ? 'bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-300' : 'bg-yellow-100 text-yellow-600 dark:bg-yellow-900 dark:text-yellow-300'}`}>{order.payment_status === 'paid' ? 'PAID' : 'PENDING'}</span></span>
-                      <span className="font-medium">{order.address_snapshot?.city}, {order.address_snapshot?.state}</span>
+                      <span className="font-medium">{order.address_snapshot instanceof Map ? order.address_snapshot.get('phone') : order.address_snapshot?.phone || 'N/A'}</span>
+                    </div>
+                    <div className="mt-2 text-xs text-neutral-600 dark:text-neutral-400">
+                      <p><strong>Customer:</strong> {order.address_snapshot instanceof Map ? order.address_snapshot.get('full_name') : order.address_snapshot?.full_name || 'N/A'}</p>
+                      <p><strong>Address:</strong> {order.address_snapshot instanceof Map ? order.address_snapshot.get('address_line') : order.address_snapshot?.address_line || 'N/A'}, {order.address_snapshot instanceof Map ? order.address_snapshot.get('city') : order.address_snapshot?.city || 'N/A'}, {order.address_snapshot instanceof Map ? order.address_snapshot.get('state') : order.address_snapshot?.state || 'N/A'} - {order.address_snapshot instanceof Map ? order.address_snapshot.get('pincode') : order.address_snapshot?.pincode || 'N/A'}</p>
                     </div>
                     {/* Delivery Partner Assignment */}
                     {(order.status === 'packed' || order.status === 'shipped') && (

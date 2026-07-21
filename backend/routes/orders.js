@@ -5,8 +5,11 @@ import Product from '../models/Product.js';
 import Notification from '../models/Notification.js';
 import User from '../models/User.js';
 import DeliveryPartner from '../models/DeliveryPartner.js';
-import { auth } from '../middleware/auth.js';
+import DeliveryOrder from '../models/DeliveryOrder.js';
+import Store from '../models/Store.js';
+import { auth, adminAuth } from '../middleware/auth.js';
 import emailService from '../services/emailService.js';
+import { calculateDeliveryPayment, calculateRoundTripDistance } from '../utils/calculateDeliveryPayment.js';
 
 const router = express.Router();
 
@@ -42,6 +45,28 @@ router.get('/', auth, async (req, res) => {
     const orders = await Order.find(filter)
       .sort({ createdAt: -1 })
       .populate('items.product_id');
+
+    // Populate address details for orders that only have address_id
+    const Address = (await import('../models/Address.js')).default;
+    for (const order of orders) {
+      if (order.address_snapshot instanceof Map) {
+        const addressId = order.address_snapshot.get('address_id');
+        if (addressId && !order.address_snapshot.get('full_name')) {
+          const address = await Address.findById(addressId);
+          if (address) {
+            order.address_snapshot.set('full_name', address.full_name);
+            order.address_snapshot.set('phone', address.phone);
+            order.address_snapshot.set('address_line', address.address_line);
+            order.address_snapshot.set('city', address.city);
+            order.address_snapshot.set('district', address.district);
+            order.address_snapshot.set('state', address.state);
+            order.address_snapshot.set('pincode', address.pincode);
+            order.address_snapshot.set('country', address.country);
+          }
+        }
+      }
+    }
+
     res.json({ success: true, orders });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -138,6 +163,23 @@ router.post('/', auth, async (req, res) => {
     // Calculate final discount
     const finalDiscount = discount + firstOrderDiscount;
 
+    // Get full address details
+    const Address = (await import('../models/Address.js')).default;
+    const address = await Address.findById(address_id);
+
+    const addressSnapshot = new Map();
+    if (address) {
+      addressSnapshot.set('address_id', address_id);
+      addressSnapshot.set('full_name', address.full_name);
+      addressSnapshot.set('phone', address.phone);
+      addressSnapshot.set('address_line', address.address_line);
+      addressSnapshot.set('city', address.city);
+      addressSnapshot.set('district', address.district);
+      addressSnapshot.set('state', address.state);
+      addressSnapshot.set('pincode', address.pincode);
+      addressSnapshot.set('country', address.country);
+    }
+
     const order = new Order({
       user_id: req.user._id,
       order_number: orderNumber,
@@ -152,7 +194,7 @@ router.post('/', auth, async (req, res) => {
       payment_status: isOnline ? 'paid' : 'pending',
       paid_at: isOnline ? new Date() : null,
       payment_details: payment_details || null,
-      address_snapshot: { address_id },
+      address_snapshot: addressSnapshot,
       timeline,
       items: orderItems
     });
@@ -222,7 +264,7 @@ router.post('/', auth, async (req, res) => {
 });
 
 // Update order status (Admin only)
-router.patch('/:id/status', async (req, res) => {
+router.patch('/:id/status', adminAuth, async (req, res) => {
   try {
     const { status } = req.body;
     const order = await Order.findById(req.params.id);
@@ -294,11 +336,8 @@ router.patch('/:id/status', async (req, res) => {
 });
 
 // Assign delivery partner to order
-router.put('/:id/assign-partner', auth, async (req, res) => {
+router.put('/:id/assign-partner', adminAuth, async (req, res) => {
   try {
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ success: false, message: 'Admin access required' });
-    }
 
     const { partnerId } = req.body;
 
@@ -312,10 +351,76 @@ router.put('/:id/assign-partner', auth, async (req, res) => {
       return res.status(404).json({ success: false, message: 'Delivery partner not found' });
     }
 
+    // Get store details
+    const store = await Store.findOne({ is_active: true });
+    if (!store) {
+      return res.status(404).json({ success: false, message: 'No active store found' });
+    }
+
+    console.log('Store data:', JSON.stringify(store, null, 2));
+
     // Generate OTPs for pickup and delivery
     const pickupOTP = Math.floor(1000 + Math.random() * 9000).toString();
     const deliveryOTP = Math.floor(1000 + Math.random() * 9000).toString();
 
+    // Ensure coordinates are always provided
+    const storeLat = store.coordinates?.lat || 27.8974;
+    const storeLng = store.coordinates?.lng || 78.0880;
+
+    console.log('Coordinates:', { storeLat, storeLng });
+
+    // Calculate round-trip distance for payment calculation
+    const roundTripDistance = calculateRoundTripDistance(
+      storeLat,
+      storeLng,
+      27.8974, // Default customer coordinates (should be fetched from order address)
+      78.0880
+    );
+
+    // Calculate payment based on distance
+    const paymentCalculation = calculateDeliveryPayment(roundTripDistance);
+
+    // Create delivery order
+    const deliveryOrder = new DeliveryOrder({
+      orderId: order._id,
+      deliveryPartnerId: partnerId,
+      storeId: store._id,
+      customerDetails: {
+        name: 'Customer',
+        contactNumber: 'N/A',
+        address: order.address_snapshot?.get('address') || 'N/A',
+        coordinates: { latitude: 27.8974, longitude: 78.0880 }
+      },
+      pickupDetails: {
+        address: store.fullAddress || store.address?.street + ', ' + store.address?.city,
+        coordinates: {
+          latitude: storeLat,
+          longitude: storeLng
+        },
+        contactNumber: store.phone || '+91-XXXXXXXXXX',
+        pickupOTP
+      },
+      deliveryDetails: {
+        deliveryOTP,
+        estimatedDistance: roundTripDistance,
+        estimatedDuration: 30 // Default 30 minutes
+      },
+      payment: {
+        deliveryFee: paymentCalculation.baseFee,
+        distanceFee: paymentCalculation.distanceFee,
+        bonus: paymentCalculation.bonus,
+        totalEarning: paymentCalculation.totalEarning
+      },
+      timeline: [{
+        status: 'assigned',
+        timestamp: new Date(),
+        notes: 'Order assigned to delivery partner'
+      }]
+    });
+
+    await deliveryOrder.save();
+
+    // Update order
     const updatedOrder = await Order.findByIdAndUpdate(
       req.params.id,
       {
@@ -323,9 +428,9 @@ router.put('/:id/assign-partner', auth, async (req, res) => {
         'delivery.partnerId': partnerId,
         'delivery.pickupOTP': pickupOTP,
         'delivery.deliveryOTP': deliveryOTP,
-        'delivery.storeAddress': 'Mahir & Friends Store, Aligarh',
-        'delivery.storeCoordinates': { latitude: 27.8974, longitude: 78.0880 },
-        'delivery.storeContact': '+91-XXXXXXXXXX',
+        'delivery.storeAddress': store.fullAddress || store.address?.street + ', ' + store.address?.city,
+        'delivery.storeCoordinates': { latitude: storeLat, longitude: storeLng },
+        'delivery.storeContact': store.phone || '+91-XXXXXXXXXX',
         status: 'out_for_delivery',
         $push: { timeline: { status: 'Out for Delivery', timestamp: new Date() } }
       },
@@ -340,7 +445,7 @@ router.put('/:id/assign-partner', auth, async (req, res) => {
       type: 'order'
     });
 
-    res.json({ success: true, order: updatedOrder });
+    res.json({ success: true, order: updatedOrder, deliveryOrder });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

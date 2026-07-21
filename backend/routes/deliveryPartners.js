@@ -428,7 +428,128 @@ router.get('/active-orders', deliveryAuth, checkRenewalStatus, async (req, res) 
       status: { $in: ['assigned', 'accepted', 'reached_store', 'picked_up', 'in_transit'] }
     }).populate('orderId');
 
-    res.json({ success: true, data: activeOrders });
+    // Transform DeliveryOrder to match frontend expectations
+    const orders = activeOrders.map(deliveryOrder => {
+      const order = deliveryOrder.orderId;
+      return {
+        _id: deliveryOrder._id,
+        order_number: order?.order_number || 'N/A',
+        status: deliveryOrder.status,
+        total: order?.total || 0,
+        items: order?.items || [],
+        shippingAddress: {
+          address: deliveryOrder.customerDetails?.address || 'N/A',
+          phone: deliveryOrder.customerDetails?.contactNumber || 'N/A'
+        },
+        payment: deliveryOrder.payment,
+        deliveryDetails: deliveryOrder.deliveryDetails,
+        pickupDetails: deliveryOrder.pickupDetails
+      };
+    });
+
+    // Fallback: Check for orders assigned in Order model but not in DeliveryOrder
+    // (for orders assigned before the fix)
+    const Order = (await import('../models/Order.js')).default;
+    const Address = (await import('../models/Address.js')).default;
+    const assignedOrders = await Order.find({
+      'delivery.assigned': true,
+      'delivery.partnerId': req.deliveryPartner._id,
+      status: { $in: ['out_for_delivery', 'processing'] }
+    });
+
+    // Create DeliveryOrder records for legacy assigned orders
+    const Store = (await import('../models/Store.js')).default;
+    const store = await Store.findOne({ is_active: true });
+    
+    for (const order of assignedOrders) {
+      // Check if DeliveryOrder already exists
+      const existingDeliveryOrder = await DeliveryOrder.findOne({ orderId: order._id });
+      if (!existingDeliveryOrder && store) {
+        // Get address details
+        let customerName = 'Customer';
+        let customerPhone = 'N/A';
+        let customerAddress = 'N/A';
+        
+        if (order.address_snapshot instanceof Map) {
+          const addressId = order.address_snapshot.get('address_id');
+          if (addressId) {
+            const address = await Address.findById(addressId);
+            if (address) {
+              customerName = address.full_name;
+              customerPhone = address.phone;
+              customerAddress = `${address.address_line}, ${address.city}, ${address.state} - ${address.pincode}`;
+            }
+          } else {
+            // Try to get from existing snapshot
+            customerName = order.address_snapshot.get('full_name') || 'Customer';
+            customerPhone = order.address_snapshot.get('phone') || 'N/A';
+            customerAddress = order.address_snapshot.get('address_line') || 'N/A';
+          }
+        }
+        
+        const roundTripDistance = 5; // Default distance
+        const paymentCalculation = { baseFee: 30, distanceFee: 20, bonus: 0, totalEarning: 50 };
+        
+        const deliveryOrder = new DeliveryOrder({
+          orderId: order._id,
+          deliveryPartnerId: req.deliveryPartner._id,
+          storeId: store._id,
+          customerDetails: {
+            name: customerName,
+            contactNumber: customerPhone,
+            address: customerAddress,
+            coordinates: { latitude: 27.8974, longitude: 78.0880 }
+          },
+          pickupDetails: {
+            address: store.fullAddress || 'N/A',
+            coordinates: {
+              latitude: store.coordinates?.lat || 27.8974,
+              longitude: store.coordinates?.lng || 78.0880
+            },
+            contactNumber: store.phone || '+91-XXXXXXXXXX',
+            pickupOTP: order.delivery?.pickupOTP || '0000'
+          },
+          deliveryDetails: {
+            deliveryOTP: order.delivery?.deliveryOTP || '0000',
+            estimatedDistance: roundTripDistance,
+            estimatedDuration: 30
+          },
+          payment: paymentCalculation,
+          timeline: [{
+            status: 'assigned',
+            timestamp: new Date(),
+            notes: 'Migrated from Order model'
+          }]
+        });
+        await deliveryOrder.save();
+        
+        // Add to orders list
+        orders.push({
+          _id: deliveryOrder._id,
+          order_number: order.order_number || 'N/A',
+          status: 'assigned',
+          total: order.total || 0,
+          items: order.items || [],
+          shippingAddress: {
+            address: customerAddress,
+            phone: customerPhone
+          },
+          payment: paymentCalculation,
+          deliveryDetails: {
+            deliveryOTP: order.delivery?.deliveryOTP || '0000',
+            estimatedDistance: roundTripDistance,
+            estimatedDuration: 30
+          },
+          pickupDetails: {
+            address: store.fullAddress || 'N/A',
+            contactNumber: store.phone || '+91-XXXXXXXXXX',
+            pickupOTP: order.delivery?.pickupOTP || '0000'
+          }
+        });
+      }
+    }
+
+    res.json({ success: true, orders });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

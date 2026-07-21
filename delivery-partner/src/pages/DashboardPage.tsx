@@ -704,7 +704,7 @@ export function DashboardPage() {
               {orders
                 .filter(order => {
                   if (ordersSubTab === 'available') return order.status === 'assigned';
-                  if (ordersSubTab === 'in_progress') return order.status === 'in_progress';
+                  if (ordersSubTab === 'in_progress') return ['accepted', 'reached_store', 'picked_up', 'in_transit'].includes(order.status);
                   if (ordersSubTab === 'completed') return order.status === 'delivered';
                   return true;
                 })
