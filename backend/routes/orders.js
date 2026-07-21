@@ -51,17 +51,27 @@ router.get('/', auth, async (req, res) => {
     for (const order of orders) {
       if (order.address_snapshot instanceof Map) {
         const addressId = order.address_snapshot.get('address_id');
-        if (addressId && !order.address_snapshot.get('full_name')) {
-          const address = await Address.findById(addressId);
-          if (address) {
-            order.address_snapshot.set('full_name', address.full_name);
-            order.address_snapshot.set('phone', address.phone);
-            order.address_snapshot.set('address_line', address.address_line);
-            order.address_snapshot.set('city', address.city);
-            order.address_snapshot.set('district', address.district);
-            order.address_snapshot.set('state', address.state);
-            order.address_snapshot.set('pincode', address.pincode);
-            order.address_snapshot.set('country', address.country);
+        // Populate if address_id exists but details are missing
+        if (addressId) {
+          const hasDetails = order.address_snapshot.get('full_name') && 
+                           order.address_snapshot.get('phone') && 
+                           order.address_snapshot.get('address_line');
+          
+          if (!hasDetails) {
+            const address = await Address.findById(addressId);
+            if (address) {
+              order.address_snapshot.set('full_name', address.full_name);
+              order.address_snapshot.set('phone', address.phone);
+              order.address_snapshot.set('address_line', address.address_line);
+              order.address_snapshot.set('city', address.city);
+              order.address_snapshot.set('district', address.district);
+              order.address_snapshot.set('state', address.state);
+              order.address_snapshot.set('pincode', address.pincode);
+              order.address_snapshot.set('country', address.country);
+              order.address_snapshot.set('latitude', address.latitude);
+              order.address_snapshot.set('longitude', address.longitude);
+              order.address_snapshot.set('google_maps_link', address.google_maps_link);
+            }
           }
         }
       }
@@ -178,6 +188,9 @@ router.post('/', auth, async (req, res) => {
       addressSnapshot.set('state', address.state);
       addressSnapshot.set('pincode', address.pincode);
       addressSnapshot.set('country', address.country);
+      addressSnapshot.set('latitude', address.latitude);
+      addressSnapshot.set('longitude', address.longitude);
+      addressSnapshot.set('google_maps_link', address.google_maps_link);
     }
 
     const order = new Order({
@@ -369,12 +382,48 @@ router.put('/:id/assign-partner', adminAuth, async (req, res) => {
 
     console.log('Coordinates:', { storeLat, storeLng });
 
+    // Get customer address details
+    let customerName = 'Customer';
+    let customerPhone = 'N/A';
+    let customerAddress = 'N/A';
+    let customerLat = 27.8974;
+    let customerLng = 78.0880;
+    let customerMapsLink = '';
+    
+    if (order.address_snapshot instanceof Map) {
+      const addressId = order.address_snapshot.get('address_id');
+      if (addressId) {
+        const Address = (await import('../models/Address.js')).default;
+        const address = await Address.findById(addressId);
+        if (address) {
+          customerName = address.full_name;
+          customerPhone = address.phone;
+          customerAddress = `${address.address_line}, ${address.city}, ${address.state} - ${address.pincode}`;
+          customerLat = address.latitude || 27.8974;
+          customerLng = address.longitude || 78.0880;
+          customerMapsLink = address.google_maps_link || '';
+        }
+      } else {
+        // Try to get from existing snapshot
+        customerName = order.address_snapshot.get('full_name') || 'Customer';
+        customerPhone = order.address_snapshot.get('phone') || 'N/A';
+        const addressLine = order.address_snapshot.get('address_line') || '';
+        const city = order.address_snapshot.get('city') || '';
+        const state = order.address_snapshot.get('state') || '';
+        const pincode = order.address_snapshot.get('pincode') || '';
+        customerAddress = [addressLine, city, state, pincode].filter(Boolean).join(', ') || 'N/A';
+        customerLat = order.address_snapshot.get('latitude') || 27.8974;
+        customerLng = order.address_snapshot.get('longitude') || 78.0880;
+        customerMapsLink = order.address_snapshot.get('google_maps_link') || '';
+      }
+    }
+
     // Calculate round-trip distance for payment calculation
     const roundTripDistance = calculateRoundTripDistance(
       storeLat,
       storeLng,
-      27.8974, // Default customer coordinates (should be fetched from order address)
-      78.0880
+      customerLat,
+      customerLng
     );
 
     // Calculate payment based on distance
@@ -386,10 +435,11 @@ router.put('/:id/assign-partner', adminAuth, async (req, res) => {
       deliveryPartnerId: partnerId,
       storeId: store._id,
       customerDetails: {
-        name: 'Customer',
-        contactNumber: 'N/A',
-        address: order.address_snapshot?.get('address') || 'N/A',
-        coordinates: { latitude: 27.8974, longitude: 78.0880 }
+        name: customerName,
+        contactNumber: customerPhone,
+        address: customerAddress,
+        coordinates: { latitude: customerLat, longitude: customerLng },
+        googleMapsLink: customerMapsLink
       },
       pickupDetails: {
         address: store.fullAddress || store.address?.street + ', ' + store.address?.city,

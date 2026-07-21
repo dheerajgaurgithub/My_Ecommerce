@@ -38,6 +38,18 @@ const addressSchema = new mongoose.Schema({
     type: String,
     default: 'India'
   },
+  latitude: {
+    type: Number,
+    default: 0
+  },
+  longitude: {
+    type: Number,
+    default: 0
+  },
+  google_maps_link: {
+    type: String,
+    default: ''
+  },
   is_default: {
     type: Boolean,
     default: false

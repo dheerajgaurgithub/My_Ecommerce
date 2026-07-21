@@ -616,6 +616,18 @@ export function AdminPage() {
                     <div className="mt-2 text-xs text-neutral-600 dark:text-neutral-400">
                       <p><strong>Customer:</strong> {order.address_snapshot instanceof Map ? order.address_snapshot.get('full_name') : order.address_snapshot?.full_name || 'N/A'}</p>
                       <p><strong>Address:</strong> {order.address_snapshot instanceof Map ? order.address_snapshot.get('address_line') : order.address_snapshot?.address_line || 'N/A'}, {order.address_snapshot instanceof Map ? order.address_snapshot.get('city') : order.address_snapshot?.city || 'N/A'}, {order.address_snapshot instanceof Map ? order.address_snapshot.get('state') : order.address_snapshot?.state || 'N/A'} - {order.address_snapshot instanceof Map ? order.address_snapshot.get('pincode') : order.address_snapshot?.pincode || 'N/A'}</p>
+                      {(order.address_snapshot instanceof Map ? order.address_snapshot.get('google_maps_link') : order.address_snapshot?.google_maps_link) && (
+                        <p className="mt-1">
+                          <a 
+                            href={order.address_snapshot instanceof Map ? order.address_snapshot.get('google_maps_link') : order.address_snapshot?.google_maps_link} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-brand-600 hover:text-brand-700 hover:underline"
+                          >
+                            📍 View on Google Maps
+                          </a>
+                        </p>
+                      )}
                     </div>
                     {/* Delivery Partner Assignment */}
                     {(order.status === 'packed' || order.status === 'shipped') && (
@@ -2542,6 +2554,10 @@ function FeedbackManagement() {
 function UsersManagement() {
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sortBy, setSortBy] = useState('createdAt');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [searchQuery, setSearchQuery] = useState('');
+
   useEffect(() => {
     const fetchUsers = async () => {
       try {
@@ -2559,46 +2575,115 @@ function UsersManagement() {
     };
     fetchUsers();
   }, []);
+
+  const handleSort = (field: string) => {
+    if (sortBy === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(field);
+      setSortOrder('asc');
+    }
+  };
+
+  const sortedUsers = [...users]
+    .filter(u => 
+      (u.name?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+      (u.email?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+      (u.phone || '').includes(searchQuery)
+    )
+    .sort((a, b) => {
+      let aVal = a[sortBy];
+      let bVal = b[sortBy];
+      
+      if (sortBy === 'createdAt') {
+        aVal = new Date(aVal);
+        bVal = new Date(bVal);
+      }
+      
+      if (aVal < bVal) return sortOrder === 'asc' ? -1 : 1;
+      if (aVal > bVal) return sortOrder === 'asc' ? 1 : -1;
+      return 0;
+    });
+
   return (
     <div className="space-y-4">
-      <h1 className="font-serif text-2xl font-bold text-neutral-900 dark:text-white">Customers</h1>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <h1 className="font-serif text-2xl font-bold text-neutral-900 dark:text-white">Customers</h1>
+        <div className="relative">
+          <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
+          <input
+            type="text"
+            placeholder="Search customers..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="input pl-10 w-full sm:w-64"
+          />
+        </div>
+      </div>
       {loading ? (
         <div className="card p-8 text-center"><p className="text-neutral-500">Loading customers...</p></div>
-      ) : users.length === 0 ? (
-        <div className="card p-8 text-center"><Users size={40} className="mx-auto text-neutral-300 dark:text-neutral-600 mb-2" /><p className="text-neutral-500">No customers yet</p></div>
+      ) : sortedUsers.length === 0 ? (
+        <div className="card p-8 text-center"><Users size={40} className="mx-auto text-neutral-300 dark:text-neutral-600 mb-2" /><p className="text-neutral-500">{searchQuery ? 'No customers found' : 'No customers yet'}</p></div>
       ) : (
         <div className="card overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-neutral-50 dark:bg-neutral-800"><tr className="text-left text-neutral-500">
-                <th className="p-3 font-medium">Customer</th><th className="p-3 font-medium">Email</th><th className="p-3 font-medium">Phone</th><th className="p-3 font-medium">Location</th><th className="p-3 font-medium">Address</th><th className="p-3 font-medium">Pincode</th>
+                <th className="p-3 font-medium cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-700" onClick={() => handleSort('name')}>
+                  Customer {sortBy === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}
+                </th>
+                <th className="p-3 font-medium cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-700" onClick={() => handleSort('email')}>
+                  Email {sortBy === 'email' && (sortOrder === 'asc' ? '↑' : '↓')}
+                </th>
+                <th className="p-3 font-medium cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-700" onClick={() => handleSort('phone')}>
+                  Phone {sortBy === 'phone' && (sortOrder === 'asc' ? '↑' : '↓')}
+                </th>
+                <th className="p-3 font-medium">Location</th>
+                <th className="p-3 font-medium">Address</th>
+                <th className="p-3 font-medium cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-700" onClick={() => handleSort('createdAt')}>
+                  Joined {sortBy === 'createdAt' && (sortOrder === 'asc' ? '↑' : '↓')}
+                </th>
               </tr></thead>
-              <tbody>{users.map((u) => (
-                <tr key={u._id} className="border-t border-neutral-100 dark:border-neutral-700">
+              <tbody>{sortedUsers.map((u) => (
+                <tr key={u._id} className="border-t border-neutral-100 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800">
                   <td className="p-3">
                     <div className="flex items-center gap-2">
-                      {u.profilePicture ? (
-                        <img src={u.profilePicture} alt="" className="w-8 h-8 rounded-full object-cover" />
+                      {u.profilePicture || u.picture ? (
+                        <img src={u.profilePicture || u.picture} alt="" className="w-10 h-10 rounded-full object-cover border border-neutral-200 dark:border-neutral-700" />
                       ) : (
-                        <div className="w-8 h-8 rounded-full bg-brand-100 dark:bg-brand-900 flex items-center justify-center text-brand-600 dark:text-brand-300 font-medium text-xs">
+                        <div className="w-10 h-10 rounded-full bg-brand-100 dark:bg-brand-900 flex items-center justify-center text-brand-600 dark:text-brand-300 font-medium text-sm">
                           {u.name?.[0] || u.email?.[0]}
                         </div>
                       )}
-                      <span className="font-medium text-neutral-900 dark:text-white">{u.name || 'N/A'}</span>
+                      <div>
+                        <span className="font-medium text-neutral-900 dark:text-white block">{u.name || 'N/A'}</span>
+                        <span className="text-xs text-neutral-500">{u.emailVerified ? '✓ Verified' : 'Unverified'}</span>
+                      </div>
                     </div>
                   </td>
                   <td className="p-3 text-neutral-600 dark:text-neutral-400">{u.email}</td>
                   <td className="p-3 text-neutral-600 dark:text-neutral-400">{u.phone || 'N/A'}</td>
-                  <td className="p-3 text-neutral-600 dark:text-neutral-400">{u.location || 'N/A'}</td>
-                  <td className="p-3 text-neutral-600 dark:text-neutral-400 text-xs max-w-xs truncate">
-                    {u.addresses && u.addresses.length > 0 ? u.addresses[0].address_line : 'N/A'}
-                  </td>
                   <td className="p-3 text-neutral-600 dark:text-neutral-400">
-                    {u.addresses && u.addresses.length > 0 ? u.addresses[0].pincode : 'N/A'}
+                    {u.location ? (
+                      <a href={u.location} target="_blank" rel="noopener noreferrer" className="text-brand-600 hover:underline text-xs">
+                        📍 View on Maps
+                      </a>
+                    ) : 'N/A'}
+                  </td>
+                  <td className="p-3 text-neutral-600 dark:text-neutral-400 text-xs max-w-xs truncate">
+                    {u.addresses && u.addresses.length > 0 
+                      ? `${u.addresses[0].address_line}, ${u.addresses[0].city}, ${u.addresses[0].state} - ${u.addresses[0].pincode}`
+                      : 'N/A'}
+                  </td>
+                  <td className="p-3 text-neutral-600 dark:text-neutral-400 text-xs">
+                    {u.createdAt ? formatDate(u.createdAt) : 'N/A'}
                   </td>
                 </tr>
               ))}</tbody>
             </table>
+          </div>
+          <div className="p-3 border-t border-neutral-100 dark:border-neutral-700 text-xs text-neutral-500">
+            Showing {sortedUsers.length} customer{sortedUsers.length !== 1 ? 's' : ''}
           </div>
         </div>
       )}

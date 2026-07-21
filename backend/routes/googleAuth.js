@@ -33,7 +33,7 @@ router.get('/url', (req, res) => {
 // Handle Google OAuth callback
 router.post('/callback', async (req, res) => {
   try {
-    const { code } = req.body;
+    const { code, locationData } = req.body;
 
     if (!code) {
       return res.status(400).json({ success: false, message: 'Authorization code is required' });
@@ -51,7 +51,7 @@ router.post('/callback', async (req, res) => {
     let user = await User.findOne({ email: data.email });
 
     if (!user) {
-      // Create new user
+      // Create new user without requiring location (will be added in onboarding)
       user = new User({
         email: data.email,
         name: data.name,
@@ -78,6 +78,12 @@ router.post('/callback', async (req, res) => {
         user.googleId = data.id;
         user.picture = data.picture;
         user.emailVerified = true;
+        // Update location if provided
+        if (locationData && locationData.latitude && locationData.longitude && locationData.google_maps_link) {
+          user.location = locationData.google_maps_link;
+          user.latitude = locationData.latitude;
+          user.longitude = locationData.longitude;
+        }
         await user.save();
       }
     }
@@ -92,9 +98,11 @@ router.post('/callback', async (req, res) => {
         id: user._id,
         email: user.email,
         name: user.name,
+        phone: user.phone,
         role: user.role,
         picture: user.picture,
-        emailVerified: user.emailVerified
+        emailVerified: user.emailVerified,
+        location: user.location
       },
       isNewUser: !user.googleId || user.googleId !== data.id
     });

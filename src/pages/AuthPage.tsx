@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Mail, Lock, User, Eye, EyeOff, ArrowRight, RefreshCw } from 'lucide-react';
+import { Mail, Lock, User, Eye, EyeOff, ArrowRight, RefreshCw, MapPin } from 'lucide-react';
 import { useAuth } from '../lib/auth';
 import { useToast } from '../lib/toast';
 import { api } from '../lib/api';
@@ -17,6 +17,7 @@ export function AuthPage({ mode }: { mode: 'login' | 'signup' }) {
   const { showToast } = useToast();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -26,8 +27,36 @@ export function AuthPage({ mode }: { mode: 'login' | 'signup' }) {
   const [otpVerified, setOtpVerified] = useState(false);
   const [otpLoading, setOtpLoading] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
+  const [locationData, setLocationData] = useState({ latitude: 0, longitude: 0, google_maps_link: '' });
+  const [locationLoading, setLocationLoading] = useState(false);
 
   const redirect = searchParams.get('redirect') ?? '/';
+
+  const getCurrentLocation = () => {
+    setLocationLoading(true);
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          setLocationData({
+            latitude,
+            longitude,
+            google_maps_link: `https://www.google.com/maps?q=${latitude},${longitude}`
+          });
+          setLocationLoading(false);
+          showToast('Location captured successfully', 'success');
+        },
+        (error) => {
+          setLocationLoading(false);
+          showToast('Failed to get location. Please enable location access.', 'error');
+          console.error('Geolocation error:', error);
+        }
+      );
+    } else {
+      setLocationLoading(false);
+      showToast('Geolocation is not supported by your browser', 'error');
+    }
+  };
 
   const handleSendOtp = async () => {
     if (!email) {
@@ -125,7 +154,17 @@ export function AuthPage({ mode }: { mode: 'login' | 'signup' }) {
         setLoading(false);
         return;
       }
-      const { error } = await signUp(email, password, name, otp);
+      if (!phone || phone.trim().length < 10) {
+        showToast('Please enter a valid mobile number (at least 10 digits)', 'error');
+        setLoading(false);
+        return;
+      }
+      if (!locationData.latitude || !locationData.longitude || !locationData.google_maps_link) {
+        showToast('Please provide your location to complete registration', 'error');
+        setLoading(false);
+        return;
+      }
+      const { error } = await signUp(email, password, name, otp, phone, locationData);
       if (error) {
         showToast(error, 'error');
       } else {
@@ -231,6 +270,51 @@ export function AuthPage({ mode }: { mode: 'login' | 'signup' }) {
                   )}
                   {otpVerified && (
                     <span className="text-sm text-green-600 font-medium">✓ Email Verified</span>
+                  )}
+                </div>
+              </div>
+            )}
+            {mode === 'signup' && (
+              <div>
+                <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5 block">Mobile Number *</label>
+                <input
+                  type="tel"
+                  required
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className="input"
+                  placeholder="Enter your mobile number"
+                />
+              </div>
+            )}
+            {mode === 'signup' && (
+              <div>
+                <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5 block">Your Location *</label>
+                <div className="space-y-2">
+                  <button 
+                    type="button"
+                    onClick={getCurrentLocation}
+                    disabled={locationLoading}
+                    className="w-full btn-secondary text-sm flex items-center justify-center gap-2"
+                  >
+                    <MapPin size={16} />
+                    {locationLoading ? 'Getting Location...' : 'Get Current Location'}
+                  </button>
+                  <input 
+                    className="input" 
+                    placeholder="Google Maps Link *" 
+                    value={locationData.google_maps_link} 
+                    onChange={(e) => setLocationData({ ...locationData, google_maps_link: e.target.value })} 
+                  />
+                  {locationData.google_maps_link && (
+                    <a 
+                      href={locationData.google_maps_link} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-xs text-brand-600 hover:underline"
+                    >
+                      Open in Google Maps →
+                    </a>
                   )}
                 </div>
               </div>

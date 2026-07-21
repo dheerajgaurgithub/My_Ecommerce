@@ -164,13 +164,15 @@ router.get('/first-order-status', auth, async (req, res) => {
 // Update user profile
 router.put('/me', auth, async (req, res) => {
   try {
-    const { name, nickname, profilePicture, location, phone } = req.body;
+    const { name, nickname, profilePicture, location, phone, latitude, longitude } = req.body;
     const updateData = {};
     if (name !== undefined) updateData.name = name;
     if (nickname !== undefined) updateData.nickname = nickname;
     if (profilePicture !== undefined) updateData.profilePicture = profilePicture;
     if (location !== undefined) updateData.location = location;
     if (phone !== undefined) updateData.phone = phone;
+    if (latitude !== undefined) updateData.latitude = latitude;
+    if (longitude !== undefined) updateData.longitude = longitude;
     
     const user = await User.findByIdAndUpdate(req.user._id, updateData, { new: true }).select('-password');
     res.json({ success: true, user });

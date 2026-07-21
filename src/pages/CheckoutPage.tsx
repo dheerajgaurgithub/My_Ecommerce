@@ -18,7 +18,7 @@ export function CheckoutPage() {
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState('');
   const [showAddressForm, setShowAddressForm] = useState(false);
-  const [newAddress, setNewAddress] = useState({ full_name: '', phone: '', pincode: '', address_line: '', city: '', state: '' });
+  const [newAddress, setNewAddress] = useState({ full_name: '', phone: '', pincode: '', address_line: '', city: '', state: '', latitude: 0, longitude: 0, google_maps_link: '' });
   const [paymentMethod, setPaymentMethod] = useState('cod');
   const [placing, setPlacing] = useState(false);
   const [orderPlaced, setOrderPlaced] = useState<{ orderNumber: string; total: number; paymentMethod: string; paymentStatus: string; firstOrderDiscount?: number } | null>(null);
@@ -26,6 +26,7 @@ export function CheckoutPage() {
   const [deliveryAvailable, setDeliveryAvailable] = useState(false);
   const [deliveryCharge, setDeliveryCharge] = useState(0);
   const [showRazorpay, setShowRazorpay] = useState(false);
+  const [locationLoading, setLocationLoading] = useState(false);
 
   const checkoutData = JSON.parse(sessionStorage.getItem('checkout_data') ?? '{}');
   const baseSubtotal = checkoutData.subtotal ?? cartSubtotal;
@@ -106,10 +107,41 @@ export function CheckoutPage() {
     }
   }, [selectedAddressId]);
 
+  const getCurrentLocation = () => {
+    setLocationLoading(true);
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          setNewAddress(prev => ({
+            ...prev,
+            latitude,
+            longitude,
+            google_maps_link: `https://www.google.com/maps?q=${latitude},${longitude}`
+          }));
+          setLocationLoading(false);
+          showToast('Location captured successfully', 'success');
+        },
+        (error) => {
+          setLocationLoading(false);
+          showToast('Failed to get location. Please enable location access.', 'error');
+          console.error('Geolocation error:', error);
+        }
+      );
+    } else {
+      setLocationLoading(false);
+      showToast('Geolocation is not supported by your browser', 'error');
+    }
+  };
+
   const addAddress = async () => {
     if (!user) return;
     if (!newAddress.phone || newAddress.phone.trim().length < 10) {
       showToast('A valid mobile number (at least 10 digits) is required', 'error');
+      return;
+    }
+    if (!newAddress.latitude || !newAddress.longitude || !newAddress.google_maps_link) {
+      showToast('Please capture your location using "Get Current Location" or provide a Google Maps link', 'error');
       return;
     }
     try {
@@ -123,7 +155,7 @@ export function CheckoutPage() {
       setSelectedAddressId(addr._id);
       checkDeliveryAvailability(addr._id);
       setShowAddressForm(false);
-      setNewAddress({ full_name: '', phone: '', pincode: '', address_line: '', city: '', state: '' });
+      setNewAddress({ full_name: '', phone: '', pincode: '', address_line: '', city: '', state: '', latitude: 0, longitude: 0, google_maps_link: '' });
       showToast('Address added', 'success');
     } catch (error) {
       showToast('Failed to add address', 'error');
@@ -315,6 +347,33 @@ export function CheckoutPage() {
                   <input className="input" placeholder="City" value={newAddress.city} onChange={(e) => setNewAddress({ ...newAddress, city: e.target.value })} />
                   <input className="input" placeholder="State" value={newAddress.state} onChange={(e) => setNewAddress({ ...newAddress, state: e.target.value })} />
                   <input className="input" placeholder="Pincode" value={newAddress.pincode} onChange={(e) => setNewAddress({ ...newAddress, pincode: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                  <button 
+                    type="button"
+                    onClick={getCurrentLocation}
+                    disabled={locationLoading}
+                    className="w-full btn-secondary text-sm flex items-center justify-center gap-2"
+                  >
+                    <MapPin size={16} />
+                    {locationLoading ? 'Getting Location...' : 'Get Current Location'}
+                  </button>
+                  <input 
+                    className="input" 
+                    placeholder="Google Maps Link *" 
+                    value={newAddress.google_maps_link} 
+                    onChange={(e) => setNewAddress({ ...newAddress, google_maps_link: e.target.value })} 
+                  />
+                  {newAddress.google_maps_link && (
+                    <a 
+                      href={newAddress.google_maps_link} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-xs text-brand-600 hover:underline"
+                    >
+                      Open in Google Maps →
+                    </a>
+                  )}
                 </div>
                 <div className="flex gap-2">
                   <button onClick={addAddress} className="btn-primary text-sm">Save Address</button>

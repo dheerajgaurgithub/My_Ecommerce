@@ -17,7 +17,7 @@ interface AuthContextType {
   loading: boolean;
   setUser: (user: User | null) => void;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
-  signUp: (email: string, password: string, name: string, otp?: string) => Promise<{ error: string | null }>;
+  signUp: (email: string, password: string, name: string, otp?: string, phone?: string, locationData?: { latitude: number; longitude: number; google_maps_link: string }) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
@@ -64,9 +64,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const signUp = async (email: string, password: string, name: string, otp?: string) => {
+  const signUp = async (email: string, password: string, name: string, otp?: string, phone?: string, locationData?: { latitude: number; longitude: number; google_maps_link: string }) => {
     try {
-      const response = await api.post<{ success: boolean; token: string; user: User }>('/auth/register', { email, password, name, otp });
+      const response = await api.post<{ success: boolean; token: string; user: User }>('/auth/register', { email, password, name, otp, phone, locationData });
       if (response.success) {
         api.setToken(response.token);
         setUser(response.user);

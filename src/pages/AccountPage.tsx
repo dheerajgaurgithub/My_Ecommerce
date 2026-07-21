@@ -22,7 +22,9 @@ export function AccountPage() {
   const [wishlist, setWishlist] = useState<Product[]>([]);
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [showAddressForm, setShowAddressForm] = useState(false);
-  const [newAddress, setNewAddress] = useState({ full_name: '', phone: '', pincode: '', address_line: '', city: '', state: '' });
+  const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
+  const [newAddress, setNewAddress] = useState({ full_name: '', phone: '', pincode: '', address_line: '', city: '', state: '', latitude: 0, longitude: 0, google_maps_link: '' });
+  const [locationLoading, setLocationLoading] = useState(false);
   const [profileForm, setProfileForm] = useState({ name: '', nickname: '', phone: '', location: '' });
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [reviewProduct, setReviewProduct] = useState<any>(null);
@@ -57,21 +59,89 @@ export function AccountPage() {
     });
   }, [user, navigate]);
 
+  const getCurrentLocation = () => {
+    setLocationLoading(true);
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          setNewAddress(prev => ({
+            ...prev,
+            latitude,
+            longitude,
+            google_maps_link: `https://www.google.com/maps?q=${latitude},${longitude}`
+          }));
+          setLocationLoading(false);
+          showToast('Location captured successfully', 'success');
+        },
+        (error) => {
+          setLocationLoading(false);
+          showToast('Failed to get location. Please enable location access.', 'error');
+          console.error('Geolocation error:', error);
+        }
+      );
+    } else {
+      setLocationLoading(false);
+      showToast('Geolocation is not supported by your browser', 'error');
+    }
+  };
+
+  const startEditAddress = (address: Address) => {
+    setEditingAddressId(address._id);
+    setNewAddress({
+      full_name: address.full_name,
+      phone: address.phone,
+      pincode: address.pincode,
+      address_line: address.address_line,
+      city: address.city,
+      state: address.state,
+      latitude: address.latitude || 0,
+      longitude: address.longitude || 0,
+      google_maps_link: address.google_maps_link || ''
+    });
+    setShowAddressForm(true);
+  };
+
+  const cancelEditAddress = () => {
+    setEditingAddressId(null);
+    setShowAddressForm(false);
+    setNewAddress({ full_name: '', phone: '', pincode: '', address_line: '', city: '', state: '', latitude: 0, longitude: 0, google_maps_link: '' });
+  };
+
   const addAddress = async () => {
     if (!user) return;
+    if (!newAddress.phone || newAddress.phone.trim().length < 10) {
+      showToast('A valid mobile number (at least 10 digits) is required', 'error');
+      return;
+    }
+    if (!newAddress.latitude || !newAddress.longitude || !newAddress.google_maps_link) {
+      showToast('Please capture your location using "Get Current Location" or provide a Google Maps link', 'error');
+      return;
+    }
     try {
-      const response = await api.post<{ success: boolean; address: Address }>('/addresses', {
-        ...newAddress,
-        country: 'India',
-        is_default: addresses.length === 0,
-      });
-      const addr = response.address;
-      setAddresses((prev) => [...prev, addr]);
-      setShowAddressForm(false);
-      setNewAddress({ full_name: '', phone: '', pincode: '', address_line: '', city: '', state: '' });
-      showToast('Address added', 'success');
+      if (editingAddressId) {
+        // Update existing address
+        const response = await api.put<{ success: boolean; address: Address }>(`/addresses/${editingAddressId}`, {
+          ...newAddress,
+          country: 'India',
+        });
+        const addr = response.address;
+        setAddresses((prev) => prev.map((a) => a._id === editingAddressId ? addr : a));
+        showToast('Address updated', 'success');
+      } else {
+        // Add new address
+        const response = await api.post<{ success: boolean; address: Address }>('/addresses', {
+          ...newAddress,
+          country: 'India',
+          is_default: addresses.length === 0,
+        });
+        const addr = response.address;
+        setAddresses((prev) => [...prev, addr]);
+        showToast('Address added', 'success');
+      }
+      cancelEditAddress();
     } catch (error) {
-      showToast('Failed to add address', 'error');
+      showToast(editingAddressId ? 'Failed to update address' : 'Failed to add address', 'error');
     }
   };
 
@@ -335,7 +405,39 @@ export function AccountPage() {
                     <input className="input" placeholder="State" value={newAddress.state} onChange={(e) => setNewAddress({ ...newAddress, state: e.target.value })} />
                     <input className="input" placeholder="Pincode" value={newAddress.pincode} onChange={(e) => setNewAddress({ ...newAddress, pincode: e.target.value })} />
                   </div>
-                  <button onClick={addAddress} className="btn-primary text-sm">Save Address</button>
+                  <div className="space-y-2">
+                    <button 
+                      type="button"
+                      onClick={getCurrentLocation}
+                      disabled={locationLoading}
+                      className="w-full btn-secondary text-sm flex items-center justify-center gap-2"
+                    >
+                      <MapPin size={16} />
+                      {locationLoading ? 'Getting Location...' : 'Get Current Location'}
+                    </button>
+                    <input 
+                      className="input" 
+                      placeholder="Google Maps Link *" 
+                      value={newAddress.google_maps_link} 
+                      onChange={(e) => setNewAddress({ ...newAddress, google_maps_link: e.target.value })} 
+                    />
+                    {newAddress.google_maps_link && (
+                      <a 
+                        href={newAddress.google_maps_link} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-xs text-brand-600 hover:underline"
+                      >
+                        Open in Google Maps →
+                      </a>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={addAddress} className="btn-primary text-sm">{editingAddressId ? 'Update Address' : 'Save Address'}</button>
+                    {editingAddressId && (
+                      <button onClick={cancelEditAddress} className="btn-secondary text-sm">Cancel</button>
+                    )}
+                  </div>
                 </div>
               )}
               {addresses.length === 0 && !showAddressForm ? (
@@ -353,11 +455,26 @@ export function AccountPage() {
                           <p className="text-neutral-500">{addr.phone}</p>
                           <p className="text-neutral-600 dark:text-neutral-400 mt-2">{addr.address_line}</p>
                           <p className="text-neutral-600 dark:text-neutral-400">{addr.city}, {addr.state} - {addr.pincode}</p>
+                          {addr.google_maps_link && (
+                            <a 
+                              href={addr.google_maps_link} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-xs text-brand-600 hover:underline mt-1 inline-block"
+                            >
+                              📍 View on Google Maps
+                            </a>
+                          )}
                           {addr.is_default && <span className="inline-block mt-2 text-xs bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 px-2 py-0.5 rounded">Default</span>}
                         </div>
-                        <button onClick={() => deleteAddress(addr.id)} className="text-red-500 hover:text-red-600">
-                          <Trash2 size={16} />
-                        </button>
+                        <div className="flex gap-2">
+                          <button onClick={() => startEditAddress(addr)} className="text-brand-600 hover:text-brand-700">
+                            <Check size={16} />
+                          </button>
+                          <button onClick={() => deleteAddress(addr.id)} className="text-red-500 hover:text-red-600">
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}

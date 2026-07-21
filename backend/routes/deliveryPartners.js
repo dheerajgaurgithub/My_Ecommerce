@@ -348,73 +348,30 @@ router.get('/available-orders', auth, isDeliveryPartner, checkRenewalStatus, asy
   }
 });
 
-// Accept an order
-router.post('/accept-order/:orderId', auth, isDeliveryPartner, checkRenewalStatus, async (req, res) => {
+// Accept an assigned order (update DeliveryOrder status from assigned to accepted)
+router.post('/accept-order/:orderId', deliveryAuth, checkRenewalStatus, async (req, res) => {
   try {
-    const order = await Order.findById(req.params.orderId);
-    if (!order) {
-      return res.status(404).json({ success: false, message: 'Order not found' });
-    }
-
-    if (order.delivery.assigned) {
-      return res.status(400).json({ success: false, message: 'Order already assigned' });
-    }
-
-    // Create delivery order
-    // Calculate round-trip distance for payment calculation
-    const roundTripDistance = calculateRoundTripDistance(
-      order.storeCoordinates?.lat || 0,
-      order.storeCoordinates?.lng || 0,
-      order.shippingAddress.coordinates?.lat || 0,
-      order.shippingAddress.coordinates?.lng || 0
-    );
-
-    // Calculate payment based on distance
-    const paymentCalculation = calculateDeliveryPayment(roundTripDistance);
-
-    const deliveryOrder = new DeliveryOrder({
-      orderId: order._id,
+    // Find the DeliveryOrder for this delivery partner
+    const deliveryOrder = await DeliveryOrder.findOne({
+      _id: req.params.orderId,
       deliveryPartnerId: req.deliveryPartner._id,
-      storeId: order.storeId,
-      customerDetails: {
-        name: order.customerName,
-        contactNumber: order.contactNumber,
-        address: order.shippingAddress.address,
-        coordinates: order.shippingAddress.coordinates
-      },
-      pickupDetails: {
-        address: order.storeAddress,
-        coordinates: order.storeCoordinates,
-        contactNumber: order.storeContact,
-        pickupOTP: Math.random().toString(36).substring(2, 8).toUpperCase()
-      },
-      deliveryDetails: {
-        deliveryOTP: Math.random().toString(36).substring(2, 8).toUpperCase(),
-        estimatedDistance: roundTripDistance,
-        estimatedDuration: order.delivery.estimatedTime
-      },
-      payment: {
-        deliveryFee: paymentCalculation.baseFee,
-        distanceFee: paymentCalculation.distanceFee,
-        bonus: paymentCalculation.bonus,
-        totalEarning: paymentCalculation.totalEarning
-      },
-      timeline: [{
-        status: 'assigned',
-        timestamp: new Date(),
-        notes: 'Order assigned to delivery partner'
-      }]
+      status: 'assigned'
     });
 
+    if (!deliveryOrder) {
+      return res.status(404).json({ success: false, message: 'Order not found or not assigned to you' });
+    }
+
+    // Update status to accepted
+    deliveryOrder.status = 'accepted';
+    deliveryOrder.timeline.push({
+      status: 'accepted',
+      timestamp: new Date(),
+      notes: 'Order accepted by delivery partner'
+    });
     await deliveryOrder.save();
 
-    // Update order
-    order.delivery.assigned = true;
-    order.delivery.partnerId = req.deliveryPartner._id;
-    order.status = 'processing';
-    await order.save();
-
-    res.json({ success: true, message: 'Order accepted', data: deliveryOrder });
+    res.json({ success: true, message: 'Order accepted successfully' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -428,9 +385,95 @@ router.get('/active-orders', deliveryAuth, checkRenewalStatus, async (req, res) 
       status: { $in: ['assigned', 'accepted', 'reached_store', 'picked_up', 'in_transit'] }
     }).populate('orderId');
 
+    const Address = (await import('../models/Address.js')).default;
+
+    // Update DeliveryOrder records with correct customer details if they have placeholder data
+    for (const deliveryOrder of activeOrders) {
+      const order = deliveryOrder.orderId;
+      
+      // Check if customer details are placeholders
+      if (deliveryOrder.customerDetails?.name === 'Customer' || 
+          deliveryOrder.customerDetails?.contactNumber === 'N/A') {
+        
+        // Get address details from Order
+        if (order && order.address_snapshot instanceof Map) {
+          const addressId = order.address_snapshot.get('address_id');
+          if (addressId) {
+            const address = await Address.findById(addressId);
+            if (address) {
+              deliveryOrder.customerDetails.name = address.full_name;
+              deliveryOrder.customerDetails.contactNumber = address.phone;
+              deliveryOrder.customerDetails.address = `${address.address_line}, ${address.city}, ${address.state} - ${address.pincode}`;
+              await deliveryOrder.save();
+            }
+          } else {
+            // Try to get from existing snapshot
+            const name = order.address_snapshot.get('full_name');
+            const phone = order.address_snapshot.get('phone');
+            const addressLine = order.address_snapshot.get('address_line');
+            const city = order.address_snapshot.get('city');
+            const state = order.address_snapshot.get('state');
+            const pincode = order.address_snapshot.get('pincode');
+            
+            if (name) deliveryOrder.customerDetails.name = name;
+            if (phone) deliveryOrder.customerDetails.contactNumber = phone;
+            if (addressLine || city || state || pincode) {
+              deliveryOrder.customerDetails.address = [addressLine, city, state, pincode].filter(Boolean).join(', ') || 'N/A';
+            }
+            await deliveryOrder.save();
+          }
+        }
+      }
+    }
+
     // Transform DeliveryOrder to match frontend expectations
     const orders = activeOrders.map(deliveryOrder => {
       const order = deliveryOrder.orderId;
+      
+      // Get customer address from order's address_snapshot first (most accurate)
+      let customerAddress = 'N/A';
+      let customerPhone = 'N/A';
+      let customerMapsLink = '';
+      let customerCoords = null;
+      
+      if (order?.address_snapshot) {
+        if (order.address_snapshot instanceof Map) {
+          const addressLine = order.address_snapshot.get('address_line') || '';
+          const city = order.address_snapshot.get('city') || '';
+          const state = order.address_snapshot.get('state') || '';
+          const pincode = order.address_snapshot.get('pincode') || '';
+          customerAddress = [addressLine, city, state, pincode].filter(Boolean).join(', ') || 'N/A';
+          customerPhone = order.address_snapshot.get('phone') || 'N/A';
+          customerMapsLink = order.address_snapshot.get('google_maps_link') || '';
+          const lat = order.address_snapshot.get('latitude');
+          const lng = order.address_snapshot.get('longitude');
+          if (lat && lng) {
+            customerCoords = { latitude: lat, longitude: lng };
+          }
+        } else {
+          const addressLine = order.address_snapshot.address_line || '';
+          const city = order.address_snapshot.city || '';
+          const state = order.address_snapshot.state || '';
+          const pincode = order.address_snapshot.pincode || '';
+          customerAddress = [addressLine, city, state, pincode].filter(Boolean).join(', ') || 'N/A';
+          customerPhone = order.address_snapshot.phone || 'N/A';
+          customerMapsLink = order.address_snapshot.google_maps_link || '';
+          const lat = order.address_snapshot.latitude;
+          const lng = order.address_snapshot.longitude;
+          if (lat && lng) {
+            customerCoords = { latitude: lat, longitude: lng };
+          }
+        }
+      }
+      
+      // Fallback to DeliveryOrder customerDetails if order address_snapshot is empty
+      if (customerAddress === 'N/A' && deliveryOrder.customerDetails) {
+        customerAddress = deliveryOrder.customerDetails.address || 'N/A';
+        customerPhone = deliveryOrder.customerDetails.contactNumber || 'N/A';
+        customerMapsLink = deliveryOrder.customerDetails.googleMapsLink || '';
+        customerCoords = deliveryOrder.customerDetails.coordinates || null;
+      }
+      
       return {
         _id: deliveryOrder._id,
         order_number: order?.order_number || 'N/A',
@@ -438,8 +481,10 @@ router.get('/active-orders', deliveryAuth, checkRenewalStatus, async (req, res) 
         total: order?.total || 0,
         items: order?.items || [],
         shippingAddress: {
-          address: deliveryOrder.customerDetails?.address || 'N/A',
-          phone: deliveryOrder.customerDetails?.contactNumber || 'N/A'
+          address: customerAddress,
+          phone: customerPhone,
+          googleMapsLink: customerMapsLink,
+          coordinates: customerCoords
         },
         payment: deliveryOrder.payment,
         deliveryDetails: deliveryOrder.deliveryDetails,
@@ -450,7 +495,6 @@ router.get('/active-orders', deliveryAuth, checkRenewalStatus, async (req, res) 
     // Fallback: Check for orders assigned in Order model but not in DeliveryOrder
     // (for orders assigned before the fix)
     const Order = (await import('../models/Order.js')).default;
-    const Address = (await import('../models/Address.js')).default;
     const assignedOrders = await Order.find({
       'delivery.assigned': true,
       'delivery.partnerId': req.deliveryPartner._id,
@@ -459,6 +503,7 @@ router.get('/active-orders', deliveryAuth, checkRenewalStatus, async (req, res) 
 
     // Create DeliveryOrder records for legacy assigned orders
     const Store = (await import('../models/Store.js')).default;
+    const AddressModel = (await import('../models/Address.js')).default;
     const store = await Store.findOne({ is_active: true });
     
     for (const order of assignedOrders) {
@@ -469,21 +514,34 @@ router.get('/active-orders', deliveryAuth, checkRenewalStatus, async (req, res) 
         let customerName = 'Customer';
         let customerPhone = 'N/A';
         let customerAddress = 'N/A';
+        let customerLat = 27.8974;
+        let customerLng = 78.0880;
+        let customerMapsLink = '';
         
         if (order.address_snapshot instanceof Map) {
           const addressId = order.address_snapshot.get('address_id');
           if (addressId) {
-            const address = await Address.findById(addressId);
+            const address = await AddressModel.findById(addressId);
             if (address) {
               customerName = address.full_name;
               customerPhone = address.phone;
               customerAddress = `${address.address_line}, ${address.city}, ${address.state} - ${address.pincode}`;
+              customerLat = address.latitude || 27.8974;
+              customerLng = address.longitude || 78.0880;
+              customerMapsLink = address.google_maps_link || '';
             }
           } else {
             // Try to get from existing snapshot
             customerName = order.address_snapshot.get('full_name') || 'Customer';
             customerPhone = order.address_snapshot.get('phone') || 'N/A';
-            customerAddress = order.address_snapshot.get('address_line') || 'N/A';
+            const addressLine = order.address_snapshot.get('address_line') || '';
+            const city = order.address_snapshot.get('city') || '';
+            const state = order.address_snapshot.get('state') || '';
+            const pincode = order.address_snapshot.get('pincode') || '';
+            customerAddress = [addressLine, city, state, pincode].filter(Boolean).join(', ') || 'N/A';
+            customerLat = order.address_snapshot.get('latitude') || 27.8974;
+            customerLng = order.address_snapshot.get('longitude') || 78.0880;
+            customerMapsLink = order.address_snapshot.get('google_maps_link') || '';
           }
         }
         
@@ -498,7 +556,8 @@ router.get('/active-orders', deliveryAuth, checkRenewalStatus, async (req, res) 
             name: customerName,
             contactNumber: customerPhone,
             address: customerAddress,
-            coordinates: { latitude: 27.8974, longitude: 78.0880 }
+            coordinates: { latitude: customerLat, longitude: customerLng },
+            googleMapsLink: customerMapsLink
           },
           pickupDetails: {
             address: store.fullAddress || 'N/A',
@@ -532,7 +591,9 @@ router.get('/active-orders', deliveryAuth, checkRenewalStatus, async (req, res) 
           items: order.items || [],
           shippingAddress: {
             address: customerAddress,
-            phone: customerPhone
+            phone: customerPhone,
+            googleMapsLink: customerMapsLink,
+            coordinates: { latitude: customerLat, longitude: customerLng }
           },
           payment: paymentCalculation,
           deliveryDetails: {

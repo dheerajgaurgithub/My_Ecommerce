@@ -108,6 +108,13 @@ router.get('/nearest', async (req, res) => {
     // Calculate distance using Haversine formula
     const stores = await Store.find({ is_active: true });
     
+    if (stores.length === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'No active stores found'
+      });
+    }
+    
     let nearestStore = null;
     let minDistance = Infinity;
     const availableStores = [];
@@ -141,16 +148,25 @@ router.get('/nearest', async (req, res) => {
       }
     });
 
+    // If no store within service radius, return the nearest one anyway
     if (!nearestStore) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Service not available in your area',
-        availableServiceAreas: stores.map(s => ({
-          city: s.address.city,
-          state: s.address.state,
-          district: s.address.district,
-          serviceRadius: s.serviceRadius || 50
-        }))
+      stores.forEach(store => {
+        const distance = calculateDistance(
+          latitude,
+          longitude,
+          store.coordinates.lat,
+          store.coordinates.lng
+        );
+
+        if (distance < minDistance) {
+          minDistance = distance;
+          nearestStore = {
+            ...store.toObject(),
+            distance,
+            serviceRadius: store.serviceRadius || 50,
+            withinServiceArea: false
+          };
+        }
       });
     }
 
@@ -160,6 +176,7 @@ router.get('/nearest', async (req, res) => {
       distance: minDistance,
       distanceUnit: 'km',
       serviceRadius: nearestStore.serviceRadius,
+      withinServiceArea: nearestStore.withinServiceArea !== false,
       availableStores: availableStores.sort((a, b) => a.distance - b.distance)
     });
   } catch (error) {

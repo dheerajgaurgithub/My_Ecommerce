@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../lib/auth';
 import { useToast } from '../lib/toast';
@@ -17,6 +17,36 @@ export function GoogleCallbackPage() {
   const [searchParams] = useSearchParams();
   const { setUser } = useAuth();
   const { showToast } = useToast();
+  const [locationData, setLocationData] = useState<{ latitude: number; longitude: number; google_maps_link: string } | null>(null);
+  const [locationLoading, setLocationLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchLocation = () => {
+      setLocationLoading(true);
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const { latitude, longitude } = position.coords;
+            setLocationData({
+              latitude,
+              longitude,
+              google_maps_link: `https://www.google.com/maps?q=${latitude},${longitude}`
+            });
+            setLocationLoading(false);
+          },
+          (error) => {
+            console.error('Geolocation error:', error);
+            setLocationLoading(false);
+            // Continue without location if denied
+          }
+        );
+      } else {
+        setLocationLoading(false);
+      }
+    };
+
+    fetchLocation();
+  }, []);
 
   useEffect(() => {
     const handleGoogleCallback = async () => {
@@ -29,8 +59,13 @@ export function GoogleCallbackPage() {
         return;
       }
 
+      // Wait for location if it's being fetched
+      if (locationLoading) {
+        return;
+      }
+
       try {
-        const response: GoogleCallbackResponse = await api.post<GoogleCallbackResponse>('/google/callback', { code });
+        const response: GoogleCallbackResponse = await api.post<GoogleCallbackResponse>('/google/callback', { code, locationData });
 
         if (response.success) {
           if (response.token) {
@@ -38,7 +73,13 @@ export function GoogleCallbackPage() {
           }
           setUser(response.user);
           showToast(response.isNewUser ? 'Account created successfully!' : 'Welcome back!', 'success');
-          navigate(redirect);
+          
+          // Redirect to onboarding if user doesn't have phone or location
+          if (!response.user.phone || !response.user.location) {
+            navigate('/onboarding');
+          } else {
+            navigate(redirect);
+          }
         } else {
           showToast(response.message || 'Google authentication failed', 'error');
           navigate('/login');
@@ -52,13 +93,15 @@ export function GoogleCallbackPage() {
     };
 
     handleGoogleCallback();
-  }, [searchParams, navigate, setUser, showToast]);
+  }, [searchParams, navigate, setUser, showToast, locationData, locationLoading]);
 
   return (
     <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 bg-neutral-50 dark:bg-neutral-900">
       <div className="text-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-600 mx-auto mb-4"></div>
-        <p className="text-neutral-600 dark:text-neutral-400">Authenticating with Google...</p>
+        <p className="text-neutral-600 dark:text-neutral-400">
+          {locationLoading ? 'Fetching your location...' : 'Authenticating with Google...'}
+        </p>
       </div>
     </div>
   );

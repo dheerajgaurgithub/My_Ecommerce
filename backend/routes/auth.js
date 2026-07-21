@@ -10,10 +10,18 @@ const router = express.Router();
 // Register with OTP verification (OTP is required)
 router.post('/register', async (req, res) => {
   try {
-    const { email, password, name, otp } = req.body;
+    const { email, password, name, otp, phone, locationData } = req.body;
 
     if (!email || !password || !name || !otp) {
       return res.status(400).json({ success: false, message: 'All fields including OTP are required' });
+    }
+
+    if (!phone || phone.trim().length < 10) {
+      return res.status(400).json({ success: false, message: 'A valid mobile number (at least 10 digits) is required' });
+    }
+
+    if (!locationData || !locationData.latitude || !locationData.longitude || !locationData.google_maps_link) {
+      return res.status(400).json({ success: false, message: 'Location data is required for registration' });
     }
 
     const existingUser = await User.findOne({ email });
@@ -22,7 +30,17 @@ router.post('/register', async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = new User({ email, password: hashedPassword, name, role: 'customer', emailVerified: true });
+    const user = new User({ 
+      email, 
+      password: hashedPassword, 
+      name, 
+      phone,
+      role: 'customer', 
+      emailVerified: true,
+      location: locationData.google_maps_link,
+      latitude: locationData.latitude,
+      longitude: locationData.longitude
+    });
     await user.save();
 
     // Create welcome notification
@@ -40,7 +58,7 @@ router.post('/register', async (req, res) => {
     res.status(201).json({ 
       success: true, 
       token, 
-      user: { id: user._id, email: user.email, name: user.name, role: user.role, emailVerified: user.emailVerified } 
+      user: { id: user._id, email: user.email, name: user.name, phone: user.phone, role: user.role, emailVerified: user.emailVerified, location: locationData.google_maps_link } 
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

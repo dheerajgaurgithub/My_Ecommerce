@@ -168,7 +168,7 @@ export function DashboardPage() {
 
   const acceptOrder = async (orderId: string) => {
     try {
-      await api.patch(`/orders/${orderId}/accept`, {});
+      await api.post(`/delivery-partners/accept-order/${orderId}`, {});
       showToast('Order accepted successfully', 'success');
       fetchOrders();
     } catch (error) {
@@ -734,6 +734,16 @@ export function DashboardPage() {
                         <MapPin className="w-4 h-4" />
                         <span>{order.shippingAddress?.address || 'Address not available'}</span>
                       </div>
+                      {order.shippingAddress?.googleMapsLink && (
+                        <a 
+                          href={order.shippingAddress.googleMapsLink} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-sm text-brand-600 hover:text-brand-700 hover:underline flex items-center gap-1"
+                        >
+                          📍 Open in Google Maps
+                        </a>
+                      )}
                       <div className="flex items-center gap-2 text-neutral-600 dark:text-neutral-400">
                         <Phone className="w-4 h-4" />
                         <span>{order.shippingAddress?.phone || 'Phone not available'}</span>

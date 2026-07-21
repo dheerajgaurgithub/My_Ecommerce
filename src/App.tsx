@@ -25,6 +25,7 @@ const SizeGuidePage = lazy(() => import('./pages/SizeGuidePage').then(m => ({ de
 const FAQPage = lazy(() => import('./pages/FAQPage').then(m => ({ default: m.FAQPage })));
 const FounderPage = lazy(() => import('./pages/FounderPage'));
 const GoogleCallbackPage = lazy(() => import('./pages/GoogleCallbackPage').then(m => ({ default: m.GoogleCallbackPage })));
+const OnboardingPage = lazy(() => import('./pages/OnboardingPage').then(m => ({ default: m.OnboardingPage })));
 const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage').then(m => ({ default: m.ForgotPasswordPage })));
 const FeedbackPage = lazy(() => import('./pages/FeedbackPage').then(m => ({ default: m.FeedbackPage })));
 const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage').then(m => ({ default: m.PrivacyPolicyPage })));
@@ -71,6 +72,7 @@ export default function App() {
                           <Route path="/signup" element={<AuthPage mode="signup" />} />
                           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                           <Route path="/auth/google/callback" element={<GoogleCallbackPage />} />
+                          <Route path="/onboarding" element={<OnboardingPage />} />
                           <Route path="/account" element={<AccountPage />} />
                           <Route path="/account/orders" element={<AccountPage />} />
                           <Route path="/account/addresses" element={<AccountPage />} />

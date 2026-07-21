@@ -17,7 +17,7 @@ router.get('/', auth, async (req, res) => {
 // Create address
 router.post('/', auth, async (req, res) => {
   try {
-    const { full_name, phone, pincode, address_line, city, state, is_default = false } = req.body;
+    const { full_name, phone, pincode, address_line, city, state, is_default = false, latitude, longitude, google_maps_link } = req.body;
 
     // If setting as default, unset other defaults
     if (is_default) {
@@ -33,7 +33,10 @@ router.post('/', auth, async (req, res) => {
       city,
       state,
       country: 'India',
-      is_default
+      is_default,
+      latitude: latitude || 0,
+      longitude: longitude || 0,
+      google_maps_link: google_maps_link || ''
     });
 
     await address.save();
@@ -51,6 +54,11 @@ router.put('/:id', auth, async (req, res) => {
       req.body,
       { new: true }
     );
+    
+    if (!address) {
+      return res.status(404).json({ success: false, message: 'Address not found' });
+    }
+    
     res.json({ success: true, address });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
