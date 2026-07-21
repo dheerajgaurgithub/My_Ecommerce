@@ -15,7 +15,7 @@ type Tab = 'overview' | 'orders' | 'wishlist' | 'addresses' | 'profile';
 
 export function AccountPage() {
   const navigate = useNavigate();
-  const { user, signOut, setUser } = useAuth();
+  const { user, signOut, setUser, loading } = useAuth();
   const { showToast } = useToast();
   const [tab, setTab] = useState<Tab>('overview');
   const [orders, setOrders] = useState<Order[]>([]);
@@ -31,6 +31,7 @@ export function AccountPage() {
   const [reviewForm, setReviewForm] = useState({ rating: 5, title: '', body: '' });
 
   useEffect(() => {
+    if (loading) return; // Wait for auth to load
     if (!user) {
       navigate('/login?redirect=/account');
       return;
@@ -57,7 +58,7 @@ export function AccountPage() {
       phone: user.phone || '',
       location: user.location || ''
     });
-  }, [user, navigate]);
+  }, [user, navigate, loading]);
 
   const getCurrentLocation = () => {
     setLocationLoading(true);
@@ -216,9 +217,17 @@ export function AccountPage() {
         <aside className="lg:col-span-1 order-2 lg:order-1">
           <div className="card p-3 sm:p-4 sticky top-16 sm:top-20 lg:top-24">
             <div className="flex items-center gap-3 mb-4 pb-4 border-b border-neutral-100 dark:border-neutral-700">
-              <div className="w-10 h-10 rounded-full bg-brand-100 dark:bg-brand-900 flex items-center justify-center font-medium text-brand-700 dark:text-brand-300">
-                {user?.email?.[0]?.toUpperCase()}
-              </div>
+              {user?.profilePicture ? (
+                <img
+                  src={user.profilePicture}
+                  alt="Profile"
+                  className="w-10 h-10 rounded-full object-cover aspect-square"
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-brand-100 dark:bg-brand-900 flex items-center justify-center aspect-square">
+                  <User size={20} className="text-brand-600 dark:text-brand-300" />
+                </div>
+              )}
               <div className="min-w-0">
                 <p className="text-sm font-medium text-neutral-900 dark:text-white truncate">{user?.email}</p>
                 <p className="text-xs text-neutral-500">Customer</p>
