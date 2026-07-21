@@ -736,10 +736,23 @@ router.put('/order-status/:orderId', deliveryAuth, checkRenewalStatus, async (re
   try {
     const { status, latitude, longitude, notes, otp, otpType } = req.body;
 
-    const order = await Order.findOne({
+    // First try to find as DeliveryOrder (frontend sends DeliveryOrder ID)
+    let deliveryOrder = await DeliveryOrder.findOne({
       _id: req.params.orderId,
-      'delivery.partnerId': req.deliveryPartner._id
+      deliveryPartnerId: req.deliveryPartner._id
     });
+
+    let order;
+    if (deliveryOrder) {
+      // Found DeliveryOrder, get the actual Order
+      order = await Order.findById(deliveryOrder.orderId);
+    } else {
+      // Try to find as Order directly
+      order = await Order.findOne({
+        _id: req.params.orderId,
+        'delivery.partnerId': req.deliveryPartner._id
+      });
+    }
 
     if (!order) {
       return res.status(404).json({ success: false, message: 'Order not found or not assigned to you' });
@@ -773,6 +786,17 @@ router.put('/order-status/:orderId', deliveryAuth, checkRenewalStatus, async (re
         timestamp: new Date()
       });
 
+      // Update DeliveryOrder status as well
+      if (deliveryOrder) {
+        deliveryOrder.status = 'picked_up';
+        deliveryOrder.timeline.push({
+          status: 'picked_up',
+          timestamp: new Date(),
+          notes: 'Order picked up by delivery partner'
+        });
+        await deliveryOrder.save();
+      }
+
       await order.save();
 
       // Send OTP email to customer
@@ -786,10 +810,10 @@ router.put('/order-status/:orderId', deliveryAuth, checkRenewalStatus, async (re
         // Don't fail the order update if email fails
       }
 
-      return res.json({ 
-        success: true, 
-        message: 'Order picked up. OTP sent to customer.', 
-        data: order 
+      return res.json({
+        success: true,
+        message: 'Order picked up. OTP sent to customer.',
+        data: order
       });
     }
 
@@ -817,6 +841,17 @@ router.put('/order-status/:orderId', deliveryAuth, checkRenewalStatus, async (re
       status: status.charAt(0).toUpperCase() + status.slice(1),
       timestamp: new Date()
     });
+
+    // Update DeliveryOrder status as well
+    if (deliveryOrder) {
+      deliveryOrder.status = status === 'delivered' ? 'delivered' : status;
+      deliveryOrder.timeline.push({
+        status: status,
+        timestamp: new Date(),
+        notes: `Order status updated to ${status}`
+      });
+      await deliveryOrder.save();
+    }
 
     await order.save();
 
