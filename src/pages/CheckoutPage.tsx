@@ -272,10 +272,10 @@ export function CheckoutPage() {
         </div>
         <h1 className="font-serif text-3xl font-bold text-neutral-900 dark:text-white mb-2">Order Confirmed!</h1>
         <p className="text-neutral-500 dark:text-neutral-400 mb-6">Thank you for your purchase. Your order is being processed.</p>
-        {orderPlaced.firstOrderDiscount && orderPlaced.firstOrderDiscount > 0 && (
+        {(orderPlaced.firstOrderDiscount ?? 0) > 0 && (
           <div className="bg-green-50 dark:bg-green-900 border border-green-200 dark:border-green-700 rounded-lg p-4 mb-6">
             <p className="text-green-700 dark:text-green-300 font-medium">🎉 First Order Discount Applied!</p>
-            <p className="text-green-600 dark:text-green-400 text-sm">You saved {formatPrice(orderPlaced.firstOrderDiscount)} on your first order.</p>
+            <p className="text-green-600 dark:text-green-400 text-sm">You saved {formatPrice(orderPlaced.firstOrderDiscount ?? 0)} on your first order.</p>
           </div>
         )}
         <div className="card p-6 mb-6 text-left">
