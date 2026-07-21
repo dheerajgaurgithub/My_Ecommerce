@@ -28,23 +28,6 @@ interface RazorpayOptions {
     emi?: boolean;
     paylater?: boolean;
   };
-  config?: {
-    display: {
-      blocks: {
-        [key: string]: {
-          name: string;
-          instruments: Array<{
-            method: string;
-            flows?: string[];
-          }>;
-        };
-      };
-      sequence: string[];
-      preferences: {
-        show_default_blocks: boolean;
-      };
-    };
-  };
 }
 
 interface PaymentProps {
@@ -134,7 +117,7 @@ export function RazorpayPayment({
         theme: {
           color: '#4F46E5',
         },
-        // Enable all payment methods
+        // Enable all payment methods - Razorpay will automatically show UPI apps on mobile
         method: {
           upi: true,
           card: true,
@@ -142,37 +125,6 @@ export function RazorpayPayment({
           wallet: true,
           emi: true,
           paylater: true,
-        },
-        // Configure UPI
-        config: {
-          display: {
-            blocks: {
-              utib: {
-                name: 'Pay via UPI',
-                instruments: [
-                  {
-                    method: 'upi',
-                    flows: ['qr', 'collect'],
-                  },
-                ],
-              },
-              other: {
-                name: 'Other Payment Methods',
-                instruments: [
-                  {
-                    method: 'card',
-                  },
-                  {
-                    method: 'netbanking',
-                  },
-                ],
-              },
-            },
-            sequence: ['block.utib', 'block.other'],
-            preferences: {
-              show_default_blocks: false,
-            },
-          },
         },
         modal: {
           ondismiss: () => {

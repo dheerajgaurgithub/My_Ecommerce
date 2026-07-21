@@ -219,7 +219,7 @@ export function CheckoutPage() {
     setShowRazorpay(false);
 
     try {
-      const response = await api.post<{ success: boolean; order: any; firstOrderDiscount?: number }>('/orders', {
+      const response = await api.post<{ success: boolean; order: any; firstOrderDiscount?: number; message?: string }>('/orders', {
         address_id: selectedAddressId,
         payment_method: 'razorpay',
         delivery_type: deliveryAvailable ? 'express' : 'standard',
