@@ -777,6 +777,13 @@ router.put('/order-status/:orderId', deliveryAuth, checkRenewalStatus, async (re
       const deliveryOTP = generateDeliveryOTP();
       const otpExpiresAt = calculateOTPExpiration();
 
+      console.log('========================================');
+      console.log('DELIVERY OTP GENERATED FOR TESTING:');
+      console.log('Order Number:', order.order_number);
+      console.log('OTP:', deliveryOTP);
+      console.log('Expires At:', otpExpiresAt);
+      console.log('========================================');
+
       order.delivery.deliveryOTP = deliveryOTP;
       order.delivery.deliveryOTPGeneratedAt = new Date();
       order.delivery.deliveryOTPExpiresAt = otpExpiresAt;
@@ -804,6 +811,7 @@ router.put('/order-status/:orderId', deliveryAuth, checkRenewalStatus, async (re
         const user = await User.findById(order.user_id);
         if (user) {
           await sendDeliveryOTPEmail(user.email, user.name, order.order_number, deliveryOTP);
+          console.log('Delivery OTP email sent to:', user.email);
         }
       } catch (emailError) {
         console.error('Error sending delivery OTP email:', emailError);
@@ -819,6 +827,13 @@ router.put('/order-status/:orderId', deliveryAuth, checkRenewalStatus, async (re
 
     // Verify delivery OTP before marking as delivered
     if (status === 'delivered') {
+      console.log('========================================');
+      console.log('DELIVERY OTP VERIFICATION:');
+      console.log('Provided OTP:', otp);
+      console.log('Stored OTP:', order.delivery.deliveryOTP);
+      console.log('Expires At:', order.delivery.deliveryOTPExpiresAt);
+      console.log('========================================');
+
       const { verifyDeliveryOTP } = await import('../utils/deliveryOTP.js');
       const verification = verifyDeliveryOTP(
         otp,
@@ -827,8 +842,11 @@ router.put('/order-status/:orderId', deliveryAuth, checkRenewalStatus, async (re
       );
 
       if (!verification.valid) {
+        console.log('OTP Verification Failed:', verification.message);
         return res.status(400).json({ success: false, message: verification.message });
       }
+
+      console.log('OTP Verification Successful');
 
       // Clear OTP after successful delivery
       order.delivery.deliveryOTP = null;
