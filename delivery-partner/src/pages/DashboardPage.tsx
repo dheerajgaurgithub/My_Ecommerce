@@ -868,7 +868,7 @@ export function DashboardPage() {
 
                     {ordersSubTab === 'in_progress' && (
                       <div className="space-y-3">
-                        {order.status === 'out_for_delivery' ? (
+                        {order.status === 'picked_up' ? (
                           <div>
                             <button
                               onClick={() => setShowOtpInput(prev => ({ ...prev, [order._id]: !prev[order._id] }))}
