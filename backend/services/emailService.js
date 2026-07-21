@@ -85,6 +85,7 @@ const createTransporter = () => {
           clientSecret: EMAIL_CONFIG.gmailOAuth.clientSecret,
           refreshToken: EMAIL_CONFIG.gmailOAuth.refreshToken,
         },
+        encoding: 'utf-8',
       });
     }
 
@@ -106,7 +107,8 @@ const createTransporter = () => {
         lookup: ipv4Lookup,
         tls: {
           rejectUnauthorized: false
-        }
+        },
+        encoding: 'utf-8',
       });
     }
 
@@ -127,7 +129,8 @@ const createTransporter = () => {
         socketTimeout: 20000,
         tls: {
           rejectUnauthorized: false
-        }
+        },
+        encoding: 'utf-8',
       });
     }
 
@@ -160,14 +163,26 @@ const verifyTransporter = async () => {
   }
 };
 
+const encodeHeader = (value) => {
+  // Check if the value contains non-ASCII characters
+  if (/^[\x00-\x7F]*$/.test(value)) {
+    return value;
+  }
+  // Encode using RFC 2047 for UTF-8
+  const encoded = Buffer.from(value, 'utf-8').toString('base64');
+  return `=?UTF-8?B?${encoded}?=`;
+};
+
 const buildGmailMime = ({ from, to, subject, text, html }) => {
   const boundary = 'mixed_' + Math.random().toString(16).slice(2);
+  const encodedSubject = encodeHeader(subject);
+  const encodedFrom = encodeHeader(from);
   if (html && text) {
     return [
       `Content-Type: multipart/alternative; boundary="${boundary}"`,
-      `From: ${from}`,
+      `From: ${encodedFrom}`,
       `To: ${to}`,
-      `Subject: ${subject}`,
+      `Subject: ${encodedSubject}`,
       '',
       `--${boundary}`,
       'Content-Type: text/plain; charset=UTF-8',
@@ -185,9 +200,9 @@ const buildGmailMime = ({ from, to, subject, text, html }) => {
   const contentType = isHtml ? 'text/html; charset=UTF-8' : 'text/plain; charset=UTF-8';
   return [
     `Content-Type: ${contentType}`,
-    `From: ${from}`,
+    `From: ${encodedFrom}`,
     `To: ${to}`,
-    `Subject: ${subject}`,
+    `Subject: ${encodedSubject}`,
     '',
     body
   ].join('\r\n');
@@ -773,7 +788,7 @@ export const sendEmail = async ({ to, subject, text, html, attachments = [], typ
         const gmail = google.gmail({ version: 'v1', auth: oAuth2Client });
 
         const rawMime = buildGmailMime({
-          from: sender,
+          from: `"Mahir & Friends" <${sender}>`,
           to,
           subject,
           text,
@@ -844,7 +859,8 @@ export const sendEmail = async ({ to, subject, text, html, attachments = [], typ
                 },
                 connectionTimeout: 20000,
                 greetingTimeout: 15000,
-                socketTimeout: 20000
+                socketTimeout: 20000,
+                encoding: 'utf-8',
               });
 
               const fallbackInfo = await fallbackTransporter.sendMail(mailOptions);
@@ -879,7 +895,8 @@ export const sendEmail = async ({ to, subject, text, html, attachments = [], typ
                 lookup: ipv4Lookup,
                 tls: {
                   rejectUnauthorized: false
-                }
+                },
+                encoding: 'utf-8',
               });
               const sgInfo = await sgTransport.sendMail(mailOptions);
               result = {
