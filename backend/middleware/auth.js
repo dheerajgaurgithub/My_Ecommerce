@@ -82,16 +82,12 @@ export const checkRenewalStatus = async (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const partner = await DeliveryPartner.findById(decoded.userId);
 
-    console.log('checkRenewalStatus - Partner found:', !!partner);
-    console.log('checkRenewalStatus - Partner status:', partner?.status);
-
     if (!partner) {
       return res.status(401).json({ success: false, message: 'Delivery partner not found' });
     }
 
     // Check if partner is suspended due to overdue renewal
     if (partner.status === 'suspended') {
-      console.log('checkRenewalStatus - Partner is suspended');
       return res.status(403).json({
         success: false,
         message: 'Your account is suspended due to overdue renewal fee. Please pay the renewal fee to continue.',
@@ -106,16 +102,11 @@ export const checkRenewalStatus = async (req, res, next) => {
       const paymentWindowEnd = new Date(nextDueDate);
       paymentWindowEnd.setHours(paymentWindowEnd.getHours() + 24);
 
-      console.log('checkRenewalStatus - Next due date:', nextDueDate);
-      console.log('checkRenewalStatus - Payment window end:', paymentWindowEnd);
-      console.log('checkRenewalStatus - Current time:', now);
-
       if (now > paymentWindowEnd) {
         // Auto-suspend partner if overdue
         partner.status = 'suspended';
         await partner.save();
 
-        console.log('checkRenewalStatus - Auto-suspending partner');
         return res.status(403).json({
           success: false,
           message: 'Your account is suspended due to overdue renewal fee. Please pay the renewal fee to continue.',
@@ -127,7 +118,6 @@ export const checkRenewalStatus = async (req, res, next) => {
     req.deliveryPartner = partner;
     next();
   } catch (error) {
-    console.error('checkRenewalStatus Error:', error);
     res.status(401).json({ success: false, message: 'Invalid token' });
   }
 };
