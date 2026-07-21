@@ -741,20 +741,25 @@ router.put('/order-status/:orderId', deliveryAuth, async (req, res) => {
     console.log('Order ID:', req.params.orderId);
     console.log('Partner ID:', req.deliveryPartner._id);
     console.log('Status:', status);
+    console.log('Status type:', typeof status);
     console.log('OTP:', otp);
     console.log('OTP Type:', otpType);
     console.log('========================================');
 
-    if (!status) {
-      console.log('Status is missing');
+    if (!status || status === '' || status === undefined || status === null) {
+      console.log('Status is invalid:', status);
       return res.status(400).json({ success: false, message: 'Status is required' });
     }
+
+    console.log('Starting order lookup...');
 
     // First try to find as DeliveryOrder (frontend sends DeliveryOrder ID)
     let deliveryOrder = await DeliveryOrder.findOne({
       _id: req.params.orderId,
       deliveryPartnerId: req.deliveryPartner._id
     });
+
+    console.log('DeliveryOrder lookup completed, found:', !!deliveryOrder);
 
     let order;
     if (deliveryOrder) {
@@ -930,6 +935,7 @@ router.put('/order-status/:orderId', deliveryAuth, async (req, res) => {
 
     res.json({ success: true, message: 'Order status updated', data: order });
   } catch (error) {
+    console.error('ORDER STATUS UPDATE ERROR:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 });
