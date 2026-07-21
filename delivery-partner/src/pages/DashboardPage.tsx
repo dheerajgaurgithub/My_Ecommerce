@@ -28,6 +28,8 @@ export function DashboardPage() {
   const [distanceToStore, setDistanceToStore] = useState<number | null>(null);
   const [isAccountSuspended, setIsAccountSuspended] = useState(false);
   const [routeDistances, setRouteDistances] = useState<Record<string, any>>({});
+  const [otpInputs, setOtpInputs] = useState<Record<string, string>>({});
+  const [showOtpInput, setShowOtpInput] = useState<Record<string, boolean>>({});
 
   // Calculate if renewal fee is due and within 24-hour payment window
   const isRenewalDue = () => {
@@ -209,13 +211,23 @@ export function DashboardPage() {
     }
   };
 
-  const updateOrderStatus = async (orderId: string, status: string) => {
+  const updateOrderStatus = async (orderId: string, status: string, otp?: string) => {
     try {
-      await api.patch(`/orders/${orderId}/status`, { status });
+      const payload: any = { status };
+      if (otp) {
+        payload.otp = otp;
+        payload.otpType = 'delivery';
+      }
+      await api.put(`/delivery-partners/order-status/${orderId}`, payload);
       showToast(`Order status updated to ${status}`, 'success');
       fetchOrders();
-    } catch (error) {
-      showToast('Error updating order status', 'error');
+      // Clear OTP input after successful update
+      if (otp) {
+        setOtpInputs(prev => ({ ...prev, [orderId]: '' }));
+        setShowOtpInput(prev => ({ ...prev, [orderId]: false }));
+      }
+    } catch (error: any) {
+      showToast(error?.response?.data?.message || 'Error updating order status', 'error');
     }
   };
 
@@ -855,19 +867,51 @@ export function DashboardPage() {
                     )}
 
                     {ordersSubTab === 'in_progress' && (
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => updateOrderStatus(order._id, 'picked_up')}
-                          className="btn-secondary"
-                        >
-                          Mark Picked Up
-                        </button>
-                        <button
-                          onClick={() => updateOrderStatus(order._id, 'delivered')}
-                          className="btn-primary"
-                        >
-                          Mark Delivered
-                        </button>
+                      <div className="space-y-3">
+                        {order.status === 'out_for_delivery' ? (
+                          <div>
+                            <button
+                              onClick={() => setShowOtpInput(prev => ({ ...prev, [order._id]: !prev[order._id] }))}
+                              className="w-full btn-primary"
+                            >
+                              Mark Delivered
+                            </button>
+                            {showOtpInput[order._id] && (
+                              <div className="mt-3 space-y-2">
+                                <input
+                                  type="text"
+                                  placeholder="Enter delivery OTP"
+                                  value={otpInputs[order._id] || ''}
+                                  onChange={(e) => setOtpInputs(prev => ({ ...prev, [order._id]: e.target.value }))}
+                                  className="input"
+                                  maxLength={6}
+                                />
+                                <button
+                                  onClick={() => updateOrderStatus(order._id, 'delivered', otpInputs[order._id])}
+                                  className="w-full btn-primary"
+                                  disabled={!otpInputs[order._id] || otpInputs[order._id].length !== 6}
+                                >
+                                  Verify OTP & Mark Delivered
+                                </button>
+                                <button
+                                  onClick={() => setShowOtpInput(prev => ({ ...prev, [order._id]: false }))}
+                                  className="w-full btn-secondary"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => updateOrderStatus(order._id, 'picked_up')}
+                              className="btn-secondary"
+                            >
+                              Mark Picked Up
+                            </button>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -875,7 +919,7 @@ export function DashboardPage() {
               
               {orders.filter(order => {
                 if (ordersSubTab === 'available') return order.status === 'assigned';
-                if (ordersSubTab === 'in_progress') return order.status === 'in_progress';
+                if (ordersSubTab === 'in_progress') return ['accepted', 'reached_store', 'picked_up', 'out_for_delivery', 'in_transit'].includes(order.status);
                 if (ordersSubTab === 'completed') return order.status === 'delivered';
                 return true;
               }).length === 0 && (

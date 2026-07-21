@@ -758,6 +758,60 @@ router.put('/order-status/:orderId', auth, isDeliveryPartner, checkRenewalStatus
       }
     }
 
+    // Generate OTP and send email when partner picks up order
+    if (status === 'picked_up') {
+      const { generateDeliveryOTP, calculateOTPExpiration } = await import('../utils/deliveryOTP.js');
+      const deliveryOTP = generateDeliveryOTP();
+      const otpExpiresAt = calculateOTPExpiration();
+
+      order.delivery.deliveryOTP = deliveryOTP;
+      order.delivery.deliveryOTPGeneratedAt = new Date();
+      order.delivery.deliveryOTPExpiresAt = otpExpiresAt;
+      order.status = 'out_for_delivery';
+      order.timeline.push({
+        status: 'Out for Delivery',
+        timestamp: new Date()
+      });
+
+      await order.save();
+
+      // Send OTP email to customer
+      try {
+        const user = await User.findById(order.user_id);
+        if (user) {
+          await emailService.sendDeliveryOTPEmail(user.email, user.name, order.order_number, deliveryOTP);
+        }
+      } catch (emailError) {
+        console.error('Error sending delivery OTP email:', emailError);
+        // Don't fail the order update if email fails
+      }
+
+      return res.json({ 
+        success: true, 
+        message: 'Order picked up. OTP sent to customer.', 
+        data: order 
+      });
+    }
+
+    // Verify delivery OTP before marking as delivered
+    if (status === 'delivered') {
+      const { verifyDeliveryOTP } = await import('../utils/deliveryOTP.js');
+      const verification = verifyDeliveryOTP(
+        otp,
+        order.delivery.deliveryOTP,
+        order.delivery.deliveryOTPExpiresAt
+      );
+
+      if (!verification.valid) {
+        return res.status(400).json({ success: false, message: verification.message });
+      }
+
+      // Clear OTP after successful delivery
+      order.delivery.deliveryOTP = null;
+      order.delivery.deliveryOTPGeneratedAt = null;
+      order.delivery.deliveryOTPExpiresAt = null;
+    }
+
     order.status = status;
     order.timeline.push({
       status: status.charAt(0).toUpperCase() + status.slice(1),

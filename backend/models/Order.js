@@ -146,6 +146,14 @@ const orderSchema = new mongoose.Schema({
       type: String,
       default: null
     },
+    deliveryOTPGeneratedAt: {
+      type: Date,
+      default: null
+    },
+    deliveryOTPExpiresAt: {
+      type: Date,
+      default: null
+    },
     storeAddress: {
       type: String,
       default: null

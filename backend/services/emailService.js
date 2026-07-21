@@ -1923,6 +1923,214 @@ This is an automated email. Please do not reply to this message.
   return await sendEmail({ to: email, subject, html });
 };
 
+export const sendDeliveryOTPEmail = async (email, name, orderNumber, otp) => {
+  const subject = `🚚 Delivery OTP for Order ${orderNumber}`;
+  const html = `
+    <!DOCTYPE html>
+<html lang="en">
+
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<title>Delivery OTP | Mahir & Friends</title>
+
+<style>
+
+body{
+    margin:0;
+    padding:0;
+    background:#f4f6f9;
+    font-family:Arial,Helvetica,sans-serif;
+}
+
+table{
+    border-spacing:0;
+}
+
+img{
+    display:block;
+    border:0;
+    max-width:100%;
+}
+
+.wrapper{
+    width:100%;
+    background:#f4f6f9;
+    padding:40px 0;
+}
+
+.main{
+    width:100%;
+    max-width:600px;
+    margin:0 auto;
+    background:#ffffff;
+    border-radius:12px;
+    overflow:hidden;
+    box-shadow:0 8px 30px rgba(0,0,0,.08);
+}
+
+.content{
+    padding:40px;
+}
+
+h1{
+    margin:0;
+    color:#111827;
+    font-size:28px;
+    font-weight:700;
+}
+
+.subtitle{
+    margin-top:8px;
+    color:#6b7280;
+    font-size:15px;
+}
+
+.otp-box{
+    margin:30px auto;
+    padding:22px;
+    background:#0F4C81;
+    color:#ffffff;
+    text-align:center;
+    font-size:38px;
+    font-family:Courier New, monospace;
+    font-weight:bold;
+    letter-spacing:10px;
+    border-radius:10px;
+}
+
+.notice{
+    background:#FEF3C7;
+    border:1px solid #FCD34D;
+    border-radius:8px;
+    padding:18px;
+    color:#92400E;
+    font-size:14px;
+    margin:25px 0;
+}
+
+.info-box{
+    margin-top:30px;
+    padding:18px;
+    background:#F8FAFC;
+    border-left:4px solid #0F4C81;
+}
+
+.footer{
+    border-top:1px solid #e5e7eb;
+    padding:25px 40px;
+    text-align:center;
+    color:#9ca3af;
+    font-size:13px;
+}
+
+@media only screen and (max-width:600px){
+
+.content{
+padding:25px !important;
+}
+
+.footer{
+padding:20px !important;
+}
+
+h1{
+font-size:24px !important;
+}
+
+.otp-box{
+font-size:30px !important;
+letter-spacing:6px !important;
+padding:18px !important;
+}
+
+}
+</style>
+
+</head>
+
+<body>
+
+<center class="wrapper">
+
+<table class="main" role="presentation" cellpadding="0" cellspacing="0">
+
+<tr>
+<td class="content">
+
+<h1 align="center">
+Delivery OTP
+</h1>
+
+<p class="subtitle" align="center">
+Order ${orderNumber}
+</p>
+
+<p>
+Hello ${name || 'Valued Customer'},
+</p>
+
+<p>
+Your order is out for delivery! Please share the following One-Time Password (OTP) with the delivery partner when they arrive to complete the delivery.
+</p>
+
+<div class="otp-box">
+${otp}
+</div>
+
+<div class="notice">
+<strong>Important Security Notice</strong><br><br>
+This OTP is valid for <strong>24 hours</strong> from the time of pickup. Never share this OTP with anyone except the delivery partner. Mahir & Friends will never ask for your OTP through phone calls, emails, or messages.
+</p>
+
+<div class="info-box">
+<strong>Delivery Instructions</strong>
+
+<p style="margin:10px 0 0;">
+1. Keep this OTP handy for when the delivery partner arrives<br>
+2. Verify the delivery partner's identity before sharing the OTP<br>
+3. The delivery partner will enter this OTP to confirm successful delivery<br>
+4. Your order will be marked as delivered only after OTP verification
+</p>
+</div>
+
+<p style="margin-top:35px;">
+Thank you for shopping with us.
+<br><br>
+<strong>Mahir & Friends</strong>
+<br>
+Premium Fashion Store
+</p>
+
+</td>
+</tr>
+
+<tr>
+<td class="footer">
+
+<p style="margin:0;">
+© ${new Date().getFullYear()} Mahir & Friends. All rights reserved.
+</p>
+
+<p style="margin-top:8px;">
+This is an automated email. Please do not reply to this message.
+</p>
+
+</td>
+</tr>
+
+</table>
+
+</center>
+
+</body>
+</html>
+  `;
+
+  return await sendEmail({ to: email, subject, html });
+};
+
 if (EMAIL_CONFIG.enableEmailSending) {
   console.log(`📧 Email system initialized:`);
   console.log(`   • Environment: ${isProd ? 'production' : 'development'}`);
@@ -1948,7 +2156,8 @@ const emailService = {
   sendWelcomeEmail,
   sendOrderConfirmationEmail,
   sendDeliveryUpdateEmail,
-  sendFeedbackRequestEmail
+  sendFeedbackRequestEmail,
+  sendDeliveryOTPEmail
 };
 
 export default emailService;
