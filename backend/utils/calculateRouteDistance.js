@@ -53,8 +53,9 @@ function calculateRouteDistance(partnerLocation, storeLocation, customerLocation
     storeLng
   );
 
-  // Total round trip distance
-  const totalDistance = distancePartnerToStore + distanceStoreToCustomer + distanceCustomerToStore;
+  // Total distance for payment (excluding partner to store)
+  // Only include Store -> Customer and Customer -> Store (Return)
+  const totalDistance = distanceStoreToCustomer + distanceCustomerToStore;
 
   // Calculate payment based on total distance
   const payment = calculateDeliveryPayment(totalDistance, options);
@@ -84,17 +85,20 @@ function calculateRouteDistance(partnerLocation, storeLocation, customerLocation
         {
           from: 'Partner Location',
           to: 'Store (Pickup)',
-          distance: Math.round(distancePartnerToStore * 100) / 100
+          distance: Math.round(distancePartnerToStore * 100) / 100,
+          includedInPayment: false
         },
         {
           from: 'Store (Pickup)',
           to: 'Customer (Delivery)',
-          distance: Math.round(distanceStoreToCustomer * 100) / 100
+          distance: Math.round(distanceStoreToCustomer * 100) / 100,
+          includedInPayment: true
         },
         {
           from: 'Customer (Delivery)',
           to: 'Store (Return)',
-          distance: Math.round(distanceCustomerToStore * 100) / 100
+          distance: Math.round(distanceCustomerToStore * 100) / 100,
+          includedInPayment: true
         }
       ]
     }

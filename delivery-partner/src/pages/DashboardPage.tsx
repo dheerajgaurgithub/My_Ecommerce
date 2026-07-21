@@ -799,7 +799,7 @@ export function DashboardPage() {
                           </button>
                         </div>
                         <div className="space-y-2 text-sm">
-                          <div className="flex justify-between">
+                          <div className="flex justify-between opacity-60">
                             <span className="text-neutral-600 dark:text-neutral-400">Partner → Store</span>
                             <span className="font-medium text-neutral-900 dark:text-white">
                               {routeDistances[order._id].distances.partnerToStore.toFixed(2)} km
@@ -822,6 +822,9 @@ export function DashboardPage() {
                             <span className="font-bold text-blue-600 dark:text-blue-400">
                               {routeDistances[order._id].distances.total.toFixed(2)} km
                             </span>
+                          </div>
+                          <div className="text-xs text-neutral-500 dark:text-neutral-500 mt-1">
+                            * Partner → Store distance not included in payment calculation
                           </div>
                         </div>
                         {routeDistances[order._id].payment && (
