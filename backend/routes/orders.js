@@ -110,8 +110,22 @@ router.post('/', auth, async (req, res) => {
       payment_details
     } = req.body;
 
+    // Validate required fields
+    if (!address_id) {
+      return res.status(400).json({ success: false, message: 'Address is required' });
+    }
+    if (!payment_method) {
+      return res.status(400).json({ success: false, message: 'Payment method is required' });
+    }
+    if (!delivery_type) {
+      return res.status(400).json({ success: false, message: 'Delivery type is required' });
+    }
+
     // Get user to check for first order discount
     const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
     let firstOrderDiscount = 0;
     let appliedFirstOrderDiscount = false;
 
@@ -123,6 +137,13 @@ router.post('/', auth, async (req, res) => {
 
     if (cartItems.length === 0) {
       return res.status(400).json({ success: false, message: 'Cart is empty' });
+    }
+
+    // Validate that all products exist and are available
+    for (const item of cartItems) {
+      if (!item.product_id) {
+        return res.status(400).json({ success: false, message: 'One or more products in cart are no longer available' });
+      }
     }
 
     // Calculate totals from cart items
@@ -269,10 +290,12 @@ router.post('/', auth, async (req, res) => {
     res.status(201).json({ 
       success: true, 
       order,
-      firstOrderDiscount: appliedFirstOrderDiscount ? firstOrderDiscount : 0
+      firstOrderDiscount: appliedFirstOrderDiscount ? firstOrderDiscount : 0,
+      message: 'Order placed successfully'
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error('Order creation error:', error);
+    res.status(500).json({ success: false, message: error.message || 'Failed to place order' });
   }
 });
 

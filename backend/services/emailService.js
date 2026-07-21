@@ -741,7 +741,7 @@ export const sendEmail = async ({ to, subject, text, html, attachments = [], typ
 
     const emailData = { to, subject, text, html, attachments };
     const mailOptions = {
-      from: `"${EMAIL_CONFIG.sendgrid.fromName}" <${EMAIL_CONFIG.from}>`,
+      from: `"Mahir & Friends" <${EMAIL_CONFIG.from}>`,
       to,
       subject,
       text,

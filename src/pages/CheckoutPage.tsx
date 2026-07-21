@@ -207,8 +207,9 @@ export function CheckoutPage() {
         paymentStatus: order.payment_status,
         firstOrderDiscount: response.firstOrderDiscount
       });
-    } catch (error) {
-      showToast('Failed to place order', 'error');
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to place order';
+      showToast(errorMessage, 'error');
       setPlacing(false);
     }
   };
@@ -231,7 +232,8 @@ export function CheckoutPage() {
       });
 
       if (!response.success) {
-        showToast('Failed to place order after payment', 'error');
+        const errorMessage = response.message || 'Failed to place order after payment';
+        showToast(errorMessage, 'error');
         setPlacing(false);
         return;
       }
