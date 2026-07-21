@@ -736,6 +736,15 @@ router.put('/order-status/:orderId', deliveryAuth, checkRenewalStatus, async (re
   try {
     const { status, latitude, longitude, notes, otp, otpType } = req.body;
 
+    console.log('========================================');
+    console.log('ORDER STATUS UPDATE REQUEST:');
+    console.log('Order ID:', req.params.orderId);
+    console.log('Partner ID:', req.deliveryPartner._id);
+    console.log('Status:', status);
+    console.log('OTP:', otp);
+    console.log('OTP Type:', otpType);
+    console.log('========================================');
+
     // First try to find as DeliveryOrder (frontend sends DeliveryOrder ID)
     let deliveryOrder = await DeliveryOrder.findOne({
       _id: req.params.orderId,
@@ -755,6 +764,7 @@ router.put('/order-status/:orderId', deliveryAuth, checkRenewalStatus, async (re
     }
 
     if (!order) {
+      console.log('Order not found');
       return res.status(404).json({ success: false, message: 'Order not found or not assigned to you' });
     }
 
