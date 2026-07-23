@@ -42,7 +42,7 @@ router.post('/login', async (req, res) => {
     }
 
     // Check if user is a delivery partner
-    if (user.role !== 'delivery_partner') {
+    if (!user.role.includes('delivery_partner')) {
       return res.status(401).json({ success: false, message: 'Not a delivery partner' });
     }
 
@@ -113,30 +113,35 @@ router.post('/register', [
     });
 
     if (existingPartner) {
-      return res.status(400).json({ success: false, message: 'Contact number or email already registered' });
+      return res.status(400).json({ success: false, message: 'Contact number or email already registered as a delivery partner' });
     }
 
     // Check if email already exists in users collection
-    const existingUser = await User.findOne({ email: partnerData.personalDetails.email });
+    let existingUser = await User.findOne({ email: partnerData.personalDetails.email });
+    let user;
+
     if (existingUser) {
-      return res.status(400).json({ success: false, message: 'Email already registered as a user' });
+      // User exists, add delivery_partner role to their existing roles
+      if (!existingUser.role.includes('delivery_partner')) {
+        existingUser.role.push('delivery_partner');
+        await existingUser.save();
+      }
+      user = existingUser;
+    } else {
+      // Create new user account for delivery partner
+      const hashedPassword = await bcrypt.hash(password, 10);
+      user = new User({
+        email: partnerData.personalDetails.email,
+        password: hashedPassword,
+        name: partnerData.personalDetails.fullName,
+        role: ['delivery_partner']
+      });
+      await user.save();
     }
-
-    // Create user account for delivery partner
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const newUser = new User({
-      email: partnerData.personalDetails.email,
-      password: hashedPassword,
-      name: partnerData.personalDetails.fullName,
-      role: 'delivery_partner'
-    });
-
-    await newUser.save();
 
     // Create delivery partner profile
     const deliveryPartner = new DeliveryPartner({
-      userId: newUser._id,
+      userId: user._id,
       ...partnerData
     });
 

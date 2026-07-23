@@ -57,7 +57,7 @@ router.post('/callback', async (req, res) => {
         name: data.name,
         googleId: data.id,
         picture: data.picture,
-        role: 'customer',
+        role: ['customer'],
         emailVerified: true
       });
       await user.save();

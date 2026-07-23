@@ -59,10 +59,10 @@ class WebSocketServer {
       ws.userId = decoded._id || userId;
       ws.role = role;
 
-      if (role === 'admin') {
+      if (role.includes('admin')) {
         this.adminClients.add(ws);
         console.log('Admin connected to WebSocket');
-      } else if (role === 'delivery_partner') {
+      } else if (role.includes('delivery_partner')) {
         this.deliveryPartnerClients.set(userId, ws);
         console.log('Delivery partner connected to WebSocket');
       } else {
@@ -79,9 +79,9 @@ class WebSocketServer {
   }
 
   handleDisconnect(ws) {
-    if (ws.role === 'admin') {
+    if (ws.role.includes('admin')) {
       this.adminClients.delete(ws);
-    } else if (ws.role === 'delivery_partner') {
+    } else if (ws.role.includes('delivery_partner')) {
       this.deliveryPartnerClients.delete(ws.userId);
     } else if (ws.userId) {
       this.clients.delete(ws.userId);

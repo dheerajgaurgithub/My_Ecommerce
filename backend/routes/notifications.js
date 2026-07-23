@@ -8,7 +8,7 @@ const router = express.Router();
 router.get('/', auth, async (req, res) => {
   try {
     // Admin gets admin notifications, regular users get their own notifications
-    const filter = req.user.role === 'admin' ? { for_admin: true } : { user_id: req.user._id, for_admin: false };
+    const filter = req.user.role.includes('admin') ? { for_admin: true } : { user_id: req.user._id, for_admin: false };
     const notifications = await Notification.find(filter)
       .sort({ createdAt: -1 })
       .limit(50);
@@ -36,7 +36,7 @@ router.get('/delivery-partner', deliveryAuth, async (req, res) => {
 // Get unread count
 router.get('/unread-count', auth, async (req, res) => {
   try {
-    const filter = req.user.role === 'admin' ? { for_admin: true, is_read: false } : { user_id: req.user._id, for_admin: false, is_read: false };
+    const filter = req.user.role.includes('admin') ? { for_admin: true, is_read: false } : { user_id: req.user._id, for_admin: false, is_read: false };
     const count = await Notification.countDocuments(filter);
     res.json({ success: true, count });
   } catch (error) {
@@ -97,7 +97,7 @@ router.patch('/delivery-partner/:id/read', deliveryAuth, async (req, res) => {
 // Mark all as read
 router.patch('/read-all', auth, async (req, res) => {
   try {
-    const filter = req.user.role === 'admin' ? { for_admin: true } : { user_id: req.user._id, for_admin: false };
+    const filter = req.user.role.includes('admin') ? { for_admin: true } : { user_id: req.user._id, for_admin: false };
     await Notification.updateMany(filter, { is_read: true });
     res.json({ success: true, message: 'All notifications marked as read' });
   } catch (error) {
@@ -123,7 +123,7 @@ router.patch('/delivery-partner/read-all', deliveryAuth, async (req, res) => {
 // Delete single notification (must come before delete all)
 router.delete('/:id', auth, async (req, res) => {
   try {
-    const filter = req.user.role === 'admin' ? { _id: req.params.id, for_admin: true } : { _id: req.params.id, user_id: req.user._id, for_admin: false };
+    const filter = req.user.role.includes('admin') ? { _id: req.params.id, for_admin: true } : { _id: req.params.id, user_id: req.user._id, for_admin: false };
     const notification = await Notification.findOneAndDelete(filter);
     if (!notification) {
       return res.status(404).json({ success: false, message: 'Notification not found' });
@@ -156,7 +156,7 @@ router.delete('/delivery-partner/:id', deliveryAuth, async (req, res) => {
 // Delete all notifications
 router.delete('/', auth, async (req, res) => {
   try {
-    const filter = req.user.role === 'admin' ? { for_admin: true } : { user_id: req.user._id, for_admin: false };
+    const filter = req.user.role.includes('admin') ? { for_admin: true } : { user_id: req.user._id, for_admin: false };
     await Notification.deleteMany(filter);
     res.json({ success: true, message: 'All notifications deleted' });
   } catch (error) {

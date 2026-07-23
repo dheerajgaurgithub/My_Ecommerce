@@ -24,7 +24,7 @@ const generateOrderNumber = () => {
 // Get active delivery partners for assignment
 router.get('/active-delivery-partners', auth, async (req, res) => {
   try {
-    if (req.user.role !== 'admin') {
+    if (!req.user.role.includes('admin')) {
       return res.status(403).json({ success: false, message: 'Admin access required' });
     }
 
@@ -42,7 +42,7 @@ router.get('/active-delivery-partners', auth, async (req, res) => {
 router.get('/', auth, async (req, res) => {
   try {
     // Admin can see all orders, regular users see only their own
-    const filter = req.user.role === 'admin' ? {} : { user_id: req.user._id };
+    const filter = req.user.role.includes('admin') ? {} : { user_id: req.user._id };
     const orders = await Order.find(filter)
       .sort({ createdAt: -1 })
       .populate('items.product_id');

@@ -59,7 +59,7 @@ export const adminAuth = async (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const user = await User.findById(decoded.userId).select('-password');
 
-    if (!user || user.role !== 'admin') {
+    if (!user || !user.role.includes('admin')) {
       return res.status(403).json({ success: false, message: 'Admin access required' });
     }
 

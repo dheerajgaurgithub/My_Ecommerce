@@ -13,13 +13,11 @@ const deliveryPartnerSchema = new mongoose.Schema({
     },
     contactNumber: {
       type: String,
-      required: true,
-      unique: true
+      required: true
     },
     email: {
       type: String,
-      required: true,
-      unique: true
+      required: true
     },
     dateOfBirth: {
       type: Date,

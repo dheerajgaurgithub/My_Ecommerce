@@ -24,24 +24,32 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Location data is required for registration' });
     }
 
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ success: false, message: 'Email already exists' });
-    }
+    let existingUser = await User.findOne({ email });
+    let user;
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const user = new User({ 
-      email, 
-      password: hashedPassword, 
-      name, 
-      phone,
-      role: 'customer', 
-      emailVerified: true,
-      location: locationData.google_maps_link,
-      latitude: locationData.latitude,
-      longitude: locationData.longitude
-    });
-    await user.save();
+    if (existingUser) {
+      // User exists, add customer role to their existing roles
+      if (!existingUser.role.includes('customer')) {
+        existingUser.role.push('customer');
+        await existingUser.save();
+      }
+      user = existingUser;
+    } else {
+      // Create new user account
+      const hashedPassword = await bcrypt.hash(password, 10);
+      user = new User({
+        email,
+        password: hashedPassword,
+        name,
+        phone,
+        role: ['customer'],
+        emailVerified: true,
+        location: locationData.google_maps_link,
+        latitude: locationData.latitude,
+        longitude: locationData.longitude
+      });
+      await user.save();
+    }
 
     // Create welcome notification
     await Notification.create({
@@ -85,10 +93,10 @@ router.post('/login', async (req, res) => {
     }
 
     const token = generateToken(user._id);
-    res.json({ 
-      success: true, 
-      token, 
-      user: { id: user._id, email: user.email, name: user.name, role: user.role } 
+    res.json({
+      success: true,
+      token,
+      user: { id: user._id, email: user.email, name: user.name, role: user.role }
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -158,11 +166,11 @@ router.post('/admin/login', async (req, res) => {
     let adminUser = await User.findOne({ email });
     if (!adminUser) {
       const hashedPassword = await bcrypt.hash(ADMIN_PASSWORD, 10);
-      adminUser = new User({ 
-        email: ADMIN_EMAIL, 
-        password: hashedPassword, 
-        name: 'Mahir Admin', 
-        role: 'admin' 
+      adminUser = new User({
+        email: ADMIN_EMAIL,
+        password: hashedPassword,
+        name: 'Mahir Admin',
+        role: ['admin']
       });
       await adminUser.save();
     }
