@@ -518,7 +518,7 @@ export function DashboardPage() {
                 {distanceToStore !== null && (
                   <div className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 mb-4">
                     <Truck className="w-4 h-4" />
-                    <span className="font-medium">{distanceToStore.toFixed(2)} km away</span>
+                    <span className="font-medium">{parseFloat(distanceToStore).toFixed(2)} km away</span>
                   </div>
                 )}
                 {nearestStore.coordinates && (
@@ -818,25 +818,25 @@ export function DashboardPage() {
                           <div className="flex justify-between opacity-60">
                             <span className="text-neutral-600 dark:text-neutral-400">Partner → Store</span>
                             <span className="font-medium text-neutral-900 dark:text-white">
-                              {routeDistances[order._id].distances.partnerToStore.toFixed(2)} km
+                              {parseFloat(routeDistances[order._id].distances.partnerToStore).toFixed(2)} km
                             </span>
                           </div>
                           <div className="flex justify-between">
                             <span className="text-neutral-600 dark:text-neutral-400">Store → Customer</span>
                             <span className="font-medium text-neutral-900 dark:text-white">
-                              {routeDistances[order._id].distances.storeToCustomer.toFixed(2)} km
+                              {parseFloat(routeDistances[order._id].distances.storeToCustomer).toFixed(2)} km
                             </span>
                           </div>
                           <div className="flex justify-between">
                             <span className="text-neutral-600 dark:text-neutral-400">Customer → Store (Return)</span>
                             <span className="font-medium text-neutral-900 dark:text-white">
-                              {routeDistances[order._id].distances.customerToStore.toFixed(2)} km
+                              {parseFloat(routeDistances[order._id].distances.customerToStore).toFixed(2)} km
                             </span>
                           </div>
                           <div className="border-t border-blue-200 dark:border-blue-700 pt-2 mt-2 flex justify-between">
                             <span className="font-semibold text-neutral-900 dark:text-white">Total Distance</span>
                             <span className="font-bold text-blue-600 dark:text-blue-400">
-                              {routeDistances[order._id].distances.total.toFixed(2)} km
+                              {parseFloat(routeDistances[order._id].distances.total).toFixed(2)} km
                             </span>
                           </div>
                           <div className="text-xs text-neutral-500 dark:text-neutral-500 mt-1">
@@ -848,12 +848,12 @@ export function DashboardPage() {
                             <div className="flex justify-between items-center">
                               <span className="text-neutral-600 dark:text-neutral-400">Estimated Earning</span>
                               <span className="font-bold text-green-600 dark:text-green-400 text-lg">
-                                ₹{routeDistances[order._id].payment.totalEarning.toFixed(2)}
+                                ₹{parseFloat(routeDistances[order._id].payment.totalEarning).toFixed(2)}
                               </span>
                             </div>
                             <div className="text-xs text-neutral-500 dark:text-neutral-500 mt-1">
-                              Base: ₹{routeDistances[order._id].payment.baseFee} + 
-                              Distance: ₹{routeDistances[order._id].payment.distanceFee.toFixed(2)}
+                              Base: ₹{routeDistances[order._id].payment.baseFee} +
+                              Distance: ₹{parseFloat(routeDistances[order._id].payment.distanceFee).toFixed(2)}
                               {routeDistances[order._id].payment.bonus > 0 && ` + Bonus: ₹${routeDistances[order._id].payment.bonus}`}
                             </div>
                           </div>

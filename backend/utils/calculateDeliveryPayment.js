@@ -57,7 +57,7 @@ function calculateDeliveryPayment(distance, options = {}) {
   const totalEarning = tier.baseFee + distanceFee + bonus;
 
   return {
-    distance,
+    distance: Math.round(distance * 100) / 100, // Round to 2 decimal places
     tier: tier.name || 'standard',
     baseFee: tier.baseFee,
     ratePerKm: tier.ratePerKm,

@@ -79,7 +79,10 @@ function calculateRouteDistance(partnerLocation, storeLocation, customerLocation
       customerToStore: Math.round(distanceCustomerToStore * 100) / 100,
       total: Math.round(totalDistance * 100) / 100
     },
-    payment,
+    payment: {
+      ...payment,
+      distance: Math.round(payment.distance * 100) / 100
+    },
     routeSummary: {
       legs: [
         {

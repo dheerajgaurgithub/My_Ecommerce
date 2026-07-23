@@ -173,7 +173,7 @@ router.get('/nearest', async (req, res) => {
     res.json({
       success: true,
       store: nearestStore,
-      distance: minDistance,
+      distance: Math.round(minDistance * 100) / 100,
       distanceUnit: 'km',
       serviceRadius: nearestStore.serviceRadius,
       withinServiceArea: nearestStore.withinServiceArea !== false,
