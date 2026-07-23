@@ -497,7 +497,7 @@ router.get('/active-orders', deliveryAuth, checkRenewalStatus, async (req, res) 
   try {
     const activeOrders = await DeliveryOrder.find({
       deliveryPartnerId: req.deliveryPartner._id,
-      status: { $in: ['assigned', 'accepted', 'reached_store', 'picked_up', 'in_transit'] }
+      status: { $in: ['assigned', 'accepted', 'reached_store', 'picked_up', 'in_transit', 'delivered'] }
     }).populate('orderId');
 
     const Address = (await import('../models/Address.js')).default;
@@ -880,8 +880,30 @@ router.put('/order-status/:orderId', deliveryAuth, checkRenewalStatus, async (re
 
     await order.save();
 
-    // Send feedback request email when order is delivered
+    // Update delivery partner profile when order is delivered
     if (status === 'delivered') {
+      try {
+        // Calculate delivery payment
+        const payment = calculateDeliveryPayment(order, deliveryOrder);
+
+        // Update delivery partner's total deliveries and earnings
+        await DeliveryPartner.findByIdAndUpdate(req.deliveryPartner._id, {
+          $inc: {
+            'workDetails.totalDeliveries': 1,
+            'workDetails.totalEarnings': payment.totalEarning
+          }
+        });
+
+        console.log('Updated delivery partner profile:', {
+          totalDeliveries: 1,
+          totalEarnings: payment.totalEarning
+        });
+      } catch (profileError) {
+        console.error('Error updating delivery partner profile:', profileError);
+        // Don't fail the order update if profile update fails
+      }
+
+      // Send feedback request email when order is delivered
       try {
         const mainOrder = await Order.findById(order.orderId);
         if (mainOrder && mainOrder.userEmail) {
