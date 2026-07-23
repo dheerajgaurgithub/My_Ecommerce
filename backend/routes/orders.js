@@ -309,6 +309,30 @@ router.patch('/:id/status', adminAuth, async (req, res) => {
       await notifyOrderOutForDelivery(updatedOrder);
     } else if (status === 'delivered') {
       await notifyOrderDelivered(updatedOrder);
+      
+      // Send feedback request email when order is delivered
+      try {
+        const orderUser = await User.findById(order.user_id);
+        if (orderUser) {
+          console.log('========================================');
+          console.log('SENDING FEEDBACK EMAIL (via orders route):');
+          console.log('Order Number:', updatedOrder.order_number);
+          console.log('Customer Email:', orderUser.email);
+          console.log('Customer Name:', orderUser.name);
+          console.log('========================================');
+          
+          await emailService.sendFeedbackRequestEmail(
+            orderUser.email,
+            orderUser.name || 'Customer',
+            updatedOrder._id,
+            updatedOrder.order_number
+          );
+          console.log('✅ Feedback request email sent successfully to:', orderUser.email);
+        }
+      } catch (emailError) {
+        console.error('❌ Error sending feedback request email:', emailError);
+        // Don't fail the order update if email fails
+      }
     }
 
     // Send delivery update email for all status changes

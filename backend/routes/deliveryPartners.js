@@ -804,13 +804,8 @@ router.put('/order-status/:orderId', deliveryAuth, checkRenewalStatus, async (re
       }
     }
 
-    // Temporarily skip OTP verification for delivery to fix the flow
-    if (otpType === 'delivery' && status === 'delivered') {
-      // Clear OTP after successful delivery
-      order.delivery.deliveryOTP = null;
-      order.delivery.deliveryOTPGeneratedAt = null;
-      order.delivery.deliveryOTPExpiresAt = null;
-    }
+    // Remove temporary OTP skip - require proper OTP verification for delivery
+    // OTP verification is now handled in the delivery status check below
 
     // Generate OTP and send email when partner picks up order
     if (status === 'picked_up') {
@@ -924,6 +919,8 @@ router.put('/order-status/:orderId', deliveryAuth, checkRenewalStatus, async (re
       await notifyOrderPicked(order, req.deliveryPartner._id);
     } else if (status === 'in_transit') {
       await notifyOrderOutForDelivery(order, req.deliveryPartner._id);
+    } else if (status === 'delivered') {
+      await notifyOrderDelivered(order, req.deliveryPartner._id);
     }
 
     // Update delivery partner profile when order is delivered
@@ -960,18 +957,25 @@ router.put('/order-status/:orderId', deliveryAuth, checkRenewalStatus, async (re
       try {
         const mainOrder = await Order.findById(order.orderId).populate('user_id');
         if (mainOrder && mainOrder.user_id) {
+          console.log('========================================');
+          console.log('SENDING FEEDBACK EMAIL:');
+          console.log('Order Number:', mainOrder.order_number);
+          console.log('Customer Email:', mainOrder.user_id.email);
+          console.log('Customer Name:', mainOrder.user_id.name);
+          console.log('========================================');
+          
           await sendFeedbackRequestEmail(
             mainOrder.user_id.email,
             mainOrder.user_id.name || 'Customer',
             mainOrder._id,
             mainOrder.order_number
           );
-          console.log('Feedback request email sent to:', mainOrder.user_id.email);
+          console.log('✅ Feedback request email sent successfully to:', mainOrder.user_id.email);
         } else {
-          console.log('Could not send feedback email: order or user not found');
+          console.log('❌ Could not send feedback email: order or user not found');
         }
       } catch (emailError) {
-        console.error('Error sending feedback request email:', emailError);
+        console.error('❌ Error sending feedback request email:', emailError);
         // Don't fail the order update if email fails
       }
     }
