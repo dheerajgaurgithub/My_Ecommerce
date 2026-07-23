@@ -71,7 +71,7 @@ export const notifyOrderPlaced = async (order) => {
     // Admin notification
     await createAdminNotification(
       'New Order Placed',
-      `${order.userName || 'A customer'} has placed a new order #${order.orderNumber}`,
+      `${order.userName || 'A customer'} has placed a new order #${order.order_number}`,
       'order_placed',
       order._id,
       order.userName
@@ -81,7 +81,7 @@ export const notifyOrderPlaced = async (order) => {
     await createCustomerNotification(
       order.userId,
       'Order Placed Successfully',
-      `Your order #${order.orderNumber} has been placed successfully`,
+      `Your order #${order.order_number} has been placed successfully`,
       'order_placed',
       order._id
     );
@@ -99,7 +99,7 @@ export const notifyOrderConfirmed = async (order) => {
     await createCustomerNotification(
       order.userId,
       'Order Confirmed',
-      `Your order #${order.orderNumber} has been confirmed and is being processed`,
+      `Your order #${order.order_number} has been confirmed and is being processed`,
       'order_confirmed',
       order._id
     );
@@ -116,7 +116,7 @@ export const notifyOrderPicked = async (order, partnerId = null) => {
     // Admin notification
     await createAdminNotification(
       'Order Picked Up',
-      `Order #${order.orderNumber} has been picked up by delivery partner`,
+      `Order #${order.order_number} has been picked up by delivery partner`,
       'order_picked',
       order._id,
       order.userName
@@ -126,7 +126,7 @@ export const notifyOrderPicked = async (order, partnerId = null) => {
     await createCustomerNotification(
       order.userId,
       'Order Picked Up',
-      `Your order #${order.orderNumber} has been picked up and is on its way`,
+      `Your order #${order.order_number} has been picked up and is on its way`,
       'order_picked',
       order._id
     );
@@ -136,7 +136,7 @@ export const notifyOrderPicked = async (order, partnerId = null) => {
       await createDeliveryPartnerNotification(
         partnerId,
         'Order Picked Successfully',
-        `You have successfully picked up order #${order.orderNumber} from the store`,
+        `You have successfully picked up order #${order.order_number} from the store`,
         'order_picked',
         order._id
       );
@@ -155,7 +155,7 @@ export const notifyOrderOutForDelivery = async (order, partnerId = null) => {
     await createCustomerNotification(
       order.userId,
       'Order Out for Delivery',
-      `Your order #${order.orderNumber} is out for delivery. Delivery partner will reach you soon`,
+      `Your order #${order.order_number} is out for delivery. Delivery partner will reach you soon`,
       'order_out_for_delivery',
       order._id
     );
@@ -165,7 +165,7 @@ export const notifyOrderOutForDelivery = async (order, partnerId = null) => {
       await createDeliveryPartnerNotification(
         partnerId,
         'Out for Delivery',
-        `You are now out for delivery with order #${order.orderNumber}. Deliver as soon as possible`,
+        `You are now out for delivery with order #${order.order_number}. Deliver as soon as possible`,
         'order_out_for_delivery',
         order._id
       );
@@ -183,7 +183,7 @@ export const notifyOrderDelivered = async (order, partnerId = null) => {
     // Admin notification
     await createAdminNotification(
       'Order Delivered',
-      `Order #${order.orderNumber} has been delivered to ${order.userName || 'customer'}`,
+      `Order #${order.order_number} has been delivered to ${order.userName || 'customer'}`,
       'order_delivered',
       order._id,
       order.userName
@@ -193,7 +193,7 @@ export const notifyOrderDelivered = async (order, partnerId = null) => {
     await createCustomerNotification(
       order.userId,
       'Order Delivered',
-      `Your order #${order.orderNumber} has been successfully delivered`,
+      `Your order #${order.order_number} has been successfully delivered`,
       'order_delivered',
       order._id
     );
@@ -203,7 +203,7 @@ export const notifyOrderDelivered = async (order, partnerId = null) => {
       await createDeliveryPartnerNotification(
         partnerId,
         'Order Delivered',
-        `You have successfully delivered order #${order.orderNumber}`,
+        `You have successfully delivered order #${order.order_number}`,
         'order_delivered',
         order._id
       );
@@ -221,7 +221,7 @@ export const notifyOrderAssigned = async (order, partnerId) => {
     await createDeliveryPartnerNotification(
       partnerId,
       'New Order Assigned',
-      `Order #${order.orderNumber} has been assigned to you`,
+      `Order #${order.order_number} has been assigned to you`,
       'order_assigned',
       order._id
     );

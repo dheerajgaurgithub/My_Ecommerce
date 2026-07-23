@@ -925,7 +925,14 @@ router.put('/order-status/:orderId', deliveryAuth, checkRenewalStatus, async (re
     if (status === 'delivered') {
       try {
         // Calculate delivery payment
-        const payment = calculateDeliveryPayment(order, deliveryOrder);
+        const distance = deliveryOrder?.deliveryDetails?.estimatedDistance || 0;
+        const payment = calculateDeliveryPayment(distance);
+
+        // Validate payment before updating
+        if (isNaN(payment.totalEarning) || payment.totalEarning < 0) {
+          console.error('Invalid payment calculation:', payment);
+          throw new Error('Invalid payment calculation');
+        }
 
         // Update delivery partner's total deliveries and earnings
         await DeliveryPartner.findByIdAndUpdate(req.deliveryPartner._id, {
@@ -946,14 +953,17 @@ router.put('/order-status/:orderId', deliveryAuth, checkRenewalStatus, async (re
 
       // Send feedback request email when order is delivered
       try {
-        const mainOrder = await Order.findById(order.orderId);
-        if (mainOrder && mainOrder.userEmail) {
+        const mainOrder = await Order.findById(order.orderId).populate('user_id');
+        if (mainOrder && mainOrder.user_id) {
           await sendFeedbackRequestEmail(
-            mainOrder.userEmail,
-            mainOrder.userName || 'Customer',
+            mainOrder.user_id.email,
+            mainOrder.user_id.name || 'Customer',
             mainOrder._id,
-            mainOrder.orderNumber
+            mainOrder.order_number
           );
+          console.log('Feedback request email sent to:', mainOrder.user_id.email);
+        } else {
+          console.log('Could not send feedback email: order or user not found');
         }
       } catch (emailError) {
         console.error('Error sending feedback request email:', emailError);

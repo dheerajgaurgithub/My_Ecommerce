@@ -1546,6 +1546,22 @@ ${new Date(order.createdAt).toLocaleDateString()}
 
 </p>
 
+<p style="margin:8px 0;">
+
+<strong>Payment Method:</strong>
+
+${order.payment_method === 'cod' ? 'Cash on Delivery (COD)' : 'Paid Online'}
+
+</p>
+
+<p style="margin:8px 0;">
+
+<strong>Payment Status:</strong>
+
+${order.payment_status === 'paid' ? 'Paid' : 'Pending'}
+
+</p>
+
 </div>
 
 </div>
