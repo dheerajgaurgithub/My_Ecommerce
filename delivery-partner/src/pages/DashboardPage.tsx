@@ -173,7 +173,7 @@ export function DashboardPage() {
 
   const markNotificationAsRead = async (notificationId: string) => {
     try {
-      await api.patch(`/notifications/delivery-partner/${notificationId}/read`);
+      await api.patch(`/notifications/delivery-partner/${notificationId}/read`, {});
       setNotifications(notifications.map(n => n._id === notificationId ? { ...n, is_read: true } : n));
       setUnreadCount(prev => Math.max(0, prev - 1));
     } catch (error) {
@@ -384,7 +384,7 @@ export function DashboardPage() {
       <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 flex items-center justify-center px-4">
         <div className="max-w-md w-full text-center">
           <div className="w-16 h-16 bg-red-100 dark:bg-red-900 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Power className="w-8 h-8 text-red-600 dark:text-red-400" />
+            <Power size={32} className="text-red-600 dark:text-red-400" />
           </div>
           <h1 className="text-2xl font-bold text-neutral-900 dark:text-white mb-2">Account Suspended</h1>
           <p className="text-neutral-600 dark:text-neutral-400 mb-6">
@@ -428,7 +428,7 @@ export function DashboardPage() {
         <div className="p-6 border-b border-neutral-200 dark:border-neutral-700">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-brand-600 rounded-xl flex items-center justify-center">
-              <Truck className="w-6 h-6 text-white" />
+              <Truck size={24} className="text-white" />
             </div>
             <div>
               <h1 className="font-serif text-xl font-bold text-neutral-900 dark:text-white">MAHIR & FRIENDS</h1>
@@ -448,7 +448,7 @@ export function DashboardPage() {
                   className="w-full h-full object-cover rounded-full"
                 />
               ) : (
-                <User className="w-6 h-6 text-brand-600 dark:text-brand-400" />
+                <User size={24} className="text-brand-600 dark:text-brand-400" />
               )}
             </div>
             <div className="flex-1">
@@ -500,14 +500,14 @@ export function DashboardPage() {
             onClick={toggleTheme}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-all"
           >
-            {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+            {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
             {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
           </button>
           <button
             onClick={handleLogout}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
           >
-            <LogOut className="w-5 h-5" />
+            <LogOut size={20} />
             Logout
           </button>
         </div>
@@ -524,7 +524,7 @@ export function DashboardPage() {
                   onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                   className="lg:hidden p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700"
                 >
-                  {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                  {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
                 </button>
                 <div>
                   <h2 className="text-xl font-semibold text-neutral-900 dark:text-white capitalize">
@@ -543,7 +543,7 @@ export function DashboardPage() {
                     : 'bg-neutral-100 text-neutral-700 dark:bg-neutral-700 dark:text-neutral-300'
                 }`}
               >
-                <Power className="w-5 h-5" />
+                <Power size={20} />
                 <span className="hidden sm:inline">{isOnline ? 'Online' : 'Offline'}</span>
               </button>
             </div>
@@ -559,7 +559,7 @@ export function DashboardPage() {
               <div className="card p-6 border-2 border-blue-200 dark:border-blue-800">
                 <div className="flex items-center justify-between mb-4">
                   <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-xl flex items-center justify-center">
-                    <MapPin className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                    <MapPin size={24} className="text-blue-600 dark:text-blue-400" />
                   </div>
                   <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-full text-sm font-medium">
                     Nearest Pickup Store
@@ -571,7 +571,7 @@ export function DashboardPage() {
                 </p>
                 {distanceToStore !== null && (
                   <div className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 mb-4">
-                    <Truck className="w-4 h-4" />
+                    <Truck size={16} />
                     <span className="font-medium">{distanceToStore.toFixed(2)} km away</span>
                   </div>
                 )}
@@ -585,13 +585,13 @@ export function DashboardPage() {
                     }}
                     className="flex items-center justify-center gap-2 w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors mb-4"
                   >
-                    <ExternalLink className="w-4 h-4" />
+                    <ExternalLink size={16} />
                     Open in Google Maps
                   </button>
                 )}
                 {currentLocation && (
                   <div className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400">
-                    <MapPin className="w-4 h-4" />
+                    <MapPin size={16} />
                     <span>Your Location: {currentLocation.lat.toFixed(4)}, {currentLocation.lng.toFixed(4)}</span>
                   </div>
                 )}
@@ -604,7 +604,7 @@ export function DashboardPage() {
                 <div className="card p-6 border-2 border-brand-200 dark:border-brand-800">
                   <div className="flex items-center justify-between mb-4">
                     <div className="w-12 h-12 bg-brand-100 dark:bg-brand-900 rounded-xl flex items-center justify-center">
-                      <CreditCard className="w-6 h-6 text-brand-600 dark:text-brand-400" />
+                      <CreditCard size={24} className="text-brand-600 dark:text-brand-400" />
                     </div>
                     <span className="px-3 py-1 bg-brand-100 dark:bg-brand-900 text-brand-700 dark:text-brand-300 rounded-full text-sm font-medium">
                       One-time
@@ -632,7 +632,7 @@ export function DashboardPage() {
                   <div className={`card p-6 border-2 ${renewalStatus.isOverdue ? 'border-red-200 dark:border-red-800' : 'border-green-200 dark:border-green-800'}`}>
                     <div className="flex items-center justify-between mb-4">
                       <div className="w-12 h-12 ${renewalStatus.isOverdue ? 'bg-red-100 dark:bg-red-900' : 'bg-green-100 dark:bg-green-900'} rounded-xl flex items-center justify-center">
-                        <CreditCard className={`w-6 h-6 ${renewalStatus.isOverdue ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`} />
+                        <CreditCard size={24} className={renewalStatus.isOverdue ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'} />
                       </div>
                       <span className={`px-3 py-1 ${renewalStatus.isOverdue ? 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300' : 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'} rounded-full text-sm font-medium`}>
                         {renewalStatus.isOverdue ? 'Overdue' : 'Monthly'}
@@ -687,7 +687,7 @@ export function DashboardPage() {
               <div className="card p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-xl flex items-center justify-center">
-                    <Package className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                    <Package size={24} className="text-blue-600 dark:text-blue-400" />
                   </div>
                 </div>
                 <p className="text-2xl font-bold text-neutral-900 dark:text-white">
@@ -699,7 +699,7 @@ export function DashboardPage() {
               <div className="card p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div className="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-xl flex items-center justify-center">
-                    <DollarSign className="w-6 h-6 text-green-600 dark:text-green-400" />
+                    <DollarSign size={24} className="text-green-600 dark:text-green-400" />
                   </div>
                 </div>
                 <p className="text-2xl font-bold text-neutral-900 dark:text-white">
@@ -711,7 +711,7 @@ export function DashboardPage() {
               <div className="card p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div className="w-12 h-12 bg-yellow-100 dark:bg-yellow-900 rounded-xl flex items-center justify-center">
-                    <TrendingUp className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
+                    <TrendingUp size={24} className="text-yellow-600 dark:text-yellow-400" />
                   </div>
                 </div>
                 <p className="text-2xl font-bold text-neutral-900 dark:text-white">
@@ -723,7 +723,7 @@ export function DashboardPage() {
               <div className="card p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-xl flex items-center justify-center">
-                    <Clock className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                    <Clock size={24} className="text-purple-600 dark:text-purple-400" />
                   </div>
                 </div>
                 <p className="text-2xl font-bold text-neutral-900 dark:text-white">
@@ -762,7 +762,7 @@ export function DashboardPage() {
                         </span>
                       </div>
                       <div className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400 mb-2">
-                        <MapPin className="w-4 h-4" />
+                        <MapPin size={16} />
                         <span>{order.shippingAddress?.address || 'Address not available'}</span>
                       </div>
                       {order.payment && (
@@ -834,7 +834,7 @@ export function DashboardPage() {
 
                     <div className="space-y-3 mb-4">
                       <div className="flex items-center gap-2 text-neutral-600 dark:text-neutral-400">
-                        <MapPin className="w-4 h-4" />
+                        <MapPin size={16} />
                         <span>{order.shippingAddress?.address || 'Address not available'}</span>
                       </div>
                       {order.shippingAddress?.googleMapsLink && (
@@ -848,7 +848,7 @@ export function DashboardPage() {
                         </a>
                       )}
                       <div className="flex items-center gap-2 text-neutral-600 dark:text-neutral-400">
-                        <Phone className="w-4 h-4" />
+                        <Phone size={16} />
                         <span>{order.shippingAddress?.phone || 'Phone not available'}</span>
                       </div>
                     </div>
@@ -858,7 +858,7 @@ export function DashboardPage() {
                       <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 mb-4">
                         <div className="flex items-center justify-between mb-3">
                           <h4 className="font-semibold text-neutral-900 dark:text-white flex items-center gap-2">
-                            <Truck className="w-4 h-4 text-blue-600" />
+                            <Truck size={16} className="text-blue-600" />
                             Route Distance
                           </h4>
                           <button
@@ -1029,7 +1029,7 @@ export function DashboardPage() {
               <div className="card p-6 border-2 border-green-200 dark:border-green-800">
                 <div className="flex items-center justify-between mb-4">
                   <div className="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-xl flex items-center justify-center">
-                    <DollarSign className="w-6 h-6 text-green-600 dark:text-green-400" />
+                    <DollarSign size={24} className="text-green-600 dark:text-green-400" />
                   </div>
                   <span className="px-3 py-1 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded-full text-xs font-medium">
                     All Time
@@ -1044,7 +1044,7 @@ export function DashboardPage() {
               <div className="card p-6 border-2 border-blue-200 dark:border-blue-800">
                 <div className="flex items-center justify-between mb-4">
                   <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-xl flex items-center justify-center">
-                    <TrendingUp className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                    <TrendingUp size={24} className="text-blue-600 dark:text-blue-400" />
                   </div>
                   <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-full text-xs font-medium">
                     This Month
@@ -1059,7 +1059,7 @@ export function DashboardPage() {
               <div className="card p-6 border-2 border-purple-200 dark:border-purple-800">
                 <div className="flex items-center justify-between mb-4">
                   <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-xl flex items-center justify-center">
-                    <Package className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                    <Package size={24} className="text-purple-600 dark:text-purple-400" />
                   </div>
                   <span className="px-3 py-1 bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 rounded-full text-xs font-medium">
                     Completed
@@ -1074,7 +1074,7 @@ export function DashboardPage() {
               <div className="card p-6 border-2 border-yellow-200 dark:border-yellow-800">
                 <div className="flex items-center justify-between mb-4">
                   <div className="w-12 h-12 bg-yellow-100 dark:bg-yellow-900 rounded-xl flex items-center justify-center">
-                    <TrendingUp className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
+                    <TrendingUp size={24} className="text-yellow-600 dark:text-yellow-400" />
                   </div>
                   <span className="px-3 py-1 bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300 rounded-full text-xs font-medium">
                     Average
@@ -1097,7 +1097,7 @@ export function DashboardPage() {
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center">
-                        <DollarSign className="w-5 h-5 text-white" />
+                        <DollarSign size={20} className="text-white" />
                       </div>
                       <div>
                         <p className="font-semibold text-neutral-900 dark:text-white">Base Delivery Fee</p>
@@ -1114,7 +1114,7 @@ export function DashboardPage() {
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-                        <Truck className="w-5 h-5 text-white" />
+                        <Truck size={20} className="text-white" />
                       </div>
                       <div>
                         <p className="font-semibold text-neutral-900 dark:text-white">Distance Fee</p>
@@ -1131,7 +1131,7 @@ export function DashboardPage() {
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-yellow-600 rounded-lg flex items-center justify-center">
-                        <TrendingUp className="w-5 h-5 text-white" />
+                        <TrendingUp size={20} className="text-white" />
                       </div>
                       <div>
                         <p className="font-semibold text-neutral-900 dark:text-white">Bonus Earnings</p>
@@ -1159,7 +1159,7 @@ export function DashboardPage() {
                     <div key={order._id} className="flex items-center justify-between p-4 bg-neutral-50 dark:bg-neutral-800 rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors">
                       <div className="flex items-center gap-4">
                         <div className="w-10 h-10 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
-                          <DollarSign className="w-5 h-5 text-green-600 dark:text-green-400" />
+                          <DollarSign size={20} className="text-green-600 dark:text-green-400" />
                         </div>
                         <div>
                           <p className="font-medium text-neutral-900 dark:text-white">
