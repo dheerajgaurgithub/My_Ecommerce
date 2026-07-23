@@ -113,6 +113,38 @@ export function Header() {
     return () => clearInterval(interval);
   }, [user]);
 
+  const markNotificationAsRead = async (notificationId: string) => {
+    try {
+      const response = await api.patch<{ success: boolean; notification: any }>(`/notifications/${notificationId}/read`);
+      if (response.success && response.notification) {
+        setNotifications(notifications.map((n: any) => n._id === notificationId ? response.notification : n));
+        setUnreadCount(prev => Math.max(0, prev - 1));
+      }
+    } catch (error) {
+      console.error('Failed to mark notification as read:', error);
+    }
+  };
+
+  const deleteNotification = async (notificationId: string) => {
+    try {
+      await api.delete(`/notifications/${notificationId}`);
+      setNotifications(notifications.filter((n: any) => n._id !== notificationId));
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    } catch (error) {
+      console.error('Failed to delete notification:', error);
+    }
+  };
+
+  const deleteAllNotifications = async () => {
+    try {
+      await api.delete('/notifications');
+      setNotifications([]);
+      setUnreadCount(0);
+    } catch (error) {
+      console.error('Failed to delete all notifications:', error);
+    }
+  };
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
@@ -226,7 +258,17 @@ export function Header() {
                       <div className="absolute right-0 mt-2 w-80 card shadow-xl z-50 py-2 animate-slide-down max-h-96 overflow-y-auto">
                         <div className="px-4 py-2 border-b border-neutral-100 dark:border-neutral-700 flex items-center justify-between">
                           <p className="text-sm font-medium text-neutral-900 dark:text-white">Notifications</p>
-                          <span className="text-xs text-neutral-500">{unreadCount} unread</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-neutral-500">{unreadCount} unread</span>
+                            {notifications.length > 0 && (
+                              <button
+                                onClick={deleteAllNotifications}
+                                className="text-xs text-red-600 hover:text-red-700 font-medium"
+                              >
+                                Clear All
+                              </button>
+                            )}
+                          </div>
                         </div>
                         {notifications.length === 0 ? (
                           <div className="px-4 py-8 text-center text-sm text-neutral-500">No notifications</div>
@@ -234,30 +276,25 @@ export function Header() {
                           notifications.map((notif: any) => (
                             <div
                               key={notif._id}
-                              className={`px-4 py-3 border-b border-neutral-50 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800 cursor-pointer ${!notif.is_read ? 'bg-brand-50 dark:bg-brand-900/20' : ''}`}
-                              onClick={async () => {
-                                console.log('Notification clicked:', notif._id, 'is_read:', notif.is_read);
-                                if (!notif.is_read) {
-                                  try {
-                                    console.log('Calling API to mark as read...');
-                                    const response = await api.patch<{ success: boolean; notification: any }>(`/notifications/${notif._id}/read`);
-                                    console.log('API response:', response);
-                                    if (response.success && response.notification) {
-                                      setNotifications(notifications.map((n: any) => n._id === notif._id ? response.notification : n));
-                                      setUnreadCount(prev => Math.max(0, prev - 1));
-                                      console.log('Notification marked as read successfully');
-                                    } else {
-                                      console.error('API response unsuccessful:', response);
-                                    }
-                                  } catch (error) {
-                                    console.error('Failed to mark notification as read:', error);
-                                  }
-                                }
-                              }}
+                              className={`px-4 py-3 border-b border-neutral-50 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800 ${!notif.is_read ? 'bg-brand-50 dark:bg-brand-900/20' : ''}`}
                             >
-                              <p className="text-sm font-medium text-neutral-900 dark:text-white">{notif.title}</p>
-                              <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-1">{notif.message}</p>
-                              <p className="text-xs text-neutral-400 mt-2">{new Date(notif.createdAt).toLocaleDateString()}</p>
+                              <div className="flex items-start justify-between gap-2">
+                                <div
+                                  className="flex-1 cursor-pointer"
+                                  onClick={() => !notif.is_read && markNotificationAsRead(notif._id)}
+                                >
+                                  <p className="text-sm font-medium text-neutral-900 dark:text-white">{notif.title}</p>
+                                  <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-1">{notif.message}</p>
+                                  <p className="text-xs text-neutral-400 mt-2">{new Date(notif.createdAt).toLocaleDateString()}</p>
+                                </div>
+                                <button
+                                  onClick={() => deleteNotification(notif._id)}
+                                  className="p-1 text-neutral-400 hover:text-red-500 transition-colors flex-shrink-0"
+                                  title="Delete notification"
+                                >
+                                  <X size={14} />
+                                </button>
+                              </div>
                             </div>
                           ))
                         )}

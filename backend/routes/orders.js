@@ -10,6 +10,7 @@ import Store from '../models/Store.js';
 import { auth, adminAuth } from '../middleware/auth.js';
 import emailService from '../services/emailService.js';
 import { calculateDeliveryPayment, calculateRoundTripDistance } from '../utils/calculateDeliveryPayment.js';
+import { notifyOrderPlaced, notifyOrderConfirmed, notifyOrderPicked, notifyOrderOutForDelivery, notifyOrderDelivered, notifyOrderAssigned } from '../utils/notificationHelper.js';
 
 const router = express.Router();
 
@@ -240,34 +241,8 @@ router.post('/', auth, async (req, res) => {
       await User.findByIdAndUpdate(req.user._id, { hasUsedFirstOrderDiscount: true });
     }
 
-    // Create notification for user
-    await Notification.create({
-      user_id: req.user._id,
-      title: 'Order Placed!',
-      message: `Your order ${orderNumber} has been placed successfully. We will confirm your order shortly.`,
-      type: 'order'
-    });
-
-    // Create notification for admin
-    const adminUser = await User.findOne({ role: 'admin' });
-    if (adminUser) {
-      await Notification.create({
-        user_id: adminUser._id,
-        title: 'New Order Received',
-        message: `Order ${orderNumber} placed by ${user.name} (${user.email}). Total: ${total}.`,
-        type: 'order'
-      });
-
-      // Additional notification for online payment
-      if (isOnline) {
-        await Notification.create({
-          user_id: adminUser._id,
-          title: 'Payment Completed',
-          message: `Payment received for order ${orderNumber}. Amount: ${total}.`,
-          type: 'order'
-        });
-      }
-    }
+    // Create notifications using helper
+    await notifyOrderPlaced(order);
 
     // Send order confirmation email
     await emailService.sendOrderConfirmationEmail(user.email, user.name, {
@@ -327,42 +302,19 @@ router.patch('/:id/status', adminAuth, async (req, res) => {
       { new: true }
     );
 
-    // Create notification for user when status changes
-    const statusMessages = {
-      'confirmed': 'Your order has been confirmed and is being processed.',
-      'packed': 'Your order has been packed and is ready for shipment.',
-      'shipped': 'Your order has been shipped and is on its way!',
-      'out_for_delivery': 'Your order is out for delivery and will reach you soon.',
-      'delivered': 'Your order has been delivered successfully. Thank you for shopping with us!',
-      'cancelled': 'Your order has been cancelled. We apologize for the inconvenience.'
-    };
-
-    if (statusMessages[status]) {
-      await Notification.create({
-        user_id: order.user_id,
-        title: `Order ${status.charAt(0).toUpperCase() + status.slice(1)}`,
-        message: `Order ${order.order_number}: ${statusMessages[status]}`,
-        type: 'order'
-      });
-
-      // Send delivery update email
-      const orderUser = await User.findById(order.user_id);
-      if (orderUser) {
-        await emailService.sendDeliveryUpdateEmail(orderUser.email, orderUser.name, updatedOrder, status);
-      }
+    // Create notifications for status changes
+    if (status === 'confirmed') {
+      await notifyOrderConfirmed(updatedOrder);
+    } else if (status === 'out_for_delivery') {
+      await notifyOrderOutForDelivery(updatedOrder);
+    } else if (status === 'delivered') {
+      await notifyOrderDelivered(updatedOrder);
     }
 
-    // Notify admin when order is cancelled
-    if (status === 'cancelled') {
-      const adminUser = await User.findOne({ role: 'admin' });
-      if (adminUser) {
-        await Notification.create({
-          user_id: adminUser._id,
-          title: 'Order Cancelled',
-          message: `Order ${order.order_number} has been cancelled.`,
-          type: 'order'
-        });
-      }
+    // Send delivery update email for all status changes
+    const orderUser = await User.findById(order.user_id);
+    if (orderUser) {
+      await emailService.sendDeliveryUpdateEmail(orderUser.email, orderUser.name, updatedOrder, status);
     }
 
     res.json({ success: true, order: updatedOrder });
@@ -511,12 +463,7 @@ router.put('/:id/assign-partner', adminAuth, async (req, res) => {
     );
 
     // Create notification for delivery partner
-    await Notification.create({
-      user_id: partner.userId,
-      title: 'New Order Assigned',
-      message: `Order ${order.order_number} has been assigned to you for delivery.`,
-      type: 'order'
-    });
+    await notifyOrderAssigned(updatedOrder, partnerId);
 
     res.json({ success: true, order: updatedOrder, deliveryOrder });
   } catch (error) {

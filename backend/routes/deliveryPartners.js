@@ -17,6 +17,7 @@ import { createFeePaymentOrder, createUPIPaymentQR } from '../utils/qrCode.js';
 import { verifyRazorpaySignature } from '../utils/razorpay.js';
 import { calculateDeliveryPayment, calculateRoundTripDistance } from '../utils/calculateDeliveryPayment.js';
 import { calculateRouteDistance, calculatePartnerToStoreDistance, calculateStoreToCustomerDistance } from '../utils/calculateRouteDistance.js';
+import { notifyOrderPicked, notifyOrderOutForDelivery, notifyOrderDelivered, notifyOrderAssigned } from '../utils/notificationHelper.js';
 
 const router = express.Router();
 
@@ -912,6 +913,13 @@ router.put('/order-status/:orderId', deliveryAuth, checkRenewalStatus, async (re
     }
 
     await order.save();
+
+    // Create notifications for status changes
+    if (status === 'picked_up') {
+      await notifyOrderPicked(order, req.deliveryPartner._id);
+    } else if (status === 'in_transit') {
+      await notifyOrderOutForDelivery(order, req.deliveryPartner._id);
+    }
 
     // Update delivery partner profile when order is delivered
     if (status === 'delivered') {

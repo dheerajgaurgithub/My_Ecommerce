@@ -43,7 +43,7 @@ export function AdminAnalytics() {
   const fetchAnalytics = async () => {
     try {
       setLoading(true);
-      const response = await api.get<{ success: boolean; data?: AnalyticsData }>(`/admin/analytics?range=${timeRange}`);
+      const response = await api.get<{ success: boolean; data?: AnalyticsData }>(`/users/analytics?range=${timeRange}`);
       if (response.success && response.data) {
         setData(response.data);
       } else {
@@ -220,8 +220,8 @@ export function AdminAnalytics() {
         <div className="bg-white dark:bg-neutral-800 rounded-2xl p-6 shadow-sm border border-neutral-100 dark:border-neutral-700">
           <h2 className="text-lg font-semibold mb-4">Recent Orders</h2>
           <div className="space-y-3">
-            {data.recentOrders.map((order) => (
-              <div key={order.orderNumber} className="flex items-center justify-between p-3 bg-neutral-50 dark:bg-neutral-700 rounded-xl">
+            {data.recentOrders.map((order, index) => (
+              <div key={`${order.orderNumber}-${index}`} className="flex items-center justify-between p-3 bg-neutral-50 dark:bg-neutral-700 rounded-xl">
                 <div>
                   <p className="font-medium text-neutral-900 dark:text-white">{order.orderNumber}</p>
                   <p className="text-sm text-neutral-500">{order.customer}</p>

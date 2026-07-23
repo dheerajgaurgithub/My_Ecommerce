@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Package, MapPin, Phone, DollarSign, Clock, LogOut, Power,
-  TrendingUp, Truck, User, Sun, Moon, CreditCard, LayoutDashboard, Menu, X, ExternalLink, Star
+  TrendingUp, Truck, User, Sun, Moon, CreditCard, LayoutDashboard, Menu, X, ExternalLink, Star, Bell, Trash2
 } from 'lucide-react';
 import { useAuth } from '../lib/auth';
 import { useTheme } from '../lib/theme';
@@ -30,6 +30,8 @@ export function DashboardPage() {
   const [routeDistances, setRouteDistances] = useState<Record<string, any>>({});
   const [otpInputs, setOtpInputs] = useState<Record<string, string>>({});
   const [showOtpInput, setShowOtpInput] = useState<Record<string, boolean>>({});
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   // Calculate if renewal fee is due and within 24-hour payment window
   const isRenewalDue = () => {
@@ -66,6 +68,7 @@ export function DashboardPage() {
   useEffect(() => {
     fetchPartnerData();
     fetchOrders();
+    fetchNotifications();
     getCurrentLocation();
   }, []);
 
@@ -153,6 +156,51 @@ export function DashboardPage() {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchNotifications = async () => {
+    try {
+      const response = await api.get<{ success: boolean; notifications: any[] }>('/notifications/delivery-partner');
+      if (response.success) {
+        setNotifications(response.notifications);
+        setUnreadCount(response.notifications.filter((n: any) => !n.is_read).length);
+      }
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    }
+  };
+
+  const markNotificationAsRead = async (notificationId: string) => {
+    try {
+      await api.patch(`/notifications/delivery-partner/${notificationId}/read`);
+      setNotifications(notifications.map(n => n._id === notificationId ? { ...n, is_read: true } : n));
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    } catch (error) {
+      console.error('Failed to mark notification as read:', error);
+    }
+  };
+
+  const deleteNotification = async (notificationId: string) => {
+    try {
+      await api.delete(`/notifications/delivery-partner/${notificationId}`);
+      setNotifications(notifications.filter(n => n._id !== notificationId));
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    } catch (error) {
+      console.error('Failed to delete notification:', error);
+      showToast('Failed to delete notification', 'error');
+    }
+  };
+
+  const deleteAllNotifications = async () => {
+    try {
+      await api.delete('/notifications/delivery-partner');
+      setNotifications([]);
+      setUnreadCount(0);
+      showToast('All notifications cleared', 'success');
+    } catch (error) {
+      console.error('Failed to delete all notifications:', error);
+      showToast('Failed to clear notifications', 'error');
     }
   };
 
@@ -420,22 +468,28 @@ export function DashboardPage() {
             { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
             { id: 'orders', label: 'Orders', icon: Package },
             { id: 'earnings', label: 'Earnings', icon: DollarSign },
+            { id: 'notifications', label: 'Notifications', icon: Bell, badge: unreadCount },
             { id: 'profile', label: 'Profile', icon: User },
           ].map((item) => (
             <button
               key={item.id}
               onClick={() => {
                 setActiveTab(item.id);
-                setMobileMenuOpen(false);
+                if (item.id === 'notifications') fetchNotifications();
               }}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                 activeTab === item.id
-                  ? 'bg-brand-50 dark:bg-brand-900 text-brand-700 dark:text-brand-300'
-                  : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-700'
+                  ? 'bg-brand-600 text-white'
+                  : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700'
               }`}
             >
-              <item.icon className="w-5 h-5" />
-              {item.label}
+              <item.icon size={20} />
+              <span className="flex-1 text-left">{item.label}</span>
+              {item.badge && item.badge > 0 && (
+                <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                  {item.badge > 9 ? '9+' : item.badge}
+                </span>
+              )}
             </button>
           ))}
         </nav>
@@ -474,7 +528,7 @@ export function DashboardPage() {
                 </button>
                 <div>
                   <h2 className="text-xl font-semibold text-neutral-900 dark:text-white capitalize">
-                    {activeTab}
+                    {activeTab === 'notifications' ? 'Notifications' : activeTab}
                   </h2>
                   <p className="text-sm text-neutral-600 dark:text-neutral-400">
                     Welcome back, {partnerData?.personalDetails?.fullName?.split(' ')[0] || 'Partner'}
@@ -1128,6 +1182,56 @@ export function DashboardPage() {
                           {parseFloat(order.payment?.deliveryFee || 0).toFixed(2)} + {parseFloat(order.payment?.distanceFee || 0).toFixed(2)}
                           {order.payment?.bonus > 0 && ` + ${parseFloat(order.payment?.bonus).toFixed(2)}`}
                         </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'notifications' && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h1 className="font-serif text-2xl font-bold text-neutral-900 dark:text-white">Notifications</h1>
+              {notifications.length > 0 && (
+                <button onClick={deleteAllNotifications} className="text-sm text-red-600 hover:text-red-700 font-medium">
+                  Clear All
+                </button>
+              )}
+            </div>
+            <div className="card p-5">
+              {notifications.length === 0 ? (
+                <p className="text-neutral-500 text-sm">No notifications</p>
+              ) : (
+                <div className="space-y-3">
+                  {notifications.map((notif) => (
+                    <div
+                      key={notif._id}
+                      className={`p-4 rounded-lg border transition-colors ${notif.is_read ? 'bg-neutral-50 dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700' : 'bg-brand-50 dark:bg-brand-900/20 border-brand-200 dark:border-brand-800'}`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div
+                          className="flex-1 cursor-pointer"
+                          onClick={() => !notif.is_read && markNotificationAsRead(notif._id)}
+                        >
+                          <h3 className="font-medium text-neutral-900 dark:text-white">{notif.title}</h3>
+                          <p className="text-sm text-neutral-600 dark:text-neutral-300 mt-1">{notif.message}</p>
+                          <p className="text-xs text-neutral-400 mt-2">{new Date(notif.createdAt).toLocaleDateString()}</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {!notif.is_read && (
+                            <span className="w-2 h-2 bg-brand-500 rounded-full flex-shrink-0"></span>
+                          )}
+                          <button
+                            onClick={() => deleteNotification(notif._id)}
+                            className="p-1 text-neutral-400 hover:text-red-500 transition-colors"
+                            title="Delete notification"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}

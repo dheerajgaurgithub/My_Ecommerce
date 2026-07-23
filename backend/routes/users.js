@@ -1,6 +1,6 @@
 import express from 'express';
 import User from '../models/User.js';
-import { auth } from '../middleware/auth.js';
+import { auth, adminAuth } from '../middleware/auth.js';
 import Address from '../models/Address.js';
 
 const router = express.Router();
@@ -30,7 +30,7 @@ router.get('/all', auth, async (req, res) => {
 });
 
 // Get analytics data (admin only)
-router.get('/analytics', auth, async (req, res) => {
+router.get('/analytics', adminAuth, async (req, res) => {
   try {
     const { range = '30d' } = req.query;
     const days = range === '7d' ? 7 : range === '30d' ? 30 : 90;
@@ -41,35 +41,60 @@ router.get('/analytics', auth, async (req, res) => {
     const Product = (await import('../models/Product.js')).default;
     const Category = (await import('../models/Category.js')).default;
 
-    // Sales over time
-    const orders = await Order.find({
+    // Get total stats
+    const totalOrders = await Order.countDocuments();
+    const totalUsers = await User.countDocuments();
+    const totalProducts = await Product.countDocuments();
+
+    // Get today's stats
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999);
+
+    const todayOrders = await Order.find({ createdAt: { $gte: todayStart, $lte: todayEnd } });
+    const todayRevenue = todayOrders.reduce((sum, order) => sum + order.total, 0);
+    const todayUsers = await User.countDocuments({ createdAt: { $gte: todayStart, $lte: todayEnd } });
+
+    // Get total revenue
+    const allOrders = await Order.find({});
+    const totalRevenue = allOrders.reduce((sum, order) => sum + order.total, 0);
+
+    // Calculate conversion rate (orders / users)
+    const conversionRate = totalUsers > 0 ? (totalOrders / totalUsers) * 100 : 0;
+
+    // Calculate average order value
+    const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+
+    // Sales over time (revenue chart)
+    const ordersInRange = await Order.find({
       createdAt: { $gte: startDate }
     }).sort({ createdAt: 1 });
 
-    const salesOverTime = [];
+    const revenueChart = [];
     const orderMap = new Map();
     
     for (let i = 0; i < days; i++) {
       const date = new Date(startDate);
       date.setDate(date.getDate() + i);
       const dateStr = date.toISOString().split('T')[0];
-      orderMap.set(dateStr, { date: date.toLocaleDateString(), sales: 0, orders: 0 });
+      orderMap.set(dateStr, { date: dateStr, revenue: 0, orders: 0 });
     }
 
-    orders.forEach(order => {
+    ordersInRange.forEach(order => {
       const dateStr = order.createdAt.toISOString().split('T')[0];
       if (orderMap.has(dateStr)) {
         const data = orderMap.get(dateStr);
-        data.sales += order.total;
+        data.revenue += order.total;
         data.orders += 1;
       }
     });
 
-    salesOverTime.push(...Array.from(orderMap.values()));
+    revenueChart.push(...Array.from(orderMap.values()));
 
     // Top products
     const productSales = new Map();
-    orders.forEach(order => {
+    ordersInRange.forEach(order => {
       order.items?.forEach(item => {
         const current = productSales.get(item.product_id) || { sales: 0, revenue: 0 };
         current.sales += item.quantity;
@@ -84,57 +109,41 @@ router.get('/analytics', auth, async (req, res) => {
       .map(e => e[0]);
 
     const topProducts = await Product.find({ _id: { $in: topProductIds } });
-    const topProductsWithSales = topProducts.map(p => ({
+    const topSellingProducts = topProducts.map(p => ({
       name: p.name,
       sales: productSales.get(p._id)?.sales || 0,
       revenue: productSales.get(p._id)?.revenue || 0
     }));
 
-    // Category performance
-    const categories = await Category.find({});
-    const categoryPerformance = await Promise.all(
-      categories.map(async (cat) => {
-        const categoryOrders = orders.filter(o => 
-          o.items?.some(item => {
-            const product = topProducts.find(p => p._id === item.product_id);
-            return product && product.category_id === cat._id;
-          })
-        );
-        const revenue = categoryOrders.reduce((sum, o) => sum + o.total, 0);
-        return {
-          category: cat.name,
-          revenue,
-          percentage: orders.length > 0 ? (categoryOrders.length / orders.length) * 100 : 0
-        };
-      })
-    );
+    // Recent orders
+    const recentOrders = await Order.find({})
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .select('orderNumber total status createdAt');
 
-    // Customer growth
-    const customerMap = new Map();
-    for (let i = 0; i < days; i++) {
-      const date = new Date(startDate);
-      date.setDate(date.getDate() + i);
-      const dateStr = date.toISOString().split('T')[0];
-      customerMap.set(dateStr, { date: date.toLocaleDateString(), customers: 0 });
-    }
-
-    const allUsers = await User.find({ createdAt: { $gte: startDate } }).sort({ createdAt: 1 });
-    allUsers.forEach(user => {
-      const dateStr = user.createdAt.toISOString().split('T')[0];
-      if (customerMap.has(dateStr)) {
-        customerMap.set(dateStr, { date: customerMap.get(dateStr).date, customers: customerMap.get(dateStr).customers + 1 });
-      }
-    });
-
-    const customerGrowth = Array.from(customerMap.values());
+    const recentOrdersFormatted = recentOrders.map(order => ({
+      orderNumber: order.orderNumber || 'N/A',
+      customer: 'Customer', // Would need to populate user data
+      amount: order.total,
+      status: order.status,
+      date: order.createdAt.toISOString().split('T')[0]
+    }));
 
     res.json({
       success: true,
       data: {
-        salesOverTime,
-        topProducts: topProductsWithSales,
-        categoryPerformance,
-        customerGrowth
+        totalRevenue,
+        todayRevenue,
+        totalOrders,
+        todayOrders: todayOrders.length,
+        totalUsers,
+        todayUsers,
+        totalProducts,
+        conversionRate,
+        averageOrderValue,
+        topSellingProducts,
+        recentOrders: recentOrdersFormatted,
+        revenueChart
       }
     });
   } catch (error) {
