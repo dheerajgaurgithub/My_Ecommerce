@@ -564,6 +564,15 @@ router.get('/active-orders', deliveryAuth, checkRenewalStatus, async (req, res) 
       }
     }
 
+    // Fetch feedback for all delivered orders
+    const deliveredOrderIds = activeOrders
+      .filter(deliveryOrder => deliveryOrder.status === 'delivered')
+      .map(deliveryOrder => deliveryOrder.orderId?._id)
+      .filter(Boolean);
+
+    const feedbacks = await Feedback.find({ orderId: { $in: deliveredOrderIds } });
+    const feedbackMap = new Map(feedbacks.map(f => [f.orderId.toString(), f]));
+
     // Transform DeliveryOrder to match frontend expectations
     const orders = activeOrders.map(deliveryOrder => {
       const order = deliveryOrder.orderId;
@@ -627,7 +636,7 @@ router.get('/active-orders', deliveryAuth, checkRenewalStatus, async (req, res) 
         payment: deliveryOrder.payment,
         deliveryDetails: deliveryOrder.deliveryDetails,
         pickupDetails: deliveryOrder.pickupDetails,
-        feedback: deliveryOrder.status === 'delivered' ? await Feedback.findOne({ orderId: order?._id }) : null
+        feedback: deliveryOrder.status === 'delivered' ? feedbackMap.get(order?._id?.toString()) || null : null
       };
     });
 
