@@ -269,6 +269,28 @@ router.get('/profile', deliveryAuth, checkRenewalStatus, async (req, res) => {
   try {
     // Populate userId to get user data if needed
     const partner = await DeliveryPartner.findById(req.deliveryPartner._id).populate('userId');
+
+    // Recalculate totals from actual delivered orders to ensure accuracy
+    const deliveredOrders = await DeliveryOrder.find({
+      deliveryPartnerId: req.deliveryPartner._id,
+      status: 'delivered'
+    });
+
+    const actualTotalDeliveries = deliveredOrders.length;
+    const actualTotalEarnings = deliveredOrders.reduce((sum, order) => sum + (order.payment?.totalEarning || 0), 0);
+
+    // Update partner profile if totals are out of sync
+    if (partner.workDetails.totalDeliveries !== actualTotalDeliveries ||
+        partner.workDetails.totalEarnings !== actualTotalEarnings) {
+      partner.workDetails.totalDeliveries = actualTotalDeliveries;
+      partner.workDetails.totalEarnings = actualTotalEarnings;
+      await partner.save();
+      console.log('Synced delivery partner totals:', {
+        totalDeliveries: actualTotalDeliveries,
+        totalEarnings: actualTotalEarnings
+      });
+    }
+
     res.json({ success: true, data: partner });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

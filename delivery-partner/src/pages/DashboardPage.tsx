@@ -221,6 +221,10 @@ export function DashboardPage() {
       await api.put(`/delivery-partners/order-status/${orderId}`, payload);
       showToast(`Order status updated to ${status}`, 'success');
       fetchOrders();
+      // Refresh partner data when order is delivered to update totals
+      if (status === 'delivered') {
+        fetchPartnerData();
+      }
       // Clear OTP input after successful update
       if (otp) {
         setOtpInputs(prev => ({ ...prev, [orderId]: '' }));
@@ -932,27 +936,170 @@ export function DashboardPage() {
         )}
 
         {activeTab === 'earnings' && (
-          <div className="card p-6">
-            <h2 className="text-xl font-semibold mb-4">Earnings Overview</h2>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 bg-neutral-50 dark:bg-neutral-700 rounded-xl">
-                <div>
-                  <p className="font-medium text-neutral-900 dark:text-white">Total Earnings</p>
-                  <p className="text-sm text-neutral-600 dark:text-neutral-400">All time</p>
+          <div className="space-y-6">
+            {/* Earnings Stats Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="card p-6 border-2 border-green-200 dark:border-green-800">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-xl flex items-center justify-center">
+                    <DollarSign className="w-6 h-6 text-green-600 dark:text-green-400" />
+                  </div>
+                  <span className="px-3 py-1 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded-full text-xs font-medium">
+                    All Time
+                  </span>
                 </div>
-                <p className="text-2xl font-bold text-green-600">
+                <p className="text-3xl font-bold text-green-600 dark:text-green-400 mb-1">
                   ₹{partnerData?.workDetails?.totalEarnings || 0}
                 </p>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">Total Earnings</p>
               </div>
-              <div className="flex items-center justify-between p-4 bg-neutral-50 dark:bg-neutral-700 rounded-xl">
-                <div>
-                  <p className="font-medium text-neutral-900 dark:text-white">This Month</p>
-                  <p className="text-sm text-neutral-600 dark:text-neutral-400">Current month earnings</p>
+
+              <div className="card p-6 border-2 border-blue-200 dark:border-blue-800">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-xl flex items-center justify-center">
+                    <TrendingUp className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-full text-xs font-medium">
+                    This Month
+                  </span>
                 </div>
-                <p className="text-2xl font-bold text-brand-600">
+                <p className="text-3xl font-bold text-blue-600 dark:text-blue-400 mb-1">
                   ₹{partnerData?.workDetails?.monthlyEarnings || 0}
                 </p>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">Monthly Earnings</p>
               </div>
+
+              <div className="card p-6 border-2 border-purple-200 dark:border-purple-800">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-xl flex items-center justify-center">
+                    <Package className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <span className="px-3 py-1 bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 rounded-full text-xs font-medium">
+                    Completed
+                  </span>
+                </div>
+                <p className="text-3xl font-bold text-purple-600 dark:text-purple-400 mb-1">
+                  {partnerData?.workDetails?.totalDeliveries || 0}
+                </p>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">Total Deliveries</p>
+              </div>
+
+              <div className="card p-6 border-2 border-yellow-200 dark:border-yellow-800">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 bg-yellow-100 dark:bg-yellow-900 rounded-xl flex items-center justify-center">
+                    <TrendingUp className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
+                  </div>
+                  <span className="px-3 py-1 bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300 rounded-full text-xs font-medium">
+                    Average
+                  </span>
+                </div>
+                <p className="text-3xl font-bold text-yellow-600 dark:text-yellow-400 mb-1">
+                  ₹{partnerData?.workDetails?.totalDeliveries > 0 
+                    ? Math.round((partnerData?.workDetails?.totalEarnings || 0) / partnerData?.workDetails?.totalDeliveries) 
+                    : 0}
+                </p>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">Per Delivery</p>
+              </div>
+            </div>
+
+            {/* Earnings Breakdown */}
+            <div className="card p-6">
+              <h2 className="text-xl font-semibold mb-4">Earnings Breakdown</h2>
+              <div className="space-y-4">
+                <div className="p-4 bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-xl border border-green-200 dark:border-green-800">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center">
+                        <DollarSign className="w-5 h-5 text-white" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-neutral-900 dark:text-white">Base Delivery Fee</p>
+                        <p className="text-sm text-neutral-600 dark:text-neutral-400">Standard delivery charges</p>
+                      </div>
+                    </div>
+                    <p className="text-xl font-bold text-green-600 dark:text-green-400">
+                      ₹{orders.filter(o => o.status === 'delivered').reduce((sum, o) => sum + (o.payment?.deliveryFee || 0), 0)}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="p-4 bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-xl border border-blue-200 dark:border-blue-800">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+                        <Truck className="w-5 h-5 text-white" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-neutral-900 dark:text-white">Distance Fee</p>
+                        <p className="text-sm text-neutral-600 dark:text-neutral-400">Extra charges for distance</p>
+                      </div>
+                    </div>
+                    <p className="text-xl font-bold text-blue-600 dark:text-blue-400">
+                      ₹{orders.filter(o => o.status === 'delivered').reduce((sum, o) => sum + (o.payment?.distanceFee || 0), 0)}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="p-4 bg-gradient-to-r from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-800/20 rounded-xl border border-yellow-200 dark:border-yellow-800">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-yellow-600 rounded-lg flex items-center justify-center">
+                        <TrendingUp className="w-5 h-5 text-white" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-neutral-900 dark:text-white">Bonus Earnings</p>
+                        <p className="text-sm text-neutral-600 dark:text-neutral-400">Performance bonuses</p>
+                      </div>
+                    </div>
+                    <p className="text-xl font-bold text-yellow-600 dark:text-yellow-400">
+                      ₹{orders.filter(o => o.status === 'delivered').reduce((sum, o) => sum + (o.payment?.bonus || 0), 0)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Recent Earnings */}
+            <div className="card p-6">
+              <h2 className="text-xl font-semibold mb-4">Recent Earnings</h2>
+              {orders.filter(o => o.status === 'delivered').length === 0 ? (
+                <p className="text-neutral-600 dark:text-neutral-400 text-center py-8">
+                  No earnings yet
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {orders.filter(o => o.status === 'delivered').slice(0, 10).map((order) => (
+                    <div key={order._id} className="flex items-center justify-between p-4 bg-neutral-50 dark:bg-neutral-800 rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
+                          <DollarSign className="w-5 h-5 text-green-600 dark:text-green-400" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-neutral-900 dark:text-white">
+                            Order #{order.order_number}
+                          </p>
+                          <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                            {new Date(order.updatedAt || order.createdAt).toLocaleDateString('en-IN', {
+                              day: 'numeric',
+                              month: 'short',
+                              year: 'numeric'
+                            })}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-lg font-bold text-green-600 dark:text-green-400">
+                          +₹{order.payment?.totalEarning || 0}
+                        </p>
+                        <p className="text-xs text-neutral-500 dark:text-neutral-500">
+                          {order.payment?.deliveryFee || 0} + {order.payment?.distanceFee || 0}
+                          {order.payment?.bonus > 0 && ` + ${order.payment?.bonus}`}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )}
