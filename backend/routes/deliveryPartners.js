@@ -523,6 +523,7 @@ router.get('/active-orders', deliveryAuth, checkRenewalStatus, async (req, res) 
     }).populate('orderId');
 
     const Address = (await import('../models/Address.js')).default;
+    const Feedback = (await import('../models/Feedback.js')).default;
 
     // Update DeliveryOrder records with correct customer details if they have placeholder data
     for (const deliveryOrder of activeOrders) {
@@ -625,7 +626,8 @@ router.get('/active-orders', deliveryAuth, checkRenewalStatus, async (req, res) 
         },
         payment: deliveryOrder.payment,
         deliveryDetails: deliveryOrder.deliveryDetails,
-        pickupDetails: deliveryOrder.pickupDetails
+        pickupDetails: deliveryOrder.pickupDetails,
+        feedback: deliveryOrder.status === 'delivered' ? await Feedback.findOne({ orderId: order?._id }) : null
       };
     });
 

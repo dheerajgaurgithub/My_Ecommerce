@@ -33,19 +33,28 @@ export function LoginPage() {
       setLoading(false);
     } else {
       showToast('Welcome back!', 'success');
-      // Check if delivery partner has selected a store
+      // Check if stores are available before redirecting
       try {
-        const partnerResponse = await api.get<PartnerResponse>('/delivery-partners/profile');
-        const partner = partnerResponse.data;
+        const activeResponse = await api.get<{ success: boolean; stores: any[] }>('/stores/active');
         
-        // If no preferred stores selected, redirect to store selection
-        if (!partner?.workDetails?.preferredStoreIds || partner.workDetails.preferredStoreIds.length === 0) {
-          navigate('/select-store');
-        } else {
+        if (activeResponse.success && activeResponse.stores && activeResponse.stores.length > 0) {
+          // Stores are available, go directly to dashboard
           navigate('/dashboard');
+        } else {
+          // No stores available, check if partner has preferred stores
+          const partnerResponse = await api.get<PartnerResponse>('/delivery-partners/profile');
+          const partner = partnerResponse.data;
+          
+          // If no preferred stores selected, redirect to store selection
+          if (!partner?.workDetails?.preferredStoreIds || partner.workDetails.preferredStoreIds.length === 0) {
+            navigate('/select-store');
+          } else {
+            navigate('/dashboard');
+          }
         }
       } catch (error) {
-        // If error fetching partner data, go to dashboard anyway
+        // If error checking stores, go to dashboard anyway
+        console.error('Error checking stores:', error);
         navigate('/dashboard');
       }
     }

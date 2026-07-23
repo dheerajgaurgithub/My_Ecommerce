@@ -3,7 +3,7 @@ import Feedback from '../models/Feedback.js';
 import Order from '../models/Order.js';
 import DeliveryPartner from '../models/DeliveryPartner.js';
 import { body, validationResult } from 'express-validator';
-import { auth } from '../middleware/auth.js';
+import { auth, adminAuth } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -107,13 +107,8 @@ router.post('/submit', [
 });
 
 // Get all feedback (Admin only)
-router.get('/all', auth, async (req, res) => {
+router.get('/all', adminAuth, async (req, res) => {
   try {
-    // Check if user is admin
-    if (!req.user.isAdmin) {
-      return res.status(403).json({ success: false, message: 'Admin access required' });
-    }
-
     const { status, page = 1, limit = 20 } = req.query;
     
     const filter = {};
@@ -148,13 +143,8 @@ router.get('/all', auth, async (req, res) => {
 });
 
 // Get single feedback by ID (Admin only)
-router.get('/:id', auth, async (req, res) => {
+router.get('/:id', adminAuth, async (req, res) => {
   try {
-    // Check if user is admin
-    if (!req.user.isAdmin) {
-      return res.status(403).json({ success: false, message: 'Admin access required' });
-    }
-
     const feedback = await Feedback.findById(req.params.id)
       .populate('orderId', 'orderNumber totalAmount items shippingAddress')
       .populate('userId', 'name email phone')
@@ -172,13 +162,8 @@ router.get('/:id', auth, async (req, res) => {
 });
 
 // Update feedback status (Admin only)
-router.put('/:id/status', auth, async (req, res) => {
+router.put('/:id/status', adminAuth, async (req, res) => {
   try {
-    // Check if user is admin
-    if (!req.user.isAdmin) {
-      return res.status(403).json({ success: false, message: 'Admin access required' });
-    }
-
     const { status } = req.body;
 
     const feedback = await Feedback.findByIdAndUpdate(
@@ -199,13 +184,8 @@ router.put('/:id/status', auth, async (req, res) => {
 });
 
 // Respond to feedback (Admin only)
-router.put('/:id/respond', auth, async (req, res) => {
+router.put('/:id/respond', adminAuth, async (req, res) => {
   try {
-    // Check if user is admin
-    if (!req.user.isAdmin) {
-      return res.status(403).json({ success: false, message: 'Admin access required' });
-    }
-
     const { response } = req.body;
 
     const feedback = await Feedback.findByIdAndUpdate(
@@ -237,13 +217,8 @@ router.put('/:id/respond', auth, async (req, res) => {
 });
 
 // Get feedback statistics (Admin only)
-router.get('/stats/overview', auth, async (req, res) => {
+router.get('/stats/overview', adminAuth, async (req, res) => {
   try {
-    // Check if user is admin
-    if (!req.user.isAdmin) {
-      return res.status(403).json({ success: false, message: 'Admin access required' });
-    }
-
     const total = await Feedback.countDocuments();
     const pending = await Feedback.countDocuments({ status: 'pending' });
     const reviewed = await Feedback.countDocuments({ status: 'reviewed' });

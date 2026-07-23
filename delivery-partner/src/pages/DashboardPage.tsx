@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Package, MapPin, Phone, DollarSign, Clock, LogOut, Power,
-  TrendingUp, Truck, User, Sun, Moon, CreditCard, LayoutDashboard, Menu, X, ExternalLink
+  TrendingUp, Truck, User, Sun, Moon, CreditCard, LayoutDashboard, Menu, X, ExternalLink, Star
 } from 'lucide-react';
 import { useAuth } from '../lib/auth';
 import { useTheme } from '../lib/theme';
@@ -518,7 +518,7 @@ export function DashboardPage() {
                 {distanceToStore !== null && (
                   <div className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 mb-4">
                     <Truck className="w-4 h-4" />
-                    <span className="font-medium">{parseFloat(distanceToStore).toFixed(2)} km away</span>
+                    <span className="font-medium">{distanceToStore.toFixed(2)} km away</span>
                   </div>
                 )}
                 {nearestStore.coordinates && (
@@ -649,7 +649,7 @@ export function DashboardPage() {
                   </div>
                 </div>
                 <p className="text-2xl font-bold text-neutral-900 dark:text-white">
-                  ₹{partnerData?.workDetails?.totalEarnings || 0}
+                  ₹{parseFloat(partnerData?.workDetails?.totalEarnings || 0).toFixed(2)}
                 </p>
                 <p className="text-sm text-neutral-600 dark:text-neutral-400">Total Earnings</p>
               </div>
@@ -870,6 +870,39 @@ export function DashboardPage() {
                       )
                     )}
 
+                    {ordersSubTab === 'completed' && (
+                      <div className="mt-4 pt-4 border-t border-neutral-200 dark:border-neutral-700">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-neutral-600 dark:text-neutral-400">Customer Rating</span>
+                          {order.feedback ? (
+                            <div className="flex items-center gap-1">
+                              {[1, 2, 3, 4, 5].map((star) => (
+                                <Star
+                                  key={star}
+                                  size={16}
+                                  className={star <= order.feedback.deliveryExperience.rating 
+                                    ? 'fill-yellow-400 text-yellow-400' 
+                                    : 'text-neutral-300'}
+                                />
+                              ))}
+                              <span className="ml-2 text-sm font-medium text-neutral-900 dark:text-white">
+                                {order.feedback.deliveryExperience.rating}/5
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-sm text-neutral-500 dark:text-neutral-500">
+                              No feedback yet
+                            </span>
+                          )}
+                        </div>
+                        {order.feedback?.deliveryExperience?.comments && (
+                          <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-2 italic">
+                            "{order.feedback.deliveryExperience.comments}"
+                          </p>
+                        )}
+                      </div>
+                    )}
+
                     {ordersSubTab === 'in_progress' && (
                       <div className="space-y-3">
                         {order.status === 'picked_up' ? (
@@ -949,7 +982,7 @@ export function DashboardPage() {
                   </span>
                 </div>
                 <p className="text-3xl font-bold text-green-600 dark:text-green-400 mb-1">
-                  ₹{partnerData?.workDetails?.totalEarnings || 0}
+                  ₹{parseFloat(partnerData?.workDetails?.totalEarnings || 0).toFixed(2)}
                 </p>
                 <p className="text-sm text-neutral-600 dark:text-neutral-400">Total Earnings</p>
               </div>
@@ -964,7 +997,7 @@ export function DashboardPage() {
                   </span>
                 </div>
                 <p className="text-3xl font-bold text-blue-600 dark:text-blue-400 mb-1">
-                  ₹{partnerData?.workDetails?.monthlyEarnings || 0}
+                  ₹{parseFloat(partnerData?.workDetails?.monthlyEarnings || 0).toFixed(2)}
                 </p>
                 <p className="text-sm text-neutral-600 dark:text-neutral-400">Monthly Earnings</p>
               </div>
@@ -994,8 +1027,8 @@ export function DashboardPage() {
                   </span>
                 </div>
                 <p className="text-3xl font-bold text-yellow-600 dark:text-yellow-400 mb-1">
-                  ₹{partnerData?.workDetails?.totalDeliveries > 0 
-                    ? Math.round((partnerData?.workDetails?.totalEarnings || 0) / partnerData?.workDetails?.totalDeliveries) 
+                  ₹{partnerData?.workDetails?.totalDeliveries > 0
+                    ? Number(((partnerData?.workDetails?.totalEarnings || 0) / partnerData?.workDetails?.totalDeliveries).toFixed(2))
                     : 0}
                 </p>
                 <p className="text-sm text-neutral-600 dark:text-neutral-400">Per Delivery</p>
@@ -1018,7 +1051,7 @@ export function DashboardPage() {
                       </div>
                     </div>
                     <p className="text-xl font-bold text-green-600 dark:text-green-400">
-                      ₹{orders.filter(o => o.status === 'delivered').reduce((sum, o) => sum + (o.payment?.deliveryFee || 0), 0)}
+                      ₹{parseFloat(orders.filter(o => o.status === 'delivered').reduce((sum, o) => sum + (o.payment?.deliveryFee || 0), 0)).toFixed(2)}
                     </p>
                   </div>
                 </div>
@@ -1035,7 +1068,7 @@ export function DashboardPage() {
                       </div>
                     </div>
                     <p className="text-xl font-bold text-blue-600 dark:text-blue-400">
-                      ₹{orders.filter(o => o.status === 'delivered').reduce((sum, o) => sum + (o.payment?.distanceFee || 0), 0)}
+                      ₹{parseFloat(orders.filter(o => o.status === 'delivered').reduce((sum, o) => sum + (o.payment?.distanceFee || 0), 0)).toFixed(2)}
                     </p>
                   </div>
                 </div>
@@ -1052,7 +1085,7 @@ export function DashboardPage() {
                       </div>
                     </div>
                     <p className="text-xl font-bold text-yellow-600 dark:text-yellow-400">
-                      ₹{orders.filter(o => o.status === 'delivered').reduce((sum, o) => sum + (o.payment?.bonus || 0), 0)}
+                      ₹{parseFloat(orders.filter(o => o.status === 'delivered').reduce((sum, o) => sum + (o.payment?.bonus || 0), 0)).toFixed(2)}
                     </p>
                   </div>
                 </div>
@@ -1089,11 +1122,11 @@ export function DashboardPage() {
                       </div>
                       <div className="text-right">
                         <p className="text-lg font-bold text-green-600 dark:text-green-400">
-                          +₹{order.payment?.totalEarning || 0}
+                          +₹{parseFloat(order.payment?.totalEarning || 0).toFixed(2)}
                         </p>
                         <p className="text-xs text-neutral-500 dark:text-neutral-500">
-                          {order.payment?.deliveryFee || 0} + {order.payment?.distanceFee || 0}
-                          {order.payment?.bonus > 0 && ` + ${order.payment?.bonus}`}
+                          {parseFloat(order.payment?.deliveryFee || 0).toFixed(2)} + {parseFloat(order.payment?.distanceFee || 0).toFixed(2)}
+                          {order.payment?.bonus > 0 && ` + ${parseFloat(order.payment?.bonus).toFixed(2)}`}
                         </p>
                       </div>
                     </div>
