@@ -2248,12 +2248,7 @@ function FeedbackManagement() {
     const fetchFeedback = async () => {
       try {
         setLoading(true);
-        const response = await fetch('http://localhost:5000/api/feedback/all', {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
-          }
-        });
-        const data = await response.json();
+        const data = await api.get<{ success: boolean; data: any[] }>('/feedback/all');
         if (data.success) {
           setFeedback(data.data);
         }
@@ -2269,15 +2264,7 @@ function FeedbackManagement() {
 
   const handleStatusUpdate = async (feedbackId: string, status: string) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/feedback/${feedbackId}/status`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
-        },
-        body: JSON.stringify({ status })
-      });
-      const data = await response.json();
+      const data = await api.put<{ success: boolean; data: any }>(`/feedback/${feedbackId}/status`, { status });
       if (data.success) {
         setFeedback(feedback.map(f => f._id === feedbackId ? data.data : f));
         showToast('Status updated', 'success');
@@ -2292,15 +2279,7 @@ function FeedbackManagement() {
     
     setResponding(true);
     try {
-      const response = await fetch(`http://localhost:5000/api/feedback/${selectedFeedback._id}/respond`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
-        },
-        body: JSON.stringify({ response: responseText })
-      });
-      const data = await response.json();
+      const data = await api.put<{ success: boolean; data: any }>(`/feedback/${selectedFeedback._id}/respond`, { response: responseText });
       if (data.success) {
         setFeedback(feedback.map(f => f._id === selectedFeedback._id ? data.data : f));
         setSelectedFeedback(data.data);
